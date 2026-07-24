@@ -40,6 +40,9 @@ export default function StudyScreen() {
   const [isDone, setIsDone] = useState(false);
   const [isExtraPractice, setIsExtraPractice] = useState(false);
 
+  // Track cards rated for SRS in the current session (prevents inflating SRS interval on intra-session re-attempts)
+  const ratedCardIdsInSession = useRef<Set<string>>(new Set());
+
   // Guard: prevent session from being re-initialized when Zustand re-renders after each updateCard
   const sessionInitialized = useRef(false);
 
@@ -53,6 +56,7 @@ export default function StudyScreen() {
   useEffect(() => {
     if (deckCards.length > 0 && !sessionInitialized.current && !isDone) {
       sessionInitialized.current = true;
+      ratedCardIdsInSession.current = new Set();
       const dueCards = deckCards.filter((c) => isDue(c.srs));
       const isExtra = dueCards.length === 0;
       setIsExtraPractice(isExtra);
@@ -88,10 +92,13 @@ export default function StudyScreen() {
     const currentSRS = currentCard.srs || createDefaultSRSState();
     const cardIsDue = isDue(currentSRS);
 
-    // Chỉ cập nhật SRS khi: Thẻ thực sự đến hạn HÔM NAY, HOẶC người dùng đánh giá QUÊN/KHÓ trong lượt ôn tự do
-    if (cardIsDue || grade === "again" || grade === "hard") {
-      const newSRS = calculateSRS(srsGrade, currentSRS);
-      await updateCard(currentCard.id, deckId, { srs: newSRS });
+    // Chỉ cập nhật thuật toán SRS ở LẦN ĐẦU TIÊN gặp thẻ trong phiên này (tránh làm sai lệch ngày ôn ngắt quãng khi làm lại)
+    if (!ratedCardIdsInSession.current.has(currentCard.id)) {
+      ratedCardIdsInSession.current.add(currentCard.id);
+      if (cardIsDue || grade === "again" || grade === "hard") {
+        const newSRS = calculateSRS(srsGrade, currentSRS);
+        await updateCard(currentCard.id, deckId, { srs: newSRS });
+      }
     }
 
     await recordReviewToday();
@@ -110,30 +117,29 @@ export default function StudyScreen() {
     }
     // DỄ / THUỘC: Thẻ được đánh giá thuộc hoàn toàn -> Không đưa lại vào hàng đợi phiên này!
 
+    // Keep questions in sync with targetCards
+    const syncedQuestions = updatedQueue
+      .map((c) => generateQuizQuestion(c, deckCards))
+      .filter((q): q is QuizQuestion => q !== null);
+
     const nextIndex = currIdx + 1;
     const isCorrect = grade === "easy";
     const newCorrect = isCorrect ? session.correctCount + 1 : session.correctCount;
     const newReviewed = session.reviewedCount + 1;
 
     setTargetCards(updatedQueue);
+    setQuestions(syncedQuestions);
+
+    setSession({
+      ...session,
+      queue: updatedQueue,
+      currentIndex: nextIndex,
+      correctCount: newCorrect,
+      reviewedCount: newReviewed,
+    });
 
     if (nextIndex >= updatedQueue.length) {
-      setSession({
-        ...session,
-        queue: updatedQueue,
-        currentIndex: nextIndex,
-        correctCount: newCorrect,
-        reviewedCount: newReviewed,
-      });
       setIsDone(true);
-    } else {
-      setSession({
-        ...session,
-        queue: updatedQueue,
-        currentIndex: nextIndex,
-        correctCount: newCorrect,
-        reviewedCount: newReviewed,
-      });
     }
   };
 
@@ -149,18 +155,24 @@ export default function StudyScreen() {
     const currentSRS = card.srs || createDefaultSRSState();
     const cardIsDue = isDue(currentSRS);
 
-    if (cardIsDue || !isCorrect) {
-      const newSRS = calculateSRS(grade, currentSRS);
-      await updateCard(card.id, deckId, { srs: newSRS });
+    // Chỉ cập nhật thuật toán SRS ở LẦN ĐẦU TIÊN gặp thẻ trong phiên này
+    if (!ratedCardIdsInSession.current.has(card.id)) {
+      ratedCardIdsInSession.current.add(card.id);
+      if (cardIsDue || !isCorrect) {
+        const newSRS = calculateSRS(grade, currentSRS);
+        await updateCard(card.id, deckId, { srs: newSRS });
+      }
     }
 
     await recordReviewToday();
 
     let updatedQuestions = [...questions];
+    let updatedCards = [...targetCards];
     if (!isCorrect) {
       // Short-Term Memory Queue: Re-insert wrong Quiz question 3 slots later so the user must get it right!
       const targetPos = Math.min(updatedQuestions.length, currIdx + 3);
       updatedQuestions.splice(targetPos, 0, currentQuestion);
+      updatedCards.splice(targetPos, 0, card);
     }
 
     const nextIndex = currIdx + 1;
@@ -168,22 +180,18 @@ export default function StudyScreen() {
     const newReviewed = session.reviewedCount + 1;
 
     setQuestions(updatedQuestions);
+    setTargetCards(updatedCards);
+
+    setSession({
+      ...session,
+      queue: updatedCards,
+      currentIndex: nextIndex,
+      correctCount: newCorrect,
+      reviewedCount: newReviewed,
+    });
 
     if (nextIndex >= updatedQuestions.length) {
-      setSession({
-        ...session,
-        currentIndex: nextIndex,
-        correctCount: newCorrect,
-        reviewedCount: newReviewed,
-      });
       setIsDone(true);
-    } else {
-      setSession({
-        ...session,
-        currentIndex: nextIndex,
-        correctCount: newCorrect,
-        reviewedCount: newReviewed,
-      });
     }
   };
 
@@ -222,8 +230,8 @@ export default function StudyScreen() {
     );
   }
 
-  // Use session.queue.length for progress so it stays consistent when switching Flashcard ↔ Quiz
-  const totalCount = session?.queue.length || (mode === "flashcard" ? targetCards.length : questions.length);
+  // Use current mode array length for totalCount so re-inserted questions are properly counted
+  const totalCount = mode === "flashcard" ? targetCards.length : questions.length;
   const progress = Math.min(1, (session?.currentIndex ?? 0) / Math.max(1, totalCount));
 
   if (isDone || !session || session.currentIndex >= totalCount) {

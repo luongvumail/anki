@@ -156,9 +156,9 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
           <Text style={styles.promptText}>{question.prompt}</Text>
 
           {/* Question Body */}
-          {question.type === "pinyin_choice" && (
+          {(question.type === "pinyin_choice" || question.type === "meaning_choice") && (
             <View style={styles.centerTargetBox}>
-              <Text style={styles.characterBig}>{question.targetText}</Text>
+              <Text style={styles.characterBig}>{question.targetText || question.card.character}</Text>
               <TouchableOpacity
                 style={styles.speakBtn}
                 onPress={() => playTTS(question.card.character)}

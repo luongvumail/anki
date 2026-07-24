@@ -49,6 +49,8 @@ function shuffleArray<T>(array: T[]): T[] {
  * Generate tone variations for a pinyin string
  */
 function generateToneVariations(pinyin: string): string[] {
+  if (!pinyin) return [];
+
   const toneMap: Record<string, string[]> = {
     a: ["ā", "á", "ǎ", "à"],
     e: ["ē", "é", "ě", "è"],
@@ -95,18 +97,19 @@ function generateToneVariations(pinyin: string): string[] {
  * Generate 3 distractors for Character options
  */
 function getCharacterDistractors(card: Card, allCards: Card[]): string[] {
-  const pool = allCards
-    .map((c) => c.character)
-    .filter((ch) => ch && ch !== card.character);
+  const target = card.character || "";
+  const uniquePool = Array.from(
+    new Set(allCards.map((c) => c.character).filter((ch) => ch && ch !== target))
+  );
 
   for (const fallback of FALLBACK_CHARACTERS) {
-    if (pool.length >= 10) break;
-    if (fallback !== card.character && !pool.includes(fallback)) {
-      pool.push(fallback);
+    if (uniquePool.length >= 10) break;
+    if (fallback !== target && !uniquePool.includes(fallback)) {
+      uniquePool.push(fallback);
     }
   }
 
-  const shuffled = shuffleArray(pool);
+  const shuffled = shuffleArray(uniquePool);
   return shuffled.slice(0, 3);
 }
 
@@ -114,18 +117,19 @@ function getCharacterDistractors(card: Card, allCards: Card[]): string[] {
  * Generate 3 distractors for Vietnamese Translation options
  */
 function getTranslationDistractors(card: Card, allCards: Card[]): string[] {
-  const pool = allCards
-    .map((c) => c.translation)
-    .filter((tr) => tr && tr !== card.translation);
+  const target = card.translation || "";
+  const uniquePool = Array.from(
+    new Set(allCards.map((c) => c.translation).filter((tr) => tr && tr !== target))
+  );
 
   for (const fallback of FALLBACK_TRANSLATIONS) {
-    if (pool.length >= 10) break;
-    if (fallback !== card.translation && !pool.includes(fallback)) {
-      pool.push(fallback);
+    if (uniquePool.length >= 10) break;
+    if (fallback !== target && !uniquePool.includes(fallback)) {
+      uniquePool.push(fallback);
     }
   }
 
-  const shuffled = shuffleArray(pool);
+  const shuffled = shuffleArray(uniquePool);
   return shuffled.slice(0, 3);
 }
 
@@ -133,21 +137,26 @@ function getTranslationDistractors(card: Card, allCards: Card[]): string[] {
  * Generate 3 distractors for Pinyin options
  */
 function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
+  const target = card.pinyin || "";
   const distractors: string[] = [];
 
-  const toneVars = generateToneVariations(card.pinyin);
+  const toneVars = generateToneVariations(target);
   for (const tv of shuffleArray(toneVars)) {
-    if (tv !== card.pinyin && !distractors.includes(tv)) {
+    if (tv && tv !== target && !distractors.includes(tv)) {
       distractors.push(tv);
     }
     if (distractors.length >= 3) break;
   }
 
   if (distractors.length < 3) {
-    const otherPinyins = allCards
-      .map((c) => c.pinyin)
-      .filter((py) => py && py !== card.pinyin && !distractors.includes(py));
-    
+    const otherPinyins = Array.from(
+      new Set(
+        allCards
+          .map((c) => c.pinyin)
+          .filter((py) => py && py !== target && !distractors.includes(py))
+      )
+    );
+
     for (const py of shuffleArray(otherPinyins)) {
       distractors.push(py);
       if (distractors.length >= 3) break;
@@ -156,7 +165,7 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
 
   if (distractors.length < 3) {
     for (const fb of FALLBACK_PINYINS) {
-      if (fb !== card.pinyin && !distractors.includes(fb)) {
+      if (fb !== target && !distractors.includes(fb)) {
         distractors.push(fb);
       }
       if (distractors.length >= 3) break;
@@ -198,7 +207,7 @@ export function generateQuizQuestion(card: Card, allCards: Card[], forcedType?: 
 
   if (type === "meaning_choice") {
     const distractors = getTranslationDistractors(card, allCards);
-    const options = shuffleArray([card.translation, ...distractors]);
+    const options = shuffleArray(Array.from(new Set([card.translation, ...distractors])));
 
     return {
       card,
@@ -213,24 +222,26 @@ export function generateQuizQuestion(card: Card, allCards: Card[], forcedType?: 
 
   if (type === "cloze" && card.examples && card.examples.length > 0) {
     const ex = card.examples[0];
-    const blankedChinese = ex.chinese.replaceAll(card.character, " [ _____ ] ");
-    const distractors = getCharacterDistractors(card, allCards);
-    const options = shuffleArray([card.character, ...distractors]);
+    if (ex.chinese && ex.chinese.includes(card.character)) {
+      const blankedChinese = ex.chinese.replaceAll(card.character, " [ _____ ] ");
+      const distractors = getCharacterDistractors(card, allCards);
+      const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
 
-    return {
-      card,
-      type: "cloze",
-      prompt: "Điền từ thích hợp vào ô trống trong câu:",
-      clozeSentence: blankedChinese,
-      clozeTranslation: ex.vietnamese,
-      options,
-      correctAnswer: card.character,
-    };
+      return {
+        card,
+        type: "cloze",
+        prompt: "Điền từ thích hợp vào ô trống trong câu:",
+        clozeSentence: blankedChinese,
+        clozeTranslation: ex.vietnamese,
+        options,
+        correctAnswer: card.character,
+      };
+    }
   }
 
   if (type === "listening") {
     const distractors = getCharacterDistractors(card, allCards);
-    const options = shuffleArray([card.character, ...distractors]);
+    const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
 
     return {
       card,
@@ -245,7 +256,7 @@ export function generateQuizQuestion(card: Card, allCards: Card[], forcedType?: 
 
   // Default: Pinyin Choice
   const distractors = getPinyinDistractors(card, allCards);
-  const options = shuffleArray([card.pinyin, ...distractors]);
+  const options = shuffleArray(Array.from(new Set([card.pinyin, ...distractors])));
 
   return {
     card,
