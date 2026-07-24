@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
@@ -37,16 +38,28 @@ export default function StudyScreen() {
   const [targetCards, setTargetCards] = useState<Card[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isDone, setIsDone] = useState(false);
+  const [isExtraPractice, setIsExtraPractice] = useState(false);
+
+  // Guard: prevent session from being re-initialized when Zustand re-renders after each updateCard
+  const sessionInitialized = useRef(false);
 
   useEffect(() => {
     if (deckId) fetchCards(deckId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId]);
 
+  const MAX_SESSION_CARDS = 20;
+
   useEffect(() => {
-    if (deckCards.length > 0 && !session && !isDone) {
+    if (deckCards.length > 0 && !sessionInitialized.current && !isDone) {
+      sessionInitialized.current = true;
       const dueCards = deckCards.filter((c) => isDue(c.srs));
-      const chosenCards = dueCards.length > 0 ? dueCards : deckCards.slice(0, 15);
+      const isExtra = dueCards.length === 0;
+      setIsExtraPractice(isExtra);
+      const pool = isExtra ? deckCards : dueCards;
+      // Cap session to MAX_SESSION_CARDS, prioritize newest (repetitions === 0) first
+      const sorted = [...pool].sort((a, b) => (a.srs?.repetitions ?? 0) - (b.srs?.repetitions ?? 0));
+      const chosenCards = sorted.slice(0, MAX_SESSION_CARDS);
       const generatedQuestions: QuizQuestion[] = chosenCards
         .map((c) => generateQuizQuestion(c, deckCards))
         .filter((q): q is QuizQuestion => q !== null);
@@ -174,9 +187,8 @@ export default function StudyScreen() {
     }
   };
 
-  const handleSwitchMode = (newMode: StudyMode) => {
+  const handleSwitchMode = useCallback((newMode: StudyMode) => {
     if (newMode === "quiz" && targetCards.length > 0) {
-      // Sync Quiz questions with targetCards (including any re-study queue items from Flashcard mode)
       const syncedQuestions = targetCards
         .map((c) => generateQuizQuestion(c, deckCards))
         .filter((q): q is QuizQuestion => q !== null);
@@ -185,13 +197,22 @@ export default function StudyScreen() {
       }
     }
     setMode(newMode);
-  };
+  }, [targetCards, deckCards]);
 
-  const endSession = async () => {
+  const handleExitSession = useCallback(() => {
     if (session && session.reviewedCount > 0) {
-      await recordReviewToday();
+      Alert.alert(
+        "Thoát phiên học?",
+        "Tiến trình SRS của các thẻ đã ôn vẫn được lưu. Bạn có muốn thoát không?",
+        [
+          { text: "Tiếp tục học", style: "cancel" },
+          { text: "Thoát", style: "destructive", onPress: () => router.back() },
+        ],
+      );
+    } else {
+      router.back();
     }
-  };
+  }, [session]);
 
   if (isLoading || (!session && !isDone)) {
     return (
@@ -201,30 +222,26 @@ export default function StudyScreen() {
     );
   }
 
-  const totalCount = mode === "flashcard" ? targetCards.length : questions.length;
+  // Use session.queue.length for progress so it stays consistent when switching Flashcard ↔ Quiz
+  const totalCount = session?.queue.length || (mode === "flashcard" ? targetCards.length : questions.length);
+  const progress = Math.min(1, (session?.currentIndex ?? 0) / Math.max(1, totalCount));
 
   if (isDone || !session || session.currentIndex >= totalCount) {
     return (
       <SessionDoneScreen
-        session={
-          session || {
-            deckId,
-            queue: [],
-            currentIndex: 0,
-            correctCount: 0,
-            reviewedCount: 0,
-            startTime: new Date(),
-          }
-        }
-        onDone={() => {
-          triggerHaptic("medium");
-          router.back();
+        session={session || {
+          deckId,
+          queue: [],
+          currentIndex: 0,
+          correctCount: 0,
+          reviewedCount: 0,
+          startTime: new Date(),
         }}
+        onDone={() => router.back()}
       />
     );
   }
 
-  const progress = (session.currentIndex + 1) / totalCount;
   const currentCard = targetCards[session.currentIndex];
   const currentQuestion = questions[session.currentIndex];
 
@@ -233,10 +250,7 @@ export default function StudyScreen() {
       {/* Duolingo Style Header Bar */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 44) }]}>
         <TouchableOpacity
-          onPress={() => {
-            endSession();
-            router.back();
-          }}
+          onPress={handleExitSession}
           style={styles.closeHeaderBtn}
           activeOpacity={0.8}
         >
@@ -250,6 +264,14 @@ export default function StudyScreen() {
             fillColor={Colors.duolingo.green}
           />
         </View>
+
+        {/* Extra Practice Badge */}
+        {isExtraPractice && (
+          <View style={styles.extraPracticeBadge}>
+            <Ionicons name="star" size={11} color={Colors.duolingo.yellow} />
+            <Text style={styles.extraPracticeText}>TỰ DO</Text>
+          </View>
+        )}
       </View>
 
       {/* Short Term Memory Study Mode Segment Bar */}
@@ -387,5 +409,22 @@ const styles = StyleSheet.create({
   },
   modeSegmentTextActive: {
     color: "#FFFFFF",
+  },
+  extraPracticeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: Colors.duolingo.cardBg,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: Radii.full,
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.duolingo.cardBottom,
+  },
+  extraPracticeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: Colors.duolingo.yellow,
+    letterSpacing: 0.5,
   },
 });

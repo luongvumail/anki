@@ -27,20 +27,17 @@ export function createDefaultSRSState(): SRSState {
   };
 }
 
-export const DEFAULT_SRS_STATE: SRSState = {
-  get repetitions() {
-    return 0;
-  },
-  get interval() {
-    return 0;
-  },
-  get easeFactor() {
-    return 2.5;
-  },
-  get dueDate() {
-    return new Date().toISOString();
-  },
-};
+/**
+ * Default SRS state factory — always call this to get a fresh object
+ * (avoids shared mutable reference bugs)
+ * @deprecated Use createDefaultSRSState() directly for clarity
+ */
+export const DEFAULT_SRS_STATE: SRSState = Object.freeze({
+  repetitions: 0,
+  interval: 0,
+  easeFactor: 2.5,
+  dueDate: new Date(0).toISOString(), // Epoch: ensures any card is always due initially
+});
 
 /**
  * Calculates the next SRS state based on the 3 simplified grades given.

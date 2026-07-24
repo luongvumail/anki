@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import {
   updatePassword,
   reauthenticateWithCredential,
@@ -23,6 +24,7 @@ import {
   scheduleDailyStudyReminder,
   cancelDailyStudyReminder,
 } from "../../lib/notificationService";
+import { getStreakCount } from "../../lib/reviewTracker";
 import { useStore } from "../../store/useStore";
 import { Colors, Spacing } from "../../constants/theme";
 import { AccountModal } from "../../components/home/AccountModal";
@@ -42,6 +44,7 @@ export default function DashboardScreen() {
   const isLoading = useStore((s) => s.isLoading);
   const cardsState = useStore((s) => s.cards);
   const [refreshing, setRefreshing] = useState(false);
+  const [streakCount, setStreakCount] = useState(0);
 
   // Account Settings Modal States
   const [showAccountModal, setShowAccountModal] = useState(false);
@@ -71,13 +74,11 @@ export default function DashboardScreen() {
       setReminderHour(res.hour);
       setReminderMinute(res.minute);
     });
+    getStreakCount().then(setStreakCount);
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    if (decks.length > 0) {
-      await Promise.all(decks.map((d) => useStore.getState().fetchCards(d.id)));
-    }
     await fetchDecks();
     setRefreshing(false);
   };
@@ -145,7 +146,7 @@ export default function DashboardScreen() {
       {/* Header Bar with Personalized User Greeting */}
       <DuolingoHeader
         userName={displayName}
-        streakCount={1}
+        streakCount={streakCount}
         onProfilePress={() => setShowAccountModal(true)}
       />
 
@@ -174,7 +175,8 @@ export default function DashboardScreen() {
             <Text style={styles.emptyTitle}>Chưa có bộ thẻ nào!</Text>
             <Text style={styles.emptySub}>Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng.</Text>
             <DuolingoButton
-              title="➕ TẠO BỘ THẺ MỚI"
+              title="TẠO BỘ THẺ MỚI"
+              icon={<Ionicons name="add-circle" size={20} color="#FFFFFF" />}
               variant="primary"
               onPress={() => router.push("/(tabs)/decks")}
               style={{ marginTop: Spacing.md }}

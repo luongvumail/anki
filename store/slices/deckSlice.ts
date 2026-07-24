@@ -24,7 +24,6 @@ export const createDeckSlice: StateCreator<DeckSlice & UISlice & CardSlice, [], 
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     set({ isLoading: true });
-    console.log("[fetchDecks] Starting Firestore fetch for uid:", uid);
     try {
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(
@@ -40,7 +39,6 @@ export const createDeckSlice: StateCreator<DeckSlice & UISlice & CardSlice, [], 
       const snap = (await Promise.race([getDocs(decksRef(uid)), timeout])) as QuerySnapshot<DocumentData>;
       const decks = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Deck);
 
-      console.log("[fetchDecks] Success, got", decks.length, "decks");
       set({ decks, isLoading: false });
       // Pre-fetch cards for all decks in parallel so SRS due states are accurate everywhere immediately
       Promise.all(decks.map((d) => get().fetchCards(d.id))).catch((err) =>

@@ -1,8 +1,8 @@
 import { StateCreator } from "zustand";
-import { getDocs, doc, setDoc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { getDocs, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { auth } from "../../lib/firebase";
-import { DEFAULT_SRS_STATE, SRSGrade, calculateSRS, isDue } from "../../lib/srs";
-import { Card, Deck } from "./types";
+import { DEFAULT_SRS_STATE, SRSGrade, calculateSRS } from "../../lib/srs";
+import { Card } from "./types";
 import { getUserId, cardsRef, cardRef, decksRef } from "./firestoreHelpers";
 import { UISlice } from "./uiSlice";
 import { DeckSlice } from "./deckSlice";
@@ -255,34 +255,6 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     const now = new Date().toISOString();
     await get().updateCard(card.id, card.deckId, { srs: newSRS, lastReviewedAt: now });
     await recordReviewToday();
-
-    // Update deck dueCount & newCount if card is no longer due today
-    const wasDue = isDue(card.srs);
-    const isNowDue = isDue(newSRS);
-    const wasNew = card.srs.repetitions === 0;
-
-    if (wasDue && !isNowDue) {
-      const uid = getUserId();
-      const deckDocRef = doc(decksRef(uid), card.deckId);
-      const deckSnap = await getDoc(deckDocRef);
-      if (deckSnap.exists()) {
-        const d = deckSnap.data() as Deck;
-        const newDueCount = Math.max(0, (d.dueCount || 0) - 1);
-        const newNewCount = wasNew ? Math.max(0, (d.newCount || 0) - 1) : d.newCount || 0;
-
-        await updateDoc(deckDocRef, {
-          dueCount: newDueCount,
-          newCount: newNewCount,
-        });
-        set((s) => ({
-          decks: s.decks.map((deck) =>
-            deck.id === card.deckId
-              ? { ...deck, dueCount: newDueCount, newCount: newNewCount }
-              : deck,
-          ),
-        }));
-      }
-    }
   },
 
   resetDeckProgress: async (deckId) => {
@@ -321,11 +293,13 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     const q = character.trim().toLowerCase();
     if (!q) return undefined;
     const cardsState = get().cards;
+    // When deckId is provided, ONLY search within that deck (prevent false-positives across decks)
     if (deckId && cardsState[deckId]) {
       return cardsState[deckId].find(
         (c) => c.character.trim().toLowerCase() === q || c.pinyin.trim().toLowerCase() === q,
       );
     }
+    // No deckId specified: search across all decks
     for (const dId of Object.keys(cardsState)) {
       const match = cardsState[dId].find(
         (c) => c.character.trim().toLowerCase() === q || c.pinyin.trim().toLowerCase() === q,
