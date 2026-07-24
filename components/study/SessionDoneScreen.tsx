@@ -64,7 +64,8 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
 
         {/* 3D Full-Width Primary Continue Button */}
         <DuolingoButton
-          title="TIẾP TỤC ➜"
+          title="TIẾP TỤC"
+          icon={<Ionicons name="arrow-forward" size={20} color="#FFFFFF" />}
           variant="primary"
           size="lg"
           onPress={onDone}

@@ -121,7 +121,6 @@ export default function DeckDetailScreen() {
         <DuolingoCard
           style={styles.cardItem}
           onPress={() => {
-            triggerHaptic("light");
             router.push(`/card/${item.id}?deckId=${id}`);
           }}
         >
@@ -166,7 +165,6 @@ export default function DeckDetailScreen() {
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => {
-            triggerHaptic("light");
             router.back();
           }}
         >

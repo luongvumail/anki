@@ -122,7 +122,6 @@ export default function AuthScreen() {
       return;
     }
     setLoading(true);
-    triggerHaptic("medium");
     try {
       if (mode === "login") {
         await signInWithEmailAndPassword(auth, email.trim(), password);
@@ -160,7 +159,6 @@ export default function AuthScreen() {
       return;
     }
     setResettingPassword(true);
-    triggerHaptic("medium");
     try {
       await sendPasswordResetEmail(auth, email.trim());
       triggerHaptic("success");
