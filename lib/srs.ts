@@ -4,10 +4,9 @@
  */
 
 export const SRS_GRADES = {
-  AGAIN: 1, // Quên hoàn toàn — ôn lại ngay
-  HARD: 3, // Khó — nhớ nhưng rất mất công
-  GOOD: 4, // Tốt — nhớ sau khi suy nghĩ nhẹ
-  EASY: 5, // Dễ — nhớ ngay lập tức
+  AGAIN: 1, // Quên — ôn lại ngay trong phiên (interval = 0)
+  HARD: 3,  // Khó — ôn lại cuối phiên (interval = 1d)
+  EASY: 5,  // Thuộc — nhớ tốt, hoàn thành phiên (interval scaling 1d -> 6d -> EF)
 } as const;
 
 export type SRSGrade = (typeof SRS_GRADES)[keyof typeof SRS_GRADES];
@@ -44,20 +43,27 @@ export const DEFAULT_SRS_STATE: SRSState = {
 };
 
 /**
- * Calculates the next SRS state based on the grade given.
+ * Calculates the next SRS state based on the 3 simplified grades given.
  */
 export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
-  let { repetitions, interval, easeFactor } = current;
+  let repetitions = current?.repetitions ?? 0;
+  let interval = current?.interval ?? 0;
+  let easeFactor = current?.easeFactor ?? 2.5;
 
-  // Clamp ease factor minimum
   if (easeFactor < 1.3) easeFactor = 1.3;
 
-  if (grade < 3) {
-    // Failed — reset streak, ôn lại ngay trong buổi (interval = 0 = due now)
+  if (grade === SRS_GRADES.AGAIN) {
+    // Quên: Reset streak, ôn lại ngay trong phiên (interval = 0)
     repetitions = 0;
     interval = 0;
-  } else {
-    // Passed
+    easeFactor -= 0.2;
+  } else if (grade === SRS_GRADES.HARD) {
+    // Khó: Giữ trong phiên ôn lại cuối bài, interval = 1d
+    repetitions = Math.max(0, repetitions - 1);
+    interval = 1;
+    easeFactor -= 0.15;
+  } else if (grade === SRS_GRADES.EASY) {
+    // Thuộc: Đạt tiêu chuẩn hoàn thành bài, tăng interval chuẩn lặp ngắt quãng SM-2
     if (repetitions === 0) {
       interval = 1;
     } else if (repetitions === 1) {
@@ -66,10 +72,9 @@ export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
       interval = Math.ceil(interval * easeFactor);
     }
     repetitions += 1;
+    easeFactor += 0.1;
   }
 
-  // Update ease factor using SM-2 formula
-  easeFactor = easeFactor + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
   if (easeFactor < 1.3) easeFactor = 1.3;
 
   const dueDate = new Date();
@@ -100,7 +105,7 @@ export function isDue(srs: SRSState): boolean {
  */
 export function getIntervalLabel(grade: SRSGrade, current: SRSState): string {
   const next = calculateSRS(grade, current);
-  if (next.interval === 0) return "Ngay bây giờ";
+  if (next.interval === 0) return "Ôn lại ngay";
   if (next.interval === 1) return "1 ngày";
   if (next.interval < 7) return `${next.interval} ngày`;
   if (next.interval < 30) return `${Math.round(next.interval / 7)} tuần`;

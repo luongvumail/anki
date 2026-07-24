@@ -1,6 +1,6 @@
 import { Card } from "../store/slices/types";
 
-export type QuestionType = "pinyin_choice" | "listening" | "cloze";
+export type QuestionType = "meaning_choice" | "pinyin_choice" | "listening" | "cloze";
 
 export interface QuizQuestion {
   card: Card;
@@ -16,10 +16,22 @@ export interface QuizQuestion {
 }
 
 /**
- * Array of fallback common Chinese characters if deck has < 4 cards
+ * Fallback distractor arrays if deck has < 4 cards
  */
 const FALLBACK_CHARACTERS = ["好", "你", "学", "中", "国", "人", "爱", "生", "水", "大", "小", "日"];
 const FALLBACK_PINYINS = ["hǎo", "nǐ", "xué", "zhōng", "guó", "rén", "ài", "shēng", "shuǐ", "dà"];
+const FALLBACK_TRANSLATIONS = [
+  "Xin chào",
+  "Tốt / Hảo",
+  "Học sinh",
+  "Cảm ơn",
+  "Nước uống",
+  "To lớn",
+  "Tạm biệt",
+  "Yêu thương",
+  "Bạn bè",
+  "Thức ăn",
+];
 
 /**
  * Utility to shuffle an array randomly
@@ -34,7 +46,7 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
- * Generate tone variations for a pinyin string if simple
+ * Generate tone variations for a pinyin string
  */
 function generateToneVariations(pinyin: string): string[] {
   const toneMap: Record<string, string[]> = {
@@ -87,10 +99,28 @@ function getCharacterDistractors(card: Card, allCards: Card[]): string[] {
     .map((c) => c.character)
     .filter((ch) => ch && ch !== card.character);
 
-  // Fill with fallback characters if pool is small
   for (const fallback of FALLBACK_CHARACTERS) {
     if (pool.length >= 10) break;
     if (fallback !== card.character && !pool.includes(fallback)) {
+      pool.push(fallback);
+    }
+  }
+
+  const shuffled = shuffleArray(pool);
+  return shuffled.slice(0, 3);
+}
+
+/**
+ * Generate 3 distractors for Vietnamese Translation options
+ */
+function getTranslationDistractors(card: Card, allCards: Card[]): string[] {
+  const pool = allCards
+    .map((c) => c.translation)
+    .filter((tr) => tr && tr !== card.translation);
+
+  for (const fallback of FALLBACK_TRANSLATIONS) {
+    if (pool.length >= 10) break;
+    if (fallback !== card.translation && !pool.includes(fallback)) {
       pool.push(fallback);
     }
   }
@@ -105,7 +135,6 @@ function getCharacterDistractors(card: Card, allCards: Card[]): string[] {
 function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
   const distractors: string[] = [];
 
-  // Try tone variations first
   const toneVars = generateToneVariations(card.pinyin);
   for (const tv of shuffleArray(toneVars)) {
     if (tv !== card.pinyin && !distractors.includes(tv)) {
@@ -114,7 +143,6 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
     if (distractors.length >= 3) break;
   }
 
-  // If not enough, pick pinyins from other cards
   if (distractors.length < 3) {
     const otherPinyins = allCards
       .map((c) => c.pinyin)
@@ -126,7 +154,6 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
     }
   }
 
-  // Fallback pinyins if still < 3
   if (distractors.length < 3) {
     for (const fb of FALLBACK_PINYINS) {
       if (fb !== card.pinyin && !distractors.includes(fb)) {
@@ -140,18 +167,26 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
 }
 
 /**
- * Select question type adaptively based on SRS repetitions & available card data
+ * Select question type adaptively based on SRS repetitions:
+ * - reps == 0: "meaning_choice" (Lần học đầu tiên -> Ưu tiên học Nghĩa & Phát âm!)
+ * - reps 1..2: "pinyin_choice" (Lần 2 -> Chuẩn hoá Pinyin & Thanh điệu)
+ * - reps 3..4: "listening" (Lần 3 -> Phản xạ Nghe âm thanh chọn Chữ Hán)
+ * - reps >= 5: "cloze" (Nâng cao -> Điền từ vào câu ngữ cảnh)
  */
 export function determineQuestionType(card: Card): QuestionType {
   const reps = card.srs?.repetitions ?? 0;
   const hasExamples = card.examples && card.examples.length > 0 && card.examples[0].chinese;
 
-  if (reps >= 5 && hasExamples) {
-    return "cloze";
-  } else if (reps >= 3) {
-    return "listening";
-  } else {
+  if (reps === 0) {
+    return "meaning_choice";
+  } else if (reps <= 2) {
     return "pinyin_choice";
+  } else if (reps <= 4) {
+    return "listening";
+  } else if (hasExamples) {
+    return "cloze";
+  } else {
+    return "meaning_choice";
   }
 }
 
@@ -160,6 +195,21 @@ export function determineQuestionType(card: Card): QuestionType {
  */
 export function generateQuizQuestion(card: Card, allCards: Card[], forcedType?: QuestionType): QuizQuestion {
   const type = forcedType || determineQuestionType(card);
+
+  if (type === "meaning_choice") {
+    const distractors = getTranslationDistractors(card, allCards);
+    const options = shuffleArray([card.translation, ...distractors]);
+
+    return {
+      card,
+      type: "meaning_choice",
+      prompt: "Từ Hán tự này có nghĩa Tiếng Việt là gì?",
+      targetText: card.character,
+      subText: card.pinyin ? `Pinyin: ${card.pinyin}` : undefined,
+      options,
+      correctAnswer: card.translation,
+    };
+  }
 
   if (type === "cloze" && card.examples && card.examples.length > 0) {
     const ex = card.examples[0];

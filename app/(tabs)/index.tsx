@@ -24,7 +24,7 @@ import {
   cancelDailyStudyReminder,
 } from "../../lib/notificationService";
 import { useStore } from "../../store/useStore";
-import { Colors, Spacing, triggerHaptic } from "../../constants/theme";
+import { Colors, Spacing } from "../../constants/theme";
 import { AccountModal } from "../../components/home/AccountModal";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
@@ -75,7 +75,6 @@ export default function DashboardScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    triggerHaptic("light");
     if (decks.length > 0) {
       await Promise.all(decks.map((d) => useStore.getState().fetchCards(d.id)));
     }
@@ -88,20 +87,15 @@ export default function DashboardScreen() {
 
     if (value) {
       const success = await scheduleDailyStudyReminder(reminderHour, reminderMinute);
-      if (success) {
-        triggerHaptic("success");
-      } else {
-        triggerHaptic("error");
+      if (!success) {
         setReminderEnabled(false);
       }
     } else {
       await cancelDailyStudyReminder();
-      triggerHaptic("light");
     }
   };
 
   const handleSignOut = () => {
-    triggerHaptic("warning");
     Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất tài khoản?", [
       { text: "Hủy", style: "cancel" },
       {
@@ -119,7 +113,6 @@ export default function DashboardScreen() {
   const handleChangePassword = async (currentPassword: string, newPassword: string) => {
     if (!user || !user.email) return;
     if (!newPassword || newPassword.length < 6) {
-      triggerHaptic("warning");
       Alert.alert("Thông báo", "Mật khẩu mới cần ít nhất 6 ký tự");
       return;
     }
@@ -130,10 +123,8 @@ export default function DashboardScreen() {
         await reauthenticateWithCredential(user, credential);
       }
       await updatePassword(user, newPassword);
-      triggerHaptic("success");
       Alert.alert("Thành công", "Mật khẩu của bạn đã được cập nhật thành công!");
     } catch (e: any) {
-      triggerHaptic("error");
       Alert.alert("Đổi mật khẩu thất bại", getAuthErrorMessage(e));
       throw e;
     }
@@ -143,10 +134,8 @@ export default function DashboardScreen() {
     if (!user || !user.email) return;
     try {
       await sendPasswordResetEmail(auth, user.email);
-      triggerHaptic("success");
       Alert.alert("Thành công", `Đã gửi hướng dẫn khôi phục tới ${user.email}`);
     } catch (e: any) {
-      triggerHaptic("error");
       Alert.alert("Gửi mail thất bại", getAuthErrorMessage(e));
     }
   };

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { auth } from "../../lib/firebase";
-import { Colors, Radii, Spacing, triggerHaptic } from "../../constants/theme";
+import { Colors, Radii, Spacing } from "../../constants/theme";
 
 interface DuolingoHeaderProps {
   userName?: string;
@@ -41,10 +41,7 @@ export function DuolingoHeader({
         <TouchableOpacity
           style={styles.statPill}
           activeOpacity={0.8}
-          onPress={() => {
-            triggerHaptic("light");
-            if (onStreakPress) onStreakPress();
-          }}
+          onPress={onStreakPress}
         >
           <Ionicons name="flame" size={16} color={Colors.duolingo.yellow} />
           <Text style={[styles.statValue, { color: Colors.duolingo.yellow }]}>{streakCount}</Text>
@@ -54,10 +51,7 @@ export function DuolingoHeader({
         {onProfilePress ? (
           <TouchableOpacity
             style={styles.avatarBtn}
-            onPress={() => {
-              triggerHaptic("light");
-              onProfilePress();
-            }}
+            onPress={onProfilePress}
             activeOpacity={0.8}
           >
             <Ionicons name="person-circle" size={28} color={Colors.duolingo.blue} />

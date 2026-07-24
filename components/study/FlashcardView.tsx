@@ -56,7 +56,6 @@ export function FlashcardView({ card, onGrade }: FlashcardViewProps) {
     // One-way reveal per card: once answer is shown, tapping does not toggle back
     if (showAnswer) return;
 
-    triggerHaptic("selection");
     setShowAnswer(true);
 
     Animated.timing(revealAnim, {
@@ -69,7 +68,6 @@ export function FlashcardView({ card, onGrade }: FlashcardViewProps) {
 
   const playTTS = async () => {
     try {
-      triggerHaptic("light");
       setSpeaking(true);
       Speech.stop();
       Speech.speak(card.character, {

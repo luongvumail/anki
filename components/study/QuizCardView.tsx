@@ -36,7 +36,6 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
 
   const playTTS = useCallback((text: string) => {
     if (!text) return;
-    triggerHaptic("selection");
     setSpeaking(true);
     Speech.speak(text, {
       language: "zh-CN",
@@ -63,7 +62,6 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
 
   const handleSelectOption = (index: number) => {
     if (isChecked) return;
-    triggerHaptic("selection");
     setSelectedIndex(index);
   };
 
@@ -132,7 +130,9 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
             <View style={styles.typeBadge}>
               <Ionicons
                 name={
-                  question.type === "listening"
+                  question.type === "meaning_choice"
+                    ? "book"
+                    : question.type === "listening"
                     ? "volume-high"
                     : question.type === "cloze"
                     ? "create"
@@ -142,7 +142,9 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
                 color={Colors.duolingo.blue}
               />
               <Text style={styles.typeBadgeText}>
-                {question.type === "listening"
+                {question.type === "meaning_choice"
+                  ? "BÀI TẬP CHỌN NGHĨA"
+                  : question.type === "listening"
                   ? "BÀI TẬP ÂM THANH"
                   : question.type === "cloze"
                   ? "ĐIỀN VÀO CHỖ TRỐNG"
@@ -310,7 +312,7 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
             )}
 
             {isCorrect && (
-              <Text style={styles.correctSubText}>Tuyệt vời! Bạn nhận được +10 XP</Text>
+              <Text style={styles.correctSubText}>Chính xác! Tiếp tục phát huy.</Text>
             )}
           </View>
 

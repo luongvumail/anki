@@ -73,24 +73,29 @@ export default function StudyScreen() {
     const currentCard = targetCards[session.currentIndex];
     const srsGrade: SRSGrade = grade === "again" ? SRS_GRADES.AGAIN : grade === "hard" ? SRS_GRADES.HARD : SRS_GRADES.EASY;
     const currentSRS = currentCard.srs || createDefaultSRSState();
-    const newSRS = calculateSRS(srsGrade, currentSRS);
+    const cardIsDue = isDue(currentSRS);
 
-    await updateCard(currentCard.id, deckId, { srs: newSRS });
+    // Chỉ cập nhật SRS khi: Thẻ thực sự đến hạn HÔM NAY, HOẶC người dùng đánh giá QUÊN/KHÓ trong lượt ôn tự do
+    if (cardIsDue || grade === "again" || grade === "hard") {
+      const newSRS = calculateSRS(srsGrade, currentSRS);
+      await updateCard(currentCard.id, deckId, { srs: newSRS });
+    }
+
     await recordReviewToday();
 
     let updatedQueue = [...targetCards];
     const currIdx = session.currentIndex;
 
     if (grade === "again") {
-      // QUÊN: Re-insert card after 2 cards in session queue so it repeats soon!
-      const targetPos = Math.min(updatedQueue.length, currIdx + 2);
+      // QUÊN: Đưa thẻ trở lại hàng đợi sau 2 thẻ nữa để người dùng ôn lại sớm!
+      const targetPos = Math.min(updatedQueue.length, currIdx + 3);
       updatedQueue.splice(targetPos, 0, currentCard);
     } else if (grade === "hard") {
-      // KHÓ: Re-insert card after 4 cards in session queue so it repeats later!
-      const targetPos = Math.min(updatedQueue.length, currIdx + 4);
+      // KHÓ: Đưa thẻ trở lại hàng đợi sau 4 thẻ nữa để người dùng ôn lại trước khi kết thúc phiên!
+      const targetPos = Math.min(updatedQueue.length, currIdx + 5);
       updatedQueue.splice(targetPos, 0, currentCard);
     }
-    // DỄ: Card is mastered & passes for this session! No re-insertion.
+    // DỄ / THUỘC: Thẻ được đánh giá thuộc hoàn toàn -> Không đưa lại vào hàng đợi phiên này!
 
     const nextIndex = currIdx + 1;
     const isCorrect = grade === "easy";
@@ -127,11 +132,15 @@ export default function StudyScreen() {
     const currentQuestion = questions[currIdx];
     const card = currentQuestion.card;
 
-    const grade: SRSGrade = isCorrect ? SRS_GRADES.GOOD : SRS_GRADES.AGAIN;
+    const grade: SRSGrade = isCorrect ? SRS_GRADES.EASY : SRS_GRADES.AGAIN;
     const currentSRS = card.srs || createDefaultSRSState();
-    const newSRS = calculateSRS(grade, currentSRS);
+    const cardIsDue = isDue(currentSRS);
 
-    await updateCard(card.id, deckId, { srs: newSRS });
+    if (cardIsDue || !isCorrect) {
+      const newSRS = calculateSRS(grade, currentSRS);
+      await updateCard(card.id, deckId, { srs: newSRS });
+    }
+
     await recordReviewToday();
 
     let updatedQuestions = [...questions];
@@ -166,7 +175,6 @@ export default function StudyScreen() {
   };
 
   const handleSwitchMode = (newMode: StudyMode) => {
-    triggerHaptic("selection");
     if (newMode === "quiz" && targetCards.length > 0) {
       // Sync Quiz questions with targetCards (including any re-study queue items from Flashcard mode)
       const syncedQuestions = targetCards
@@ -226,7 +234,6 @@ export default function StudyScreen() {
       <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 44) }]}>
         <TouchableOpacity
           onPress={() => {
-            triggerHaptic("light");
             endSession();
             router.back();
           }}

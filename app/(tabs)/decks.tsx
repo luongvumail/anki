@@ -73,7 +73,6 @@ export default function DecksScreen() {
   }, [userId]);
 
   const onRefresh = async () => {
-    triggerHaptic("light");
     setRefreshing(true);
     await fetchDecks();
     setRefreshing(false);
@@ -81,20 +80,16 @@ export default function DecksScreen() {
 
   const handleCreate = async () => {
     if (!deckName.trim()) {
-      triggerHaptic("warning");
       Alert.alert("Thông báo", "Vui lòng nhập tên bộ thẻ");
       return;
     }
     setCreating(true);
-    triggerHaptic("medium");
     try {
       await createDeck({ name: deckName.trim(), description: deckDesc.trim(), color: Colors.duolingo.blue, icon: selectedIcon });
-      triggerHaptic("success");
       setDeckName("");
       setDeckDesc("");
       setShowCreate(false);
     } catch (e: any) {
-      triggerHaptic("error");
       Alert.alert("Tạo bộ thẻ thất bại", getFirestoreErrorMessage(e));
     } finally {
       setCreating(false);
@@ -102,7 +97,6 @@ export default function DecksScreen() {
   };
 
   const handleDelete = (deckId: string, name: string) => {
-    triggerHaptic("warning");
     Alert.alert(
       "Xóa bộ thẻ",
       `Bạn có chắc chắn muốn xóa bộ thẻ "${name}" cùng toàn bộ thẻ từ vựng bên trong không?`,
@@ -115,9 +109,7 @@ export default function DecksScreen() {
             triggerHaptic("heavy");
             try {
               await deleteDeck(deckId);
-              triggerHaptic("success");
             } catch (e: any) {
-              triggerHaptic("error");
               Alert.alert("Xóa thất bại", getFirestoreErrorMessage(e));
             }
           },
@@ -151,13 +143,11 @@ export default function DecksScreen() {
             </View>
           </View>
           <DuolingoButton
-            title="➕ TẠO BỘ THẺ MỚI"
+            title="TẠO BỘ THẺ MỚI"
+            icon={<Ionicons name="add-circle" size={20} color="#FFFFFF" />}
             variant="primary"
             size="lg"
-            onPress={() => {
-              triggerHaptic("light");
-              setShowCreate(true);
-            }}
+            onPress={() => setShowCreate(true)}
             style={{ marginTop: Spacing.sm }}
           />
         </DuolingoCard>
@@ -177,10 +167,7 @@ export default function DecksScreen() {
               <DuolingoCard
                 key={deck.id}
                 style={styles.deckCardItem}
-                onPress={() => {
-                  triggerHaptic("light");
-                  router.push(`/deck/${deck.id}`);
-                }}
+                onPress={() => router.push(`/deck/${deck.id}`)}
               >
                 <View style={styles.deckCardTop}>
                   <View style={styles.deckIconBox}>
@@ -218,7 +205,6 @@ export default function DecksScreen() {
                   variant={due > 0 ? "primary" : "secondary"}
                   size="lg"
                   onPress={() => {
-                    triggerHaptic("medium");
                     if (due > 0) {
                       router.push(`/study/${deck.id}`);
                     } else {
@@ -268,10 +254,7 @@ export default function DecksScreen() {
                   <TouchableOpacity
                     key={iconName}
                     style={[styles.iconPickerItem, isSelected && styles.iconPickerSelected]}
-                    onPress={() => {
-                      triggerHaptic("selection");
-                      setSelectedIcon(iconName);
-                    }}
+                    onPress={() => setSelectedIcon(iconName)}
                   >
                     <DeckIcon name={iconName} size={24} color={isSelected ? Colors.duolingo.blue : Colors.duolingo.textMuted} />
                   </TouchableOpacity>

@@ -40,7 +40,6 @@ export default function CardDetailScreen() {
 
   const handleDelete = () => {
     if (!card) return;
-    triggerHaptic("warning");
     Alert.alert("Xóa thẻ vựng", `Bạn có chắc chắn muốn xóa từ "${card.character}" khỏi bộ thẻ?`, [
       { text: "Hủy", style: "cancel" },
       {
@@ -57,7 +56,6 @@ export default function CardDetailScreen() {
 
   const speak = () => {
     if (!card) return;
-    triggerHaptic("selection");
     setSpeaking(true);
     Speech.speak(card.character, {
       language: "zh-CN",
@@ -83,10 +81,7 @@ export default function CardDetailScreen() {
       <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + 8, 44) }]}>
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() => {
-            triggerHaptic("light");
-            router.back();
-          }}
+          onPress={() => router.back()}
         >
           <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
@@ -115,13 +110,14 @@ export default function CardDetailScreen() {
           <Text style={[styles.pinyinBig, { color: pinyinColor }]}>{card.pinyin}</Text>
           <Text style={styles.translationBig}>{card.translation}</Text>
 
-          {/* 3D Audio Push Button */}
+          {/* 3D Speaker Audio Button - Strict Vector Icon */}
           <DuolingoButton
-            title={speaking ? "ĐANG PHÁT..." : "🔊 NGHE PHÁT ÂM"}
+            title=""
+            icon={<Ionicons name={speaking ? "volume-high" : "volume-medium"} size={26} color="#FFFFFF" />}
             variant="blue"
             size="md"
             onPress={speak}
-            style={{ marginTop: Spacing.md }}
+            style={{ marginTop: Spacing.md, width: 64, alignSelf: "center" }}
           />
         </DuolingoCard>
 
@@ -137,8 +133,8 @@ export default function CardDetailScreen() {
                   backgroundColor: isDue(card.srs)
                     ? Colors.duolingo.red
                     : card.srs?.repetitions > 0
-                    ? Colors.duolingo.green
-                    : Colors.duolingo.blue,
+                      ? Colors.duolingo.green
+                      : Colors.duolingo.blue,
                 },
               ]}
             >
@@ -146,8 +142,8 @@ export default function CardDetailScreen() {
                 {isDue(card.srs)
                   ? "⚡ CẦN ÔN TẬP"
                   : card.srs?.repetitions > 0
-                  ? "✓ ĐÃ THUỘC"
-                  : "✨ TỪ MỚI"}
+                    ? "✓ ĐÃ THUỘC"
+                    : "✨ TỪ MỚI"}
               </Text>
             </View>
           </View>
@@ -164,7 +160,9 @@ export default function CardDetailScreen() {
 
           <View style={[styles.detailRow, styles.borderTop]}>
             <Text style={styles.detailLabel}>Hệ số dễ (Ease Factor)</Text>
-            <Text style={styles.detailVal}>{((card.srs?.easeFactor || 2.5) * 100).toFixed(0)}%</Text>
+            <Text style={styles.detailVal}>
+              {((card.srs?.easeFactor || 2.5) * 100).toFixed(0)}%
+            </Text>
           </View>
         </DuolingoCard>
 
@@ -186,7 +184,7 @@ export default function CardDetailScreen() {
 
         {/* Delete Button */}
         <DuolingoButton
-          title="🗑️ XÓA THẺ TỪ VỰNG NÀY"
+          title="XÓA THẺ TỪ VỰNG NÀY"
           variant="error"
           size="md"
           onPress={handleDelete}
@@ -199,7 +197,12 @@ export default function CardDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.duolingo.bg },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: Colors.duolingo.bg },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.duolingo.bg,
+  },
 
   headerBar: {
     flexDirection: "row",
@@ -226,10 +229,21 @@ const styles = StyleSheet.create({
   characterBig: { fontSize: 64, fontWeight: "800", color: "#FFFFFF" },
   traditionalText: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 2 },
   pinyinBig: { fontSize: 22, fontWeight: "800", marginTop: Spacing.xs },
-  translationBig: { fontSize: 18, fontWeight: "700", color: "#FFFFFF", marginTop: 4, textAlign: "center" },
+  translationBig: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginTop: 4,
+    textAlign: "center",
+  },
 
   detailCard: { padding: Spacing.md, marginBottom: Spacing.lg },
-  detailRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: Spacing.sm },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
+  },
   borderTop: { borderTopWidth: 1, borderTopColor: Colors.duolingo.cardBorder },
   detailLabel: { fontSize: 14, color: Colors.duolingo.textMuted, fontWeight: "600" },
   detailVal: { fontSize: 14, fontWeight: "800", color: "#FFFFFF" },

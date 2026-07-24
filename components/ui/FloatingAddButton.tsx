@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Radii, triggerHaptic } from "../../constants/theme";
+import { Colors, Radii } from "../../constants/theme";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const FAB_SIZE = 54;
@@ -40,7 +40,6 @@ export function FloatingAddButton({ onPress, bottomOffset }: FloatingAddButtonPr
       },
       onPanResponderGrant: () => {
         setPressed(true);
-        triggerHaptic("light");
       },
       onPanResponderMove: (_, gestureState) => {
         pan.setValue({
@@ -54,7 +53,6 @@ export function FloatingAddButton({ onPress, bottomOffset }: FloatingAddButtonPr
         const isTap = Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5;
 
         if (isTap) {
-          triggerHaptic("medium");
           onPress();
         } else {
           const rawX = lastPos.current.x + gestureState.dx;

@@ -21,7 +21,7 @@ import { generateCardDataBatch, CardData } from "../../lib/gemini";
 import { createDefaultSRSState } from "../../lib/srs";
 import { useStore } from "../../store/useStore";
 import { getFirestoreErrorMessage, getGeminiErrorMessage } from "../../lib/errorHandler";
-import { Colors, Typography, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { SectionTitle } from "../ui/SectionTitle";
 import { DeckPicker } from "./DeckPicker";
 import { CardPreview } from "./CardPreview";
@@ -112,19 +112,16 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
   const handleGenerateBatch = async () => {
     const parsed = parseWords(input);
     if (parsed.length === 0) {
-      triggerHaptic("warning");
       Alert.alert("Thông báo", "Vui lòng nhập từ hoặc câu Tiếng Trung");
       return;
     }
     if (!selectedDeckId) {
-      triggerHaptic("warning");
       Alert.alert("Thông báo", "Vui lòng chọn hoặc tạo 1 bộ thẻ trước");
       return;
     }
 
     Keyboard.dismiss();
     setAnalyzingBatch(true);
-    triggerHaptic("medium");
 
     const initialItems: WordItem[] = parsed.map((w) => ({
       word: w,
@@ -152,9 +149,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
           };
         })
       );
-      triggerHaptic("success");
     } catch (e: any) {
-      triggerHaptic("error");
       setWordItems((prev) =>
         prev.map((item) => ({
           ...item,
@@ -174,7 +169,6 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     setWordItems((prev) =>
       prev.map((w, i) => (i === index ? { ...w, saving: true } : w))
     );
-    triggerHaptic("medium");
 
     try {
       const existing = findExistingCard(item.data.character, selectedDeckId);
@@ -186,7 +180,6 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
               : w
           )
         );
-        triggerHaptic("warning");
         return;
       }
 
@@ -199,14 +192,12 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
         srs: createDefaultSRSState(),
       });
 
-      triggerHaptic("success");
       setWordItems((prev) =>
         prev.map((w, i) =>
           i === index ? { ...w, saving: false, saved: true } : w
         )
       );
     } catch (e: any) {
-      triggerHaptic("error");
       setWordItems((prev) =>
         prev.map((w, i) =>
           i === index
@@ -225,14 +216,12 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     if (unsavedIndices.length === 0) return;
 
     setBulkSaving(true);
-    triggerHaptic("medium");
 
     for (const idx of unsavedIndices) {
       await handleSaveItem(idx);
     }
 
     setBulkSaving(false);
-    triggerHaptic("success");
   };
 
   const handleRemoveItem = (index: number) => {

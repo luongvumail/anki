@@ -70,15 +70,13 @@ export default function DeckDetailScreen() {
   }, [id]);
 
   const handleDeleteDeck = () => {
-    if (!deck) return;
-    triggerHaptic("warning");
     Alert.alert(
-      "Xóa bộ thẻ",
-      `Bạn có chắc chắn muốn xóa bộ thẻ "${deck.name}" cùng toàn bộ từ vựng bên trong không?`,
+      "Xóa bộ thẻ này",
+      `Bạn có chắc chắn muốn xóa bộ thẻ "${deck?.name || ""}"? Tất cả từ vựng trong bộ thẻ sẽ bị xóa vĩnh viễn!`,
       [
         { text: "Hủy", style: "cancel" },
         {
-          text: "Xóa bộ thẻ",
+          text: "Xóa vĩnh viễn",
           style: "destructive",
           onPress: async () => {
             triggerHaptic("heavy");
@@ -91,11 +89,9 @@ export default function DeckDetailScreen() {
   };
 
   const handleResetProgress = () => {
-    if (!deck) return;
-    triggerHaptic("warning");
     Alert.alert(
-      "Đặt lại tiến độ",
-      `Tất cả từ vựng trong bộ "${deck.name}" sẽ được reset về chưa học.`,
+      "Đặt lại tiến độ học",
+      `Bạn có chắc muốn đặt lại trạng thái học của tất cả ${deckCards.length} từ vựng về trạng thái từ mới?`,
       [
         { text: "Hủy", style: "cancel" },
         {
@@ -104,7 +100,6 @@ export default function DeckDetailScreen() {
           onPress: async () => {
             triggerHaptic("heavy");
             await resetDeckProgress(id);
-            triggerHaptic("success");
           },
         },
       ],
@@ -112,7 +107,6 @@ export default function DeckDetailScreen() {
   };
 
   const speak = (character: string) => {
-    triggerHaptic("selection");
     Speech.speak(character, {
       language: "zh-CN",
       rate: 0.8,

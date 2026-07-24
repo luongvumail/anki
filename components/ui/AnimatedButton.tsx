@@ -6,7 +6,7 @@ import {
   StyleProp,
   GestureResponderEvent,
 } from 'react-native';
-import { triggerHaptic } from '../../constants/theme';
+
 
 interface AnimatedButtonProps {
   children: React.ReactNode;
@@ -29,7 +29,6 @@ export function AnimatedButton({
 
   const handlePressIn = () => {
     if (disabled) return;
-    if (hapticType) triggerHaptic(hapticType);
     Animated.spring(scale, {
       toValue: activeScale,
       useNativeDriver: true,

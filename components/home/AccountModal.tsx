@@ -59,20 +59,16 @@ export function AccountModal({
   const handlePasswordSubmit = async () => {
     if (!newPassword) return;
     if (newPassword.length < 6) {
-      triggerHaptic("warning");
       Alert.alert("Thông báo", "Mật khẩu mới phải chứa ít nhất 6 ký tự.");
       return;
     }
     setLoadingPass(true);
-    triggerHaptic("medium");
     try {
       await onChangePassword(currentPassword, newPassword);
-      triggerHaptic("success");
       Alert.alert("Thành công", "Đã cập nhật mật khẩu mới!");
       setCurrentPassword("");
       setNewPassword("");
     } catch (e: any) {
-      triggerHaptic("error");
       Alert.alert("Lỗi đổi mật khẩu", e?.message || "Không thể cập nhật mật khẩu.");
     } finally {
       setLoadingPass(false);
@@ -81,16 +77,13 @@ export function AccountModal({
 
   const handleResetSubmit = async () => {
     setLoadingReset(true);
-    triggerHaptic("medium");
     try {
       await onSendResetEmail();
-      triggerHaptic("success");
       Alert.alert(
         "Đã gửi email khôi phục",
         "Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn.",
       );
     } catch (e: any) {
-      triggerHaptic("error");
       Alert.alert("Không thể gửi email", e?.message || "Vui lòng thử lại sau.");
     } finally {
       setLoadingReset(false);

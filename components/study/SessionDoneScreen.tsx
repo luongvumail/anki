@@ -6,7 +6,6 @@ import { Colors, Spacing, triggerHaptic } from "../../constants/theme";
 import { StudySession } from "../../store/slices/types";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { DuolingoButton } from "../ui/DuolingoButton";
-import { ProgressBar } from "../ui/ProgressBar";
 import { DuolingoMascot } from "../ui/DuolingoMascot";
 
 interface SessionDoneScreenProps {
@@ -33,8 +32,6 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
       ? Math.round((session.correctCount / session.reviewedCount) * 100)
       : 0;
 
-  const xpEarned = session.correctCount * 10 + 20;
-
   return (
     <View
       style={[
@@ -57,31 +54,20 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
             <Text style={[styles.statVal, { color: Colors.duolingo.green }]}>{accuracy}%</Text>
             <Text style={styles.statLabel}>ĐỘ CHÍNH XÁC</Text>
           </DuolingoCard>
-        </View>
 
-        {/* XP Daily Goal Progress */}
-        <DuolingoCard style={styles.dailyGoalCard}>
-          <View style={styles.dailyGoalRow}>
-            <Text style={styles.dailyGoalTitle}>MỤC TIÊU XP HÀNG NGÀY</Text>
-            <Text style={styles.dailyGoalValue}>{xpEarned} / 50 XP</Text>
-          </View>
-          <ProgressBar
-            progress={Math.min(1, xpEarned / 50)}
-            height={12}
-            fillColor={Colors.duolingo.green}
-            style={{ marginTop: Spacing.xs }}
-          />
-        </DuolingoCard>
+          <DuolingoCard style={styles.statBox}>
+            <Ionicons name="book" size={22} color={Colors.duolingo.blue} />
+            <Text style={[styles.statVal, { color: Colors.duolingo.blue }]}>{session.reviewedCount}</Text>
+            <Text style={styles.statLabel}>TỪ ĐÃ ÔN</Text>
+          </DuolingoCard>
+        </View>
 
         {/* 3D Full-Width Primary Continue Button */}
         <DuolingoButton
           title="TIẾP TỤC ➜"
           variant="primary"
           size="lg"
-          onPress={() => {
-            triggerHaptic("medium");
-            onDone();
-          }}
+          onPress={onDone}
           style={{ marginTop: Spacing.lg }}
         />
       </Animated.View>

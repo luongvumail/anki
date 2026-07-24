@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ViewStyle,
 } from "react-native";
-import { Colors, Radii, Spacing, triggerHaptic } from "../../constants/theme";
+import { Colors, Radii, Spacing } from "../../constants/theme";
 
 export interface DuolingoCardProps {
   children: React.ReactNode;
@@ -56,10 +56,7 @@ export function DuolingoCard({
     return (
       <TouchableOpacity
         activeOpacity={1}
-        onPressIn={() => {
-          setPressed(true);
-          triggerHaptic("light");
-        }}
+        onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}
         onPress={onPress}
         style={[

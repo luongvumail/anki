@@ -30,9 +30,9 @@ export const SRSButtons = React.memo(function SRSButtons({ cardSRS, onGrade }: S
         />
         <SRSButtonPropsItem
           label="THUỘC"
-          sub={getIntervalLabel(SRS_GRADES.GOOD, cardSRS)}
+          sub={getIntervalLabel(SRS_GRADES.EASY, cardSRS)}
           color={Colors.srs.good}
-          onPress={() => onGrade(SRS_GRADES.GOOD, 'right')}
+          onPress={() => onGrade(SRS_GRADES.EASY, 'right')}
         />
       </View>
     </View>

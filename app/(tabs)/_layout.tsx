@@ -2,7 +2,7 @@ import React from "react";
 import { Tabs } from "expo-router";
 import { StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, triggerHaptic } from "../../constants/theme";
+import { Colors } from "../../constants/theme";
 
 export default function TabLayout() {
   return (
@@ -24,9 +24,6 @@ export default function TabLayout() {
             <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
           ),
         }}
-        listeners={{
-          tabPress: () => triggerHaptic("selection"),
-        }}
       />
       <Tabs.Screen
         name="decks"
@@ -36,9 +33,6 @@ export default function TabLayout() {
             <Ionicons name={focused ? "book" : "book-outline"} size={24} color={color} />
           ),
         }}
-        listeners={{
-          tabPress: () => triggerHaptic("selection"),
-        }}
       />
       <Tabs.Screen
         name="stats"
@@ -47,9 +41,6 @@ export default function TabLayout() {
           tabBarIcon: ({ focused, color }) => (
             <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={24} color={color} />
           ),
-        }}
-        listeners={{
-          tabPress: () => triggerHaptic("selection"),
         }}
       />
     </Tabs>
