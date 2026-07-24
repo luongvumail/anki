@@ -3,13 +3,13 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Animated } from 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore, Card } from "../../store/useStore";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
+import { Colors, Typography, Spacing } from "../../constants/theme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 
-import { getReviewHistory } from "../../lib/reviewTracker";
+import { getReviewHistory, getStreakCount } from "../../lib/reviewTracker";
 import { isDue } from "../../lib/srs";
 
 interface DayActivity {
@@ -46,6 +46,7 @@ export default function StatsScreen() {
   const userId = useStore((s) => s.userId);
   const [loadingCards, setLoadingCards] = useState(true);
   const [reviewHistory, setReviewHistory] = useState<Record<string, number>>({});
+  const [streakCount, setStreakCount] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -63,7 +64,9 @@ export default function StatsScreen() {
       }
 
       const history = await getReviewHistory();
+      const streak = await getStreakCount();
       setReviewHistory(history);
+      setStreakCount(streak);
 
       setLoadingCards(false);
 
@@ -120,7 +123,7 @@ export default function StatsScreen() {
 
   return (
     <View style={styles.container}>
-      <DuolingoHeader courseName="Anki" streakCount={1} gemsCount={150} heartsCount={5} />
+      <DuolingoHeader courseName="Anki" streakCount={streakCount} />
 
       <ScrollView
         contentContainerStyle={[
@@ -163,7 +166,7 @@ export default function StatsScreen() {
             <View style={styles.statsGrid}>
               <DuolingoCard style={styles.statCardItem}>
                 <Ionicons name="flame" size={22} color={Colors.duolingo.yellow} />
-                <Text style={styles.statCardVal}>1 Ngày</Text>
+                <Text style={styles.statCardVal}>{streakCount} Ngày</Text>
                 <Text style={styles.statCardLabel}>Chuỗi Học Liên Tục</Text>
               </DuolingoCard>
 
@@ -234,12 +237,12 @@ export default function StatsScreen() {
                     <Ionicons name="hardware-chip" size={22} color={Colors.duolingo.blue} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>1. Nguyên lý Thuật toán Trí nhớ Ngắt quãng (SRS)</Text>
-                    <Text style={styles.guideSub}>Khắc phục Đường cong Quên Ebbinghaus (Forgetting Curve)</Text>
+                    <Text style={styles.guideTitle}>1. Nguyên lý Trí nhớ Ngắt quãng (SRS)</Text>
+                    <Text style={styles.guideSub}>Thuật toán SuperMemo-2 (SM-2)</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Bộ não con người sẽ quên 70% kiến thức mới sau 24h. Thuật toán SuperMemo-2 (SRS) tự động tính toán điểm rơi trí nhớ (~85%) để nhắc ôn tập đúng thời điểm sắp quên. Mỗi lần ôn tập thành công, khoảng cách ôn sẽ nhân lên (1 ngày ➔ 6 ngày ➔ 15 ngày ➔ 1 tháng), đưa từ vựng vào trí nhớ dài hạn vĩnh viễn.
+                  Bộ não con người sẽ quên tới 70% từ mới sau 24 giờ. Thuật toán SRS tự động tính toán chính xác thời điểm từ vựng sắp bị quên để nhắc bạn ôn tập. Mỗi lần trả lời đúng, khoảng cách ngày ôn sẽ nhân lên (1 ngày ➔ 6 ngày ➔ 15 ngày ➔ 1 tháng...), đưa từ vựng vào trí nhớ dài hạn vĩnh viễn.
                 </Text>
               </DuolingoCard>
 
@@ -250,56 +253,76 @@ export default function StatsScreen() {
                     <Ionicons name="hand-left" size={22} color={Colors.duolingo.green} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>2. Chế độ Flashcard (Tự Đánh Giá Nhanh)</Text>
-                    <Text style={styles.guideSub}>Lật mặt thẻ & tự chấm điểm mức độ thuộc từ</Text>
+                    <Text style={styles.guideTitle}>2. Chế độ Lật Thẻ Flashcard</Text>
+                    <Text style={styles.guideSub}>Tự đánh giá mức độ thuộc từ bằng thao tác vuốt</Text>
                   </View>
                 </View>
                 <View style={styles.gestureGuideList}>
                   <View style={styles.gestureRowItem}>
                     <Ionicons name="radio-button-on" size={16} color={Colors.duolingo.blue} />
-                    <Text style={styles.gestureText}><Text style={{ fontWeight: "800", color: "#FFFFFF" }}>Chạm vào thẻ:</Text> Mở đáp án Pinyin, dịch nghĩa & câu ví dụ</Text>
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: "#FFFFFF" }}>Chạm mặt thẻ:</Text> Mở đáp án Pinyin, âm thanh phát âm, dịch nghĩa & câu ví dụ.
+                    </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Ionicons name="arrow-back-circle" size={16} color={Colors.duolingo.red} />
-                    <Text style={styles.gestureText}><Text style={{ fontWeight: "800", color: Colors.duolingo.red }}>Vuốt Trái:</Text> Quên từ — Ôn lại ngay trong buổi học</Text>
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.red }}>Vuốt Trái (Quên):</Text> Thẻ xuất hiện lại sau 2 thẻ nữa để ôn lại trong phiên.
+                    </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Ionicons name="arrow-up-circle" size={16} color={Colors.duolingo.yellow} />
-                    <Text style={styles.gestureText}><Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Vuốt Lên:</Text> Từ khó — Giảm khoảng cách ngày ôn</Text>
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Vuốt Lên (Khó):</Text> Ôn lại ở cuối phiên và lặp lại vào ngày mai (1 ngày).
+                    </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Ionicons name="arrow-forward-circle" size={16} color={Colors.duolingo.green} />
-                    <Text style={styles.gestureText}><Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>Vuốt Phải:</Text> Thuộc lòng — Giãn thời gian ôn xa hơn</Text>
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>Vuốt Phải (Dễ):</Text> Thuộc từ hoàn toàn, hệ thống tự động tăng khoảng cách ôn tập tiếp theo.
+                    </Text>
                   </View>
                 </View>
               </DuolingoCard>
 
-              {/* Step 3: Quiz Mode - Alternative Objective Testing */}
+              {/* Step 3: Quiz Mode - Adaptive Questions */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View style={[styles.guideIconTile, { backgroundColor: Colors.duolingo.blueDim }]}>
                     <Ionicons name="checkmark-done-circle" size={22} color={Colors.duolingo.blue} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>3. Chế độ Trắc nghiệm (3 Dạng Bài Tập Khách Quan)</Text>
-                    <Text style={styles.guideSub}>Phương pháp thay thế Chống Đánh Giá Cảm Tính</Text>
+                    <Text style={styles.guideTitle}>3. Chế độ Trắc nghiệm Thích ứng (Quiz)</Text>
+                    <Text style={styles.guideSub}>Dạng bài tập tự động thay đổi theo độ thuộc từ</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Máy tính tự động chấm điểm khách quan 100% qua 3 dạng bài tập thích ứng theo tiến trình thuộc từ:
+                  Hệ thống tự động điều chỉnh dạng câu hỏi dựa trên số lần bạn đã ôn tập thẻ đó:
                 </Text>
                 <View style={styles.gestureGuideList}>
                   <View style={styles.gestureRowItem}>
-                    <Ionicons name="text" size={16} color={Colors.duolingo.blue} />
-                    <Text style={styles.gestureText}><Text style={{ fontWeight: "800", color: "#FFFFFF" }}>Chọn Pinyin & Thanh điệu:</Text> Phân biệt 4 thanh điệu Hán ngữ</Text>
+                    <Ionicons name="language" size={16} color={Colors.duolingo.blue} />
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: "#FFFFFF" }}>Lần đầu (Từ mới):</Text> Chọn nghĩa Tiếng Việt — Ưu tiên ghi nhớ ý nghĩa từ vựng trước.
+                    </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
-                    <Ionicons name="volume-high" size={16} color={Colors.duolingo.yellow} />
-                    <Text style={styles.gestureText}><Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Nghe & Chọn Chữ Hán:</Text> Nghe phát âm giọng chuẩn để chọn Hán tự</Text>
+                    <Ionicons name="text" size={16} color={Colors.duolingo.yellow} />
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Lần 2 - 3:</Text> Chọn Pinyin & Thanh điệu — Luyện chuẩn hóa phiên âm.
+                    </Text>
+                  </View>
+                  <View style={styles.gestureRowItem}>
+                    <Ionicons name="volume-high" size={16} color={Colors.duolingo.purple} />
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>Lần 4 - 5:</Text> Nghe phát âm chọn Chữ Hán — Rèn luyện phản xạ nghe.
+                    </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Ionicons name="create" size={16} color={Colors.duolingo.green} />
-                    <Text style={styles.gestureText}><Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>Điền từ Ngữ cảnh (Cloze):</Text> Điền Hán tự đúng vào ô trống câu ví dụ</Text>
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>Từ thuộc sâu:</Text> Điền từ vào câu ngữ cảnh (Cloze) — Ứng dụng từ trong câu thực tế.
+                    </Text>
                   </View>
                 </View>
               </DuolingoCard>
@@ -312,11 +335,11 @@ export default function StatsScreen() {
                   </View>
                   <View style={styles.guideHeaderText}>
                     <Text style={styles.guideTitle}>4. Nạp từ vựng tự động bằng AI</Text>
-                    <Text style={styles.guideSub}>Công nghệ Gemini AI Hán-Việt chuyên sâu</Text>
+                    <Text style={styles.guideSub}>Tạo thẻ từ vựng siêu tốc với Gemini AI</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Vào tab <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>"Thêm thẻ"</Text> hoặc bấm nút AI trong chi tiết bộ thẻ ➔ Nhập chữ Hán ➔ Trí tuệ nhân tạo sẽ tự động phân tích Pinyin, dịch nghĩa, cấu tạo Bộ thủ Hán-Việt và đặt câu ví dụ chuẩn xác.
+                  Bấm vào nút <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>AI (+)</Text> ➔ Nhập các chữ Hán hoặc câu Tiếng Trung ➔ AI sẽ tự động phân tích phiên âm Pinyin, nghĩa Tiếng Việt, phân tích Bộ thủ và tạo câu ví dụ minh họa chuẩn xác.
                 </Text>
               </DuolingoCard>
 
@@ -327,12 +350,12 @@ export default function StatsScreen() {
                     <Ionicons name="flame" size={22} color={Colors.duolingo.yellow} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>5. Duy trì Chuỗi Học (Streak)</Text>
-                    <Text style={styles.guideSub}>Học ít nhất 5 phút mỗi ngày</Text>
+                    <Text style={styles.guideTitle}>5. Duy trì Chuỗi Học (Streak 🔥)</Text>
+                    <Text style={styles.guideSub}>Bí quyết ghi nhớ bền vững</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Chỉ cần hoàn thành bài ôn tập hàng ngày để giữ ngọn lửa <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Streak 🔥</Text>. Thói quen học đều đặn mỗi ngày quan trọng hơn học dồn dập!
+                  Mỗi ngày chỉ cần ôn tập ít nhất 1 bài để giữ vững ngọn lửa <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Streak 🔥</Text>. Việc học đều đặn 5-10 phút mỗi ngày hiệu quả hơn gấp nhiều lần so với học dồn dập vào cuối tuần!
                 </Text>
               </DuolingoCard>
             </View>
@@ -403,44 +426,6 @@ const styles = StyleSheet.create({
   barDayText: { fontSize: 12, color: Colors.duolingo.textMuted, marginTop: 6, fontWeight: "600" },
   barDayToday: { color: "#FFFFFF", fontWeight: "800" },
 
-  badgeGrid: { flexDirection: "row", gap: 10, marginTop: Spacing.xs },
-  badgeCard: { flex: 1, padding: Spacing.md, alignItems: "center" },
-  badgeEmoji: { fontSize: 28, marginBottom: 4 },
-  badgeName: { fontSize: 13, fontWeight: Typography.weight.bold, color: "#FFFFFF" },
-  badgeSub: { fontSize: 10, color: Colors.duolingo.textMuted, marginTop: 2 },
-
-  leaderboardCard: { padding: Spacing.md, marginBottom: Spacing.md },
-  leaderboardHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: Spacing.md },
-  leagueTitle: { fontSize: 12, fontWeight: "800", color: Colors.duolingo.yellow, letterSpacing: 0.5 },
-  leaderboardList: { gap: 8 },
-  leaderItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: Colors.duolingo.bg,
-    borderRadius: Radii.md,
-    gap: 10,
-  },
-  leaderItemUser: {
-    backgroundColor: Colors.duolingo.greenLight,
-    borderWidth: 0,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.greenDark,
-  },
-  rankNum: { fontSize: 16, fontWeight: "800", color: "#FFFFFF", width: 28, textAlign: "center" },
-  leaderAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.duolingo.cardBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  leaderName: { flex: 1, fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
-  leaderNameUser: { color: "#FFFFFF", fontWeight: "800" },
-  leaderXp: { fontSize: 14, fontWeight: "800", color: Colors.duolingo.yellow },
-
-  /* User Guide & SRS Mechanics Styles */
   guideListContainer: { gap: 12, marginBottom: Spacing.md },
   guideCard: { padding: Spacing.md },
   guideHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
