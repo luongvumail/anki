@@ -1,8 +1,9 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 // @ts-expect-error getReactNativePersistence type definition missing in firebase/auth SDK types
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { initializeAuth, getAuth, getReactNativePersistence, browserLocalPersistence } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -19,9 +20,18 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 // Firestore
 export const db = getFirestore(app);
 
-// Auth with AsyncStorage persistence for React Native
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+// Auth with platform-appropriate persistence
+export const auth = (() => {
+  try {
+    if (Platform.OS === 'web') {
+      return getAuth(app);
+    }
+    return initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } catch {
+    return getAuth(app);
+  }
+})();
 
 export default app;

@@ -7,9 +7,8 @@
 ## 🌟 Điểm Nổi Bật Về Giao Diện & Trải Nghiệm (Duolingo 3D Design)
 
 * **Hệ thống Nút Bấm 3D Tactile (`DuolingoButton.tsx`):** Nút bấm lún 3D đặc trưng Duolingo với phản hồi cảm ứng lực (Haptics), hỗ trợ 3 kích thước chuẩn mực (`size="lg"` [52px], `size="md"` [44px], `size="sm"` [36px]) cùng màu sắc nhận diện thương hiệu rực rỡ.
-* **Linh vật Gấu Trúc Panda (`DuolingoMascot.tsx`):** Tích hợp gấu trúc hoạt họa với hiệu ứng nảy (bounce animation), lời thoại động hỗ trợ 5 biểu cảm (`waving`, `happy`, `celebrate`, `thinking`, `sad`) đồng hành cùng người học trên con đường kỹ năng.
 * **Nút Tròn Nổi AI Kéo Di Chuyển (`FloatingAddButton.tsx`):** Nút tròn AI 3D màu xanh lá Duolingo (`52x52px`) cho phép người dùng **chạm giữ và kéo di chuyển tự do đến mọi vị trí trên màn hình** mà không lo che nội dung.
-* **Modal Lớp Phủ Nạp Từ AI (`AIAddCardModal.tsx`):** Màn hình lớp phủ full-screen cho phép nạp từ vựng AI tức thì mà không ngắt luồng điều hướng, tích hợp bộ chọn bộ thẻ mục tiêu (`DeckPicker.tsx`) và danh sách lịch sử tra gần đây.
+* **Modal Nạp Từ AI Tự Động Lọc Trùng (`AIAddCardModal.tsx`):** Màn hình nạp từ vựng bằng Gemini AI tích hợp bộ lọc từ trùng lặp tự động, thông báo duy nhất và nút "THÊM TẤT CẢ" 1 chạm.
 * **Chuẩn Hoá Tương Phản Dark Mode 100%:** 100% tiêu đề & văn bản đọc sử dụng màu **Trắng Thuần (`#FFFFFF`) / Off-white Duolingo (`#F0F3F6`)**, loại bỏ hoàn toàn chữ màu xanh dương nền tối để chống mỏi mắt và tăng độ sắc nét.
 
 ---
@@ -18,38 +17,40 @@
 
 ### 1. Thuật Toán Lặp Lại Ngắt Quãng (SuperMemo-2 SRS)
 * Áp dụng đường cong quên của Ebbinghaus để tự động tính toán thời điểm lật lại từ vựng chuẩn xác từng ngày.
-* Người học đánh giá thẻ dựa trên 4 mức độ: **Quên (Again)**, **Khó (Hard)**, **Tốt (Good)**, **Dễ (Easy)**.
+* Người học đánh giá thẻ dựa trên 3 mức độ: **Quên (Again)**, **Khó (Hard)**, **Dễ (Easy)**.
 
-### 2. Chế Độ Ôn Tập Phản Xạ Khách Quan (Forced-Choice Quiz Mode)
-* Giải quyết triệt để hiện tượng **"Ảo tưởng thuộc bài" (Illusion of Competence)** vốn thường xảy ra ở chế độ lật thẻ cảm tính.
-* Ứng dụng tự động sinh ra 3 dạng bài tập trắc nghiệm khách quan:
-  1. **Pinyin Choice:** Trắc nghiệm chọn Pinyin & thanh điệu đúng trong 4 đáp án (dành cho từ < 3 lượt lặp).
-  2. **Listening Test:** Nghe phát âm TTS tiếng Trung và chọn chữ Hán khớp (dành cho từ >= 3 lượt lặp).
-  3. **Cloze Test:** Điền chữ Hán còn thiếu vào câu ví dụ ngữ cảnh (dành cho từ >= 5 lượt lặp).
+### 2. Chế Độ Ôn Tập Phản Xạ Thích Ứng (Adaptive Quiz Mode)
+* Ứng dụng tự động sinh ra 4 dạng bài tập trắc nghiệm khách quan:
+  1. **Meaning Choice:** Chọn nghĩa Tiếng Việt từ chữ Hán (dành cho từ mới).
+  2. **Pinyin Choice:** Chọn Pinyin & thanh điệu đúng trong 4 đáp án.
+  3. **Listening Test:** Nghe phát âm TTS tiếng Trung và chọn chữ Hán khớp.
+  4. **Cloze Test:** Điền chữ Hán còn thiếu vào câu ví dụ ngữ cảnh.
+
+### 3. Trung Tâm Luyện Tập Tự Do (Practice Hub) & Mini-Games
+* **🧩 Game Ghép Từ Nhanh 60s (Speed Match Arcade):** Thử thách 60 giây ghép cặp Chữ Hán ↔ Nghĩa/Pinyin rèn phản xạ nhanh tay lẹ mắt.
+* **🔤 Xếp Từ Thành Câu (Sentence Builder):** Kéo/bấm từ xáo trộn để sắp xếp thành câu ví dụ chuẩn ngữ pháp.
+* **🎖️ Điểm XP & Huy Hiệu Cá Nhân:** Tích lũy điểm XP để thăng cấp danh hiệu Hán ngữ (`初学者` ➔ `汉字宗师`) và mở khóa Bộ Huy Hiệu thành tích cá nhân.
 
 ---
 
 ## 🚀 Các Tính Năng Chính
 
-* **⚡ Nạp Thẻ AI Tự Động (Gemini API):** Tự động phân tích chữ Hán, Pinyin kèm dấu thanh, cấp độ HSK, bộ thủ, nghĩa tiếng Việt và câu ví dụ ngữ cảnh kèm dịch nghĩa.
-* **🔊 Phát Âm Text-to-Speech (TTS):** Hỗ trợ giọng đọc Hán ngữ chuẩn (`expo-speech`) với cơ chế giải phóng bộ nhớ âm thanh tự động chống chồng tiếng.
-* **🔥 Chuỗi Streak & Bảng Xếp Hạng:** Đếm chuỗi ngày học liên tục, điểm kinh nghiệm XP và bảng xếp hạng tuần sinh động.
-* **🔔 Nhắc Nhở Học Hàng Ngày:** Lên lịch thông báo đẩy (Daily Push Notification) tự động nhắc ôn bài đúng khung giờ đã cài đặt.
-* **📳 Haptic Feedback:** Tích hợp phản hồi rung cảm ứng lực cao cấp chuẩn Expo Haptics trên từng thao tác lật thẻ và chọn đáp án.
+* **⚡ Nạp Thẻ AI Tự Động (Gemini API):** Phân tích chữ Hán, Pinyin kèm dấu thanh, cấp độ HSK, bộ thủ, nghĩa tiếng Việt và câu ví dụ ngữ cảnh.
+* **🔊 Phát Âm Text-to-Speech (TTS):** Hỗ trợ giọng đọc Hán ngữ chuẩn (`expo-speech`).
+* **🔥 Chuỗi Streak & Thống Kê 7 Ngày:** Đếm chuỗi ngày học liên tục, biểu đồ 7 ngày gần nhất và bộ sưu tập huy hiệu cá nhân.
+* **🌐 Hỗ Trợ Web PWA (Vĩnh Viễn trên iPhone):** Đóng gói Web PWA mượt mà, hỗ trợ thêm vào màn hình chính iPhone sử dụng vĩnh viễn không lo bị văng hay hết hạn 7 ngày.
 
 ---
 
 ## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
 
 * **Core Framework:** React Native (v0.86) & Expo (SDK 57) bật **New Architecture**.
-* **Routing:** Expo Router v3 (File-based Routing).
-* **State Management:** Zustand (v5) chia nhỏ Slices (`deckSlice`, `cardSlice`, `userSlice`).
+* **Routing:** Expo Router v3 (File-based Routing với 4 Tabs).
+* **State Management:** Zustand (v5) chia nhỏ Slices (`deckSlice`, `cardSlice`, `userProgressSlice`).
 * **Database & Auth:** Firebase Web SDK v12 (Authentication & Cloud Firestore).
 * **AI Engine:** Google Generative AI SDK (Gemini 2.5 / 1.5 Flash).
 * **Styling & Theme:** Vanilla CSS StyleSheet + Duolingo Design System Tokens (`theme.ts`).
-* **Icons & Animation:** Ionicons (@expo/vector-icons), React Native Animated.
-* **Audio & Speech:** Expo Speech.
-* **Notification & Haptics:** Expo Notifications, Expo Haptics.
+* **Audio & Haptics:** Expo Speech, Expo Haptics, Expo Notifications.
 
 ---
 
@@ -58,64 +59,42 @@
 ```text
 Anki/
 ├── app/                      # Expo Router File-based Routes
-│   ├── (tabs)/               # Bottom Tabs: Học (index), Từ vựng (decks), Thống kê (stats)
+│   ├── (tabs)/               # Bottom Tabs: Học (index), Từ vựng (decks), Luyện tập (practice), Thống kê (stats)
 │   ├── auth.tsx              # Màn hình Đăng nhập / Đăng ký tài khoản
 │   ├── deck/[id].tsx         # Màn hình Chi tiết Bộ thẻ & Danh sách từ vựng
 │   ├── study/[deckId].tsx    # Màn hình Ôn tập Flashcard & Quiz SRS
 │   └── _layout.tsx           # Root Layout & Bottom Tab configuration
-├── assets/                   # Hình ảnh, icon và logo của ứng dụng
 ├── components/               # Các Reusable Component chuẩn Duolingo
 │   ├── add/                  # AIAddCardModal, CardPreview, DeckPicker
 │   ├── home/                 # ActiveDeckHeroCard, AccountModal, ZigZagSkillPath
+│   ├── practice/             # SpeedMatchModal, SentenceBuilderModal
+│   ├── stats/                # BadgesGallery
 │   ├── study/                # FlashcardView, QuizCardView, SessionDoneScreen
-│   └── ui/                   # DuolingoButton, DuolingoCard, DuolingoHeader, DuolingoMascot, FloatingAddButton, SectionTitle
+│   └── ui/                   # DuolingoButton, DuolingoCard, DuolingoHeader, FloatingAddButton, SectionTitle, ProgressBar
 ├── constants/                # Design Tokens: Colors, Typography, Spacing, Radii (theme.ts)
 ├── lib/                      # Services (Firebase, Gemini AI, SRS Algorithm, Quiz Generator, Notifications)
-├── store/                    # Zustand Global Store & Slices
+├── store/                    # Zustand Global Store & Slices (`userProgressSlice.ts`)
 ├── package.json              # Dependencies & Terminal Scripts
 └── tsconfig.json             # TypeScript Configuration
 ```
 
 ---
 
-## 💻 Hướng Dẫn Thiết Lập & Khởi Chạy
+## 💻 Hướng Dẫn Khởi Chạy & Deploy Web PWA
 
-### 1. Cài đặt thư viện phụ thuộc
-Từ thư mục gốc của dự án, chạy lệnh:
+### 1. Cài đặt & Chạy Server Development
 ```bash
 npm install
+npm run start
 ```
 
-### 2. Cấu hình biến môi trường
-Tạo file `.env` ở thư mục gốc dự án và khai báo thông số Firebase cùng Gemini API Key:
-```env
-EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
-EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
-```
+### 2. Đóng gói Web & Deploy PWA (Chạy vĩnh viễn trên iPhone)
+```bash
+# Export bản web static
+npx expo export -p web
 
-### 3. Khởi chạy ứng dụng
-* **Chạy Server Development:**
-  ```bash
-  npm run start
-  ```
-* **Chạy trên iOS Simulator:**
-  ```bash
-  npm run ios
-  ```
-* **Chạy trên Android Emulator:**
-  ```bash
-  npm run android
-  ```
-* **Kiểm tra TypeScript Typecheck:**
-  ```bash
-  npm run typecheck
-  ```
-* **Kiểm tra Lỗi ESLint Code Style:**
-  ```bash
-  npm run lint
-  ```
+# Deploy lên Vercel miễn phí trong 30s
+npx vercel --prod
+```
+Sau đó mở link web trên Safari iPhone ➔ Chọn **Chia sẻ (Share)** ➔ **Thêm vào Màn hình chính (Add to Home Screen)**.
+

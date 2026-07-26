@@ -331,30 +331,73 @@ export default function StatsScreen() {
                 </View>
               </DuolingoCard>
 
-              {/* Step 4: AI Card Generator */}
+              {/* Step 4: Practice Hub & Games */}
+              <DuolingoCard style={styles.guideCard}>
+                <View style={styles.guideHeaderRow}>
+                  <View style={[styles.guideIconTile, { backgroundColor: "rgba(255, 200, 0, 0.15)" }]}>
+                    <Ionicons name="extension-puzzle" size={22} color={Colors.duolingo.yellow} />
+                  </View>
+                  <View style={styles.guideHeaderText}>
+                    <Text style={styles.guideTitle}>4. Trung tâm Luyện tập & Mini-Games</Text>
+                    <Text style={styles.guideSub}>Luyện phản xạ tự do không ảnh hưởng lịch SRS</Text>
+                  </View>
+                </View>
+                <View style={styles.gestureGuideList}>
+                  <View style={styles.gestureRowItem}>
+                    <Ionicons name="flash" size={16} color={Colors.duolingo.yellow} />
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Game Ghép Từ Nhanh 60s:</Text> Thử thách 60 giây ghép cặp Chữ Hán ↔ Nghĩa/Pinyin rèn phản xạ.
+                    </Text>
+                  </View>
+                  <View style={styles.gestureRowItem}>
+                    <Ionicons name="create" size={16} color={Colors.duolingo.blue} />
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.blue }}>Xếp Từ Thành Câu:</Text> Kéo/bấm từ xáo trộn để sắp xếp lại thành câu ví dụ chuẩn ngữ pháp.
+                    </Text>
+                  </View>
+                </View>
+              </DuolingoCard>
+
+              {/* Step 5: XP & Badges System */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View style={[styles.guideIconTile, { backgroundColor: Colors.duolingo.purpleDark + "33" }]}>
-                    <Ionicons name="sparkles" size={22} color={Colors.duolingo.purple} />
+                    <Ionicons name="trophy" size={22} color={Colors.duolingo.purple} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>4. Nạp từ vựng tự động bằng AI</Text>
+                    <Text style={styles.guideTitle}>5. Điểm XP & Cấp độ Hán Ngữ</Text>
+                    <Text style={styles.guideSub}>Tích lũy kinh nghiệm & mở khóa huy hiệu</Text>
+                  </View>
+                </View>
+                <Text style={styles.guideDesc}>
+                  Mỗi lần học bài (+50 XP), trả lời đúng Quiz (+5 XP) hoặc chơi Game 60s (+15 XP) đều tích lũy điểm kinh nghiệm để thăng cấp danh hiệu (từ <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>初学者</Text> tới <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>汉字宗师</Text>) và mở khóa Bộ Huy Hiệu cá nhân.
+                </Text>
+              </DuolingoCard>
+
+              {/* Step 6: AI Card Generator */}
+              <DuolingoCard style={styles.guideCard}>
+                <View style={styles.guideHeaderRow}>
+                  <View style={[styles.guideIconTile, { backgroundColor: Colors.duolingo.blueDim }]}>
+                    <Ionicons name="sparkles" size={22} color={Colors.duolingo.blue} />
+                  </View>
+                  <View style={styles.guideHeaderText}>
+                    <Text style={styles.guideTitle}>6. Nạp từ vựng tự động bằng AI</Text>
                     <Text style={styles.guideSub}>Tạo thẻ từ vựng siêu tốc với Gemini AI</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Bấm vào nút <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>AI (+)</Text> ➔ Nhập các chữ Hán hoặc câu Tiếng Trung ➔ AI sẽ tự động phân tích phiên âm Pinyin, nghĩa Tiếng Việt, phân tích Bộ thủ và tạo câu ví dụ minh họa chuẩn xác.
+                  Bấm vào nút <Text style={{ fontWeight: "800", color: Colors.duolingo.blue }}>AI (+)</Text> ➔ Nhập chữ Hán/câu Tiếng Trung ➔ AI tự động tạo Pinyin, nghĩa Tiếng Việt, phân tích Bộ thủ & câu ví dụ. Tự động loại bỏ từ trùng lặp và lưu tất cả bằng 1 chạm.
                 </Text>
               </DuolingoCard>
 
-              {/* Step 5: Daily Learning Streak */}
+              {/* Step 7: Daily Learning Streak */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View style={[styles.guideIconTile, { backgroundColor: Colors.duolingo.yellowDark + "33" }]}>
                     <Ionicons name="flame" size={22} color={Colors.duolingo.yellow} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>5. Duy trì Chuỗi Học (Streak 🔥)</Text>
+                    <Text style={styles.guideTitle}>7. Duy trì Chuỗi Học (Streak 🔥)</Text>
                     <Text style={styles.guideSub}>Bí quyết ghi nhớ bền vững</Text>
                   </View>
                 </View>
