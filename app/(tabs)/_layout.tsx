@@ -35,6 +35,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="practice"
+        options={{
+          title: "Luyện tập",
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? "extension-puzzle" : "extension-puzzle-outline"} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="stats"
         options={{
           title: "Thống kê",

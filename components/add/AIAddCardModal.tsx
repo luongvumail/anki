@@ -42,11 +42,11 @@ interface WordItem {
 }
 
 function parseWords(raw: string): string[] {
-  return raw
+  const words = raw
     .split(/[,，\n]/)
     .map((w) => w.trim())
-    .filter((w) => w.length > 0)
-    .slice(0, MAX_WORDS);
+    .filter((w) => w.length > 0);
+  return Array.from(new Set(words)).slice(0, MAX_WORDS);
 }
 
 export interface AIAddCardModalProps {
@@ -120,10 +120,25 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
       return;
     }
 
+    const deckCardsList = cards[selectedDeckId] || [];
+    const existingChars = new Set(deckCardsList.map((c) => c.character));
+
+    // Auto filter words that already exist in target deck
+    const newWords = parsed.filter((w) => !existingChars.has(w));
+    const preSkippedCount = parsed.length - newWords.length;
+
+    if (newWords.length === 0) {
+      Alert.alert(
+        "Tất cả từ đã tồn tại",
+        `Tất cả ${parsed.length} từ bạn nhập đều đã có sẵn trong bộ thẻ này!`
+      );
+      return;
+    }
+
     Keyboard.dismiss();
     setAnalyzingBatch(true);
 
-    const initialItems: WordItem[] = parsed.map((w) => ({
+    const initialItems: WordItem[] = newWords.map((w) => ({
       word: w,
       status: "loading",
       data: null,
@@ -134,21 +149,48 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     saveToHistory(parsed);
 
     try {
-      const results = await generateCardDataBatch(parsed);
+      const results = await generateCardDataBatch(newWords);
 
-      setWordItems((prev) =>
-        prev.map((item, idx) => {
-          const resData = results[idx];
-          if (resData) {
-            return { ...item, status: "done", data: resData };
+      const seenChars = new Set<string>();
+      const finalItems: WordItem[] = [];
+      let postSkippedCount = 0;
+
+      newWords.forEach((word, idx) => {
+        const resData = results[idx];
+        if (resData && resData.character) {
+          if (existingChars.has(resData.character) || seenChars.has(resData.character)) {
+            postSkippedCount++;
+            return;
           }
-          return {
-            ...item,
+          seenChars.add(resData.character);
+          finalItems.push({
+            word,
+            status: "done",
+            data: resData,
+            saving: false,
+            saved: false,
+          });
+        } else {
+          finalItems.push({
+            word,
             status: "error",
+            data: null,
+            saving: false,
+            saved: false,
             errorMsg: "Không thể phân tích từ này.",
-          };
-        })
-      );
+          });
+        }
+      });
+
+      setWordItems(finalItems);
+
+      const totalSkipped = preSkippedCount + postSkippedCount;
+      if (totalSkipped > 0) {
+        Alert.alert(
+          "Lọc từ trùng lặp",
+          `Đã tự động loại bỏ ${totalSkipped} từ bị trùng với các thẻ đã có trong bộ.`
+        );
+      }
     } catch (e: any) {
       setWordItems((prev) =>
         prev.map((item) => ({
@@ -162,66 +204,51 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     }
   };
 
-  const handleSaveItem = async (index: number) => {
-    const item = wordItems[index];
-    if (!item.data || item.saving || item.saved) return;
-
-    setWordItems((prev) =>
-      prev.map((w, i) => (i === index ? { ...w, saving: true } : w))
+  const handleSaveAll = async () => {
+    const validItemsToSave = wordItems.filter(
+      (item) => item.status === "done" && item.data && !item.saved
     );
 
-    try {
-      const existing = findExistingCard(item.data.character, selectedDeckId);
-      if (existing) {
-        setWordItems((prev) =>
-          prev.map((w, i) =>
-            i === index
-              ? { ...w, saving: false, status: "error", errorMsg: "Từ này đã có trong bộ thẻ" }
-              : w
-          )
-        );
-        return;
-      }
-
-      await addCard({
-        deckId: selectedDeckId,
-        character: item.data.character,
-        pinyin: item.data.pinyin,
-        translation: item.data.translation,
-        examples: item.data.examples || [],
-        srs: createDefaultSRSState(),
-      });
-
-      setWordItems((prev) =>
-        prev.map((w, i) =>
-          i === index ? { ...w, saving: false, saved: true } : w
-        )
-      );
-    } catch (e: any) {
-      setWordItems((prev) =>
-        prev.map((w, i) =>
-          i === index
-            ? { ...w, saving: false, status: "error", errorMsg: getFirestoreErrorMessage(e) }
-            : w
-        )
-      );
+    if (validItemsToSave.length === 0) return;
+    if (!selectedDeckId) {
+      Alert.alert("Thông báo", "Vui lòng chọn bộ thẻ mục tiêu.");
+      return;
     }
-  };
-
-  const handleSaveAll = async () => {
-    const unsavedIndices = wordItems
-      .map((item, idx) => (item.status === "done" && !item.saved ? idx : -1))
-      .filter((i) => i !== -1);
-
-    if (unsavedIndices.length === 0) return;
 
     setBulkSaving(true);
+    let savedCount = 0;
 
-    for (const idx of unsavedIndices) {
-      await handleSaveItem(idx);
+    try {
+      for (const item of validItemsToSave) {
+        if (!item.data) continue;
+
+        const existing = findExistingCard(item.data.character, selectedDeckId);
+        if (existing) continue;
+
+        await addCard({
+          deckId: selectedDeckId,
+          character: item.data.character,
+          pinyin: item.data.pinyin,
+          translation: item.data.translation,
+          examples: item.data.examples || [],
+          srs: createDefaultSRSState(),
+        });
+        savedCount++;
+      }
+
+      Alert.alert(
+        "🎉 Thêm thẻ thành công",
+        `Đã thêm ${savedCount} thẻ mới vào bộ "${currentDeck?.name || ""}".`
+      );
+
+      // Clear input and generated list after successful add!
+      setInput("");
+      setWordItems([]);
+    } catch (e: any) {
+      Alert.alert("Lỗi", getFirestoreErrorMessage(e));
+    } finally {
+      setBulkSaving(false);
     }
-
-    setBulkSaving(false);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -245,8 +272,8 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
   };
 
   const parsedCount = useMemo(() => parseWords(input).length, [input]);
-  const unsavedDoneCount = useMemo(
-    () => wordItems.filter((i) => i.status === "done" && !i.saved).length,
+  const validItemsToSaveCount = useMemo(
+    () => wordItems.filter((i) => i.status === "done" && i.data && !i.saved).length,
     [wordItems]
   );
 
@@ -345,34 +372,31 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
               />
             </DuolingoCard>
 
+            {/* Single Global AI Loading Indicator Banner */}
+            {analyzingBatch && (
+              <DuolingoCard style={styles.singleLoadingCard}>
+                <ActivityIndicator size="small" color={Colors.duolingo.blue} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.singleLoadingTitle}>
+                    🤖 Gemini AI đang phân tích dữ liệu...
+                  </Text>
+                  <Text style={styles.singleLoadingSub}>
+                    Đang tự động tạo Pinyin, nghĩa Hán-Việt, bộ thủ & câu ví dụ cho các từ vựng.
+                  </Text>
+                </View>
+              </DuolingoCard>
+            )}
+
             {/* Generated Cards List Preview */}
-            {wordItems.length > 0 && (
+            {!analyzingBatch && wordItems.length > 0 && (
               <View style={styles.resultsContainer}>
                 <View style={styles.resultsHeaderRow}>
                   <SectionTitle>KẾT QUẢ TỰ ĐỘNG TẠO ({wordItems.length})</SectionTitle>
-
-                  {unsavedDoneCount > 0 && (
-                    <DuolingoButton
-                      title={bulkSaving ? "ĐANG LƯU..." : "LƯU TẤT CẢ ➜"}
-                      variant="success"
-                      size="md"
-                      disabled={bulkSaving}
-                      onPress={handleSaveAll}
-                      style={{ width: "auto", paddingHorizontal: 14 }}
-                    />
-                  )}
                 </View>
 
                 {wordItems.map((item, idx) => (
                   <View key={`${item.word}-${idx}`} style={{ marginBottom: 12 }}>
-                    {item.status === "loading" ? (
-                      <DuolingoCard style={styles.loadingItemCard}>
-                        <ActivityIndicator size="small" color={Colors.duolingo.blue} />
-                        <Text style={styles.loadingItemText}>
-                          Gemini đang phân tích "{item.word}"...
-                        </Text>
-                      </DuolingoCard>
-                    ) : item.status === "error" ? (
+                    {item.status === "error" ? (
                       <DuolingoCard style={styles.errorItemCard}>
                         <View style={styles.errorItemRow}>
                           <Text style={styles.errorItemTitle}>Chữ Hán: {item.word}</Text>
@@ -387,14 +411,28 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
                     ) : item.data ? (
                       <CardPreview
                         cardData={item.data}
-                        saving={item.saving}
-                        saved={item.saved}
-                        onSave={() => handleSaveItem(idx)}
                         targetDeckName={currentDeck?.name}
+                        onRemove={() => handleRemoveItem(idx)}
                       />
                     ) : null}
                   </View>
                 ))}
+
+                {/* Single Add All Button */}
+                {validItemsToSaveCount > 0 && (
+                  <DuolingoButton
+                    title={
+                      bulkSaving
+                        ? "ĐANG LƯU TẤT CẢ..."
+                        : `THÊM TẤT CẢ ${validItemsToSaveCount} THẺ VÀO BỘ "${currentDeck?.name.toUpperCase() || ""}" ➜`
+                    }
+                    variant="success"
+                    size="lg"
+                    disabled={bulkSaving}
+                    onPress={handleSaveAll}
+                    style={{ marginTop: Spacing.md, marginBottom: Spacing.lg }}
+                  />
+                )}
               </View>
             )}
           </ScrollView>
@@ -477,6 +515,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.sm,
+  },
+  singleLoadingCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderColor: Colors.duolingo.blue,
+  },
+  singleLoadingTitle: {
+    fontSize: Typography.text.subhead.fontSize,
+    color: "#FFFFFF",
+    fontWeight: Typography.weight.bold,
+  },
+  singleLoadingSub: {
+    fontSize: Typography.text.caption2.fontSize,
+    color: Colors.duolingo.textMuted,
+    marginTop: 2,
   },
   loadingItemCard: {
     flexDirection: "row",

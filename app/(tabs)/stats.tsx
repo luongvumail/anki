@@ -11,6 +11,7 @@ import { ProgressBar } from "../../components/ui/ProgressBar";
 
 import { getReviewHistory, getStreakCount } from "../../lib/reviewTracker";
 import { isDue } from "../../lib/srs";
+import { BadgesGallery } from "../../components/stats/BadgesGallery";
 
 interface DayActivity {
   dateStr: string;
@@ -225,6 +226,9 @@ export default function StatsScreen() {
                 })}
               </View>
             </DuolingoCard>
+
+            {/* Achievements Badges Gallery Section */}
+            <BadgesGallery />
 
             {/* Comprehensive User Guide & SRS Mechanics Section */}
             <SectionTitle>HƯỚNG DẪN SỬ DỤNG & NGUYÊN LÝ HOẠT ĐỘNG</SectionTitle>

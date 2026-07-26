@@ -40,3 +40,22 @@ export interface StudySession {
   correctCount: number;
   startTime: Date;
 }
+
+export interface Badge {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: "streak" | "vocab" | "speed" | "ai";
+  target: number;
+  current: number;
+  unlocked: boolean;
+}
+
+export interface UserProgressState {
+  xp: number;
+  unlockedBadgeIds: string[];
+  addXP: (amount: number) => void;
+  checkAndUnlockBadges: () => void;
+  fetchUserProgress: () => Promise<void>;
+}

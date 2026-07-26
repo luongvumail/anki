@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 interface CardPreviewProps {
   cardData: CardData;
   targetDeckName?: string;
-  saving: boolean;
+  saving?: boolean;
   saved?: boolean;
   onReGenerate?: () => void;
   onSave?: () => void;
