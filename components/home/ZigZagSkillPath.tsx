@@ -1,11 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Radii, Spacing } from "../../constants/theme";
 import { Deck } from "../../store/slices/types";
@@ -18,11 +12,7 @@ interface ZigZagSkillPathProps {
   onSelectDeck: (deck: Deck) => void;
 }
 
-export function ZigZagSkillPath({
-  decks,
-  dueCardsMap,
-  onSelectDeck,
-}: ZigZagSkillPathProps) {
+export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkillPathProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -38,7 +28,7 @@ export function ZigZagSkillPath({
           duration: 900,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     animation.start();
     return () => animation.stop();
@@ -147,15 +137,11 @@ export function ZigZagSkillPath({
                       dueCount > 0
                         ? styles.nodeCircleDue
                         : isCompleted
-                        ? styles.nodeCircleDone
-                        : styles.nodeCircleNew,
+                          ? styles.nodeCircleDone
+                          : styles.nodeCircleNew,
                     ]}
                   >
-                    <DeckIcon
-                      name={deck.icon}
-                      size={32}
-                      color="#FFFFFF"
-                    />
+                    <DeckIcon name={deck.icon} size={32} color="#FFFFFF" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -163,9 +149,7 @@ export function ZigZagSkillPath({
               {/* Deck Name & Card Count Subtitle */}
               <View style={[styles.nodeLabelRow, { transform: [{ translateX: offset }] }]}>
                 <Text style={styles.deckNameText}>{deck.name}</Text>
-                <Text style={styles.deckCardCountText}>
-                  {deck.cardCount || 0} từ vựng
-                </Text>
+                <Text style={styles.deckCardCountText}>{deck.cardCount || 0} từ vựng</Text>
               </View>
             </React.Fragment>
           );
@@ -176,9 +160,7 @@ export function ZigZagSkillPath({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingVertical: Spacing.sm,
-  },
+  container: {},
   unitBanner: {
     backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.lg,
