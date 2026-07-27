@@ -31,6 +31,9 @@ export default function DeckDetailScreen() {
   const decks = useStore((s) => s.decks);
   const cards = useStore((s) => s.cards);
   const fetchCards = useStore((s) => s.fetchCards);
+  const fetchMoreCards = useStore((s) => s.fetchMoreCards);
+  const isFetchingMore = useStore((s) => s.isFetchingMoreCards[id || ""]);
+  const hasMore = useStore((s) => s.hasMoreCards[id || ""]);
   const deleteDeck = useStore((s) => s.deleteDeck);
   const resetDeckProgress = useStore((s) => s.resetDeckProgress);
   const isLoading = useStore((s) => s.isLoading);
@@ -54,6 +57,10 @@ export default function DeckDetailScreen() {
 
   const learnedCardsCount = useMemo(() => {
     return deckCards.filter((c) => c.srs && c.srs.repetitions > 0).length;
+  }, [deckCards]);
+
+  const weakCards = useMemo(() => {
+    return deckCards.filter((c) => c.srs && c.srs.easeFactor < 2.1 && c.srs.repetitions > 0);
   }, [deckCards]);
 
   const masteryPct = useMemo(() => {
@@ -189,10 +196,25 @@ export default function DeckDetailScreen() {
           { paddingBottom: Math.max(insets.bottom + 40, 60) },
         ]}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={8}
+        initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}
         removeClippedSubviews={true}
+        onEndReached={() => {
+          if (id && !searchQuery) {
+            fetchMoreCards(id);
+          }
+        }}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          isFetchingMore ? (
+            <ActivityIndicator
+              size="small"
+              color={Colors.duolingo.blue}
+              style={{ marginVertical: 16 }}
+            />
+          ) : null
+        }
         ListHeaderComponent={
           <View style={styles.listHeader}>
             {/* Deck Summary Hero Card */}
@@ -237,6 +259,20 @@ export default function DeckDetailScreen() {
                 style={{ marginTop: 8 }}
               />
             </DuolingoCard>
+
+            {weakCards.length > 0 && (
+              <DuolingoCard style={styles.weakWarningCard}>
+                <View style={styles.weakWarningHeader}>
+                  <Ionicons name="warning" size={18} color={Colors.duolingo.yellow} />
+                  <Text style={styles.weakWarningTitle}>
+                    CẦN CHÚ Ý: {weakCards.length} TỪ DỄ QUÊN!
+                  </Text>
+                </View>
+                <Text style={styles.weakWarningSub}>
+                  Các từ này có tần suất hay quên cao. Hãy dành thêm thời gian ôn tập lại.
+                </Text>
+              </DuolingoCard>
+            )}
 
             <SectionTitle>
               DANH SÁCH TỪ VỰNG ({searchQuery ? `${filteredCards.length}/${deckCards.length}` : deckCards.length})
@@ -384,6 +420,29 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
   emptySub: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 4, textAlign: "center" },
 
+  weakWarningCard: {
+    backgroundColor: "rgba(255, 200, 0, 0.12)",
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderColor: "rgba(255, 200, 0, 0.3)",
+    borderWidth: 1,
+  },
+  weakWarningHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  weakWarningTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: Colors.duolingo.yellow,
+  },
+  weakWarningSub: {
+    fontSize: 12,
+    color: Colors.duolingo.textMuted,
+    lineHeight: 16,
+  },
   searchBarBox: {
     flexDirection: "row",
     alignItems: "center",

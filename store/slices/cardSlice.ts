@@ -1,7 +1,18 @@
 import { StateCreator } from "zustand";
-import { getDocs, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  getDocs,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+  limit,
+  startAfter,
+  QueryDocumentSnapshot,
+} from "firebase/firestore";
 import { auth } from "../../lib/firebase";
-import { DEFAULT_SRS_STATE, SRSGrade, calculateSRS } from "../../lib/srs";
+import { createDefaultSRSState, SRSGrade, calculateSRS } from "../../lib/srs";
 import { Card } from "./types";
 import { getUserId, cardsRef, cardRef, decksRef } from "./firestoreHelpers";
 import { UISlice } from "./uiSlice";
@@ -10,9 +21,15 @@ import { computeDueCount, computeNewCount } from "../../lib/deckUtils";
 
 import { recordReviewToday } from "../../lib/reviewTracker";
 
+export const PAGE_SIZE = 20;
+
 export interface CardSlice {
   cards: Record<string, Card[]>; // deckId → cards
+  hasMoreCards: Record<string, boolean>; // deckId → boolean
+  isFetchingMoreCards: Record<string, boolean>; // deckId → boolean
+  lastDocSnapshots: Record<string, QueryDocumentSnapshot | null>; // deckId → last snapshot
   fetchCards: (deckId: string) => Promise<Card[]>;
+  fetchMoreCards: (deckId: string) => Promise<void>;
   addCard: (card: Omit<Card, "id" | "createdAt" | "updatedAt">) => Promise<void>;
   updateCard: (cardId: string, deckId: string, updates: Partial<Card>) => Promise<void>;
   deleteCard: (cardId: string, deckId: string) => Promise<void>;
@@ -27,27 +44,35 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
   get,
 ) => ({
   cards: {},
+  hasMoreCards: {},
+  isFetchingMoreCards: {},
+  lastDocSnapshots: {},
   fetchCards: async (deckId) => {
     const uid = auth.currentUser?.uid;
     if (!uid) return [];
     set({ isLoading: true });
     try {
-      const snap = await getDocs(cardsRef(uid, deckId));
-      const cards = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }) as Card)
-        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      // First page query with limit
+      const q = query(cardsRef(uid, deckId), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
+      const snap = await getDocs(q);
 
-      const realCardCount = cards.length;
-      const realDueCount = computeDueCount(cards);
-      const realNewCount = computeNewCount(cards);
+      const fetchedCards = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Card);
+      const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+      const hasMore = snap.docs.length >= PAGE_SIZE;
+
+      const realCardCount = fetchedCards.length;
+      const realDueCount = computeDueCount(fetchedCards);
+      const realNewCount = computeNewCount(fetchedCards);
 
       set((s) => ({
-        cards: { ...s.cards, [deckId]: cards },
+        cards: { ...s.cards, [deckId]: fetchedCards },
+        lastDocSnapshots: { ...s.lastDocSnapshots, [deckId]: lastDoc },
+        hasMoreCards: { ...s.hasMoreCards, [deckId]: hasMore },
         decks: s.decks.map((d) =>
           d.id === deckId
             ? {
                 ...d,
-                cardCount: realCardCount,
+                cardCount: Math.max(d.cardCount, realCardCount),
                 dueCount: realDueCount,
                 newCount: realNewCount,
               }
@@ -56,18 +81,55 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
         isLoading: false,
       }));
 
-      // Background auto-sync Firestore deck metadata if desynced
-      const deckDocRef = doc(decksRef(uid), deckId);
-      updateDoc(deckDocRef, {
-        cardCount: realCardCount,
-        dueCount: realDueCount,
-        newCount: realNewCount,
-      }).catch((err) => console.warn("[fetchCards] Firestore deck count sync warning:", err));
-
-      return cards;
+      return fetchedCards;
     } catch (e: any) {
       set({ error: e.message, isLoading: false });
       return [];
+    }
+  },
+
+  fetchMoreCards: async (deckId) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const state = get();
+    const hasMore = state.hasMoreCards[deckId];
+    const isFetching = state.isFetchingMoreCards[deckId];
+    const lastDoc = state.lastDocSnapshots[deckId];
+
+    if (!hasMore || isFetching || !lastDoc) return;
+
+    set((s) => ({
+      isFetchingMoreCards: { ...s.isFetchingMoreCards, [deckId]: true },
+    }));
+
+    try {
+      const q = query(
+        cardsRef(uid, deckId),
+        orderBy("createdAt", "desc"),
+        startAfter(lastDoc),
+        limit(PAGE_SIZE),
+      );
+      const snap = await getDocs(q);
+
+      const newCards = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Card);
+      const nextLastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+      const nextHasMore = snap.docs.length >= PAGE_SIZE;
+
+      const existingCards = state.cards[deckId] || [];
+      const combinedCards = [...existingCards, ...newCards];
+
+      set((s) => ({
+        cards: { ...s.cards, [deckId]: combinedCards },
+        lastDocSnapshots: { ...s.lastDocSnapshots, [deckId]: nextLastDoc },
+        hasMoreCards: { ...s.hasMoreCards, [deckId]: nextHasMore },
+        isFetchingMoreCards: { ...s.isFetchingMoreCards, [deckId]: false },
+      }));
+    } catch (err: any) {
+      console.warn("[fetchMoreCards] Failed to fetch more cards:", err);
+      set((s) => ({
+        isFetchingMoreCards: { ...s.isFetchingMoreCards, [deckId]: false },
+      }));
     }
   },
 
@@ -104,7 +166,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     const card: Card = {
       id: ref.id,
       ...cardData,
-      srs: cardData.srs || DEFAULT_SRS_STATE,
+      srs: cardData.srs || createDefaultSRSState(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -262,7 +324,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     const snap = await getDocs(cardsRef(uid, deckId));
     const now = new Date().toISOString();
     const resets = snap.docs.map((d) =>
-      updateDoc(d.ref, { srs: DEFAULT_SRS_STATE, updatedAt: now }),
+      updateDoc(d.ref, { srs: createDefaultSRSState(), updatedAt: now }),
     );
     await Promise.all(resets);
 
@@ -279,7 +341,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
         ...s.cards,
         [deckId]: (s.cards[deckId] || []).map((c) => ({
           ...c,
-          srs: DEFAULT_SRS_STATE,
+          srs: createDefaultSRSState(),
           updatedAt: now,
         })),
       },

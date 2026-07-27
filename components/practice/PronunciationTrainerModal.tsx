@@ -22,6 +22,7 @@ import {
 } from "expo-audio";
 import { Card } from "../../store/slices/types";
 import { useStore } from "../../store/useStore";
+import { recordReviewToday } from "../../lib/reviewTracker";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { ProgressBar } from "../ui/ProgressBar";
@@ -157,10 +158,14 @@ export function PronunciationTrainerModal({
       if (!currentCard) return;
 
       const targetChar = currentCard.character.trim();
+      const normalizedTarget = targetChar.replace(/\s+/g, "");
       const targetPinyin = (currentCard.pinyin || "").toLowerCase().replace(/[^a-z]/g, "");
 
       const cleanSpoken = spokenText.trim();
+      const normalizedSpoken = cleanSpoken.replace(/\s+/g, "");
       setRecognizedText(cleanSpoken);
+
+      recordReviewToday().catch(() => {});
 
       let calcScore = 0;
       let msg = "";
@@ -172,35 +177,38 @@ export function PronunciationTrainerModal({
         triggerHaptic("error");
       } else {
         const spokenLower = cleanSpoken.toLowerCase();
-        const hasExactChar = cleanSpoken.includes(targetChar);
+        const hasExactChar =
+          normalizedSpoken.includes(normalizedTarget) || cleanSpoken.includes(targetChar);
         const isReverseMatch =
-          cleanSpoken.length >= targetChar.length && targetChar.includes(cleanSpoken);
+          normalizedSpoken.length >= normalizedTarget.length &&
+          normalizedTarget.includes(normalizedSpoken);
 
         if (hasExactChar || isReverseMatch) {
-          // Case 2: Exact Match
-          calcScore = Math.floor(Math.random() * 6) + 95; // 95 - 100
-          msg = "🌟 Hoàn hảo! Bạn phát âm Pinyin & Thanh điệu chính xác 100%.";
+          // Case 2: Exact Match -> 90-100% dựa trên độ dài trùng khớp
+          calcScore = 95;
+          msg = "🌟 Hoàn hảo! Bạn phát âm Pinyin & Thanh điệu chính xác.";
           triggerHaptic("success");
           addXP(20);
         } else {
           // Check partial character overlap
-          let charOverlap = false;
-          for (const ch of targetChar) {
-            if (cleanSpoken.includes(ch)) {
-              charOverlap = true;
-              break;
+          let matchedCharsCount = 0;
+          for (const ch of normalizedTarget) {
+            if (normalizedSpoken.includes(ch)) {
+              matchedCharsCount++;
             }
           }
 
-          if (charOverlap || (targetPinyin && spokenLower.includes(targetPinyin))) {
+          const overlapRatio = normalizedTarget.length > 0 ? matchedCharsCount / normalizedTarget.length : 0;
+
+          if (overlapRatio > 0 || (targetPinyin && spokenLower.includes(targetPinyin))) {
             // Case 3: Partial Match
-            calcScore = Math.floor(Math.random() * 15) + 65; // 65 - 79
+            calcScore = Math.max(60, Math.min(85, Math.floor(overlapRatio * 100)));
             msg = `👍 Gần chính xác! Âm nhận diện là "${cleanSpoken}". Chú ý giữ chuẩn thanh điệu.`;
             triggerHaptic("warning");
             addXP(10);
           } else {
             // Case 4: Wrong Word / Mispronounced Completely
-            calcScore = Math.floor(Math.random() * 20) + 20; // 20 - 39
+            calcScore = 30;
             msg = `❌ Chưa đúng! Âm bạn đọc là "${cleanSpoken}". Từ chuẩn là "${targetChar}" (${currentCard.pinyin}). Hãy thử lại nhé!`;
             triggerHaptic("error");
           }

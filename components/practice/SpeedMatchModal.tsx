@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
 import { useStore } from "../../store/useStore";
+import { recordReviewToday } from "../../lib/reviewTracker";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { ProgressBar } from "../ui/ProgressBar";
@@ -41,18 +42,20 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [matchedPairs, setMatchedPairs] = useState(0);
+  const [roundNumber, setRoundNumber] = useState(1);
   const [tiles, setTiles] = useState<MatchTile[]>([]);
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [mismatchedTileId, setMismatchedTileId] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Generate round of tiles (4 cards = 8 tiles)
-  const generateRoundTiles = useCallback((availableCards: Card[]) => {
+  // Generate round of tiles with dynamic pair count scaling (Round 1: 4 pairs, Round 2: 5 pairs, Round 3+: 6 pairs)
+  const generateRoundTiles = useCallback((availableCards: Card[], currentRound: number) => {
     if (availableCards.length < 2) return [];
 
+    const pairsCount = Math.min(availableCards.length, Math.min(3 + currentRound, 6));
     const shuffledCards = [...availableCards].sort(() => 0.5 - Math.random());
-    const selected = shuffledCards.slice(0, 4);
+    const selected = shuffledCards.slice(0, pairsCount);
 
     const roundTiles: MatchTile[] = [];
     selected.forEach((c) => {
@@ -80,10 +83,11 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
     setTimeLeft(60);
     setScore(0);
     setMatchedPairs(0);
+    setRoundNumber(1);
     setIsGameOver(false);
     setSelectedTileId(null);
     setMismatchedTileId(null);
-    setTiles(generateRoundTiles(cards));
+    setTiles(generateRoundTiles(cards, 1));
     setIsPlaying(true);
   }, [cards, generateRoundTiles]);
 
@@ -128,6 +132,7 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
     if (firstTile.cardId === tile.cardId && firstTile.type !== tile.type) {
       // MATCH SUCCESS!
       triggerHaptic("success");
+      recordReviewToday().catch(() => {});
       setMatchedPairs((prev) => prev + 1);
       setScore((prev) => prev + 20);
 
@@ -140,8 +145,10 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
       // Check if all tiles in current round matched
       const remainingUnmatched = updatedTiles.filter((t) => !t.matched);
       if (remainingUnmatched.length === 0) {
+        const nextRound = roundNumber + 1;
+        setRoundNumber(nextRound);
         setTimeout(() => {
-          setTiles(generateRoundTiles(cards));
+          setTiles(generateRoundTiles(cards, nextRound));
         }, 300);
       }
     } else {

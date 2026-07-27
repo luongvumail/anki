@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
 import { useStore } from "../../store/useStore";
+import { recordReviewToday } from "../../lib/reviewTracker";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 
@@ -114,6 +115,7 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
     const correct = userBuilt === targetClean;
     setIsCorrect(correct);
     setIsChecked(true);
+    recordReviewToday().catch(() => {});
 
     if (correct) {
       triggerHaptic("success");
@@ -242,10 +244,10 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
               </Text>
             </View>
             {!isCorrect && (
-              <View style={{ marginTop: 4 }}>
-                <Text style={styles.explainLabel}>CÂU ĐÚNG LÀ:</Text>
+              <View style={{ marginTop: 6 }}>
+                <Text style={styles.explainLabel}>CÂU ĐÚNG CHUẨN LÀ:</Text>
                 <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
-                <Text style={styles.explainPinyin}>{currentEx.pinyin}</Text>
+                {currentEx.pinyin ? <Text style={styles.explainPinyin}>Pinyin: {currentEx.pinyin}</Text> : null}
               </View>
             )}
             <DuolingoButton title={isCorrect ? "TIẾP TỤC ➜" : "ĐÃ HIỂU ➜"} variant={isCorrect ? "primary" : "error"} size="lg" onPress={handleContinue} style={{ marginTop: Spacing.sm }} />

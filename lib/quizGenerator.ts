@@ -222,20 +222,35 @@ export function generateQuizQuestion(card: Card, allCards: Card[], forcedType?: 
 
   if (type === "cloze" && card.examples && card.examples.length > 0) {
     const ex = card.examples[0];
-    if (ex.chinese && ex.chinese.includes(card.character)) {
-      const blankedChinese = ex.chinese.replaceAll(card.character, " [ _____ ] ");
-      const distractors = getCharacterDistractors(card, allCards);
-      const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
+    if (ex.chinese) {
+      let targetToReplace = "";
+      if (ex.chinese.includes(card.character)) {
+        targetToReplace = card.character;
+      } else {
+        // Fallback: check if individual characters match
+        for (const char of card.character) {
+          if (char.trim() && ex.chinese.includes(char)) {
+            targetToReplace = char;
+            break;
+          }
+        }
+      }
 
-      return {
-        card,
-        type: "cloze",
-        prompt: "Điền từ thích hợp vào ô trống trong câu:",
-        clozeSentence: blankedChinese,
-        clozeTranslation: ex.vietnamese,
-        options,
-        correctAnswer: card.character,
-      };
+      if (targetToReplace) {
+        const blankedChinese = ex.chinese.replaceAll(targetToReplace, " [ _____ ] ");
+        const distractors = getCharacterDistractors(card, allCards);
+        const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
+
+        return {
+          card,
+          type: "cloze",
+          prompt: "Điền từ thích hợp vào ô trống trong câu:",
+          clozeSentence: blankedChinese,
+          clozeTranslation: ex.vietnamese,
+          options,
+          correctAnswer: card.character,
+        };
+      }
     }
   }
 

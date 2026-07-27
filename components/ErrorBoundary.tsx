@@ -1,10 +1,13 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radii } from '../constants/theme';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Colors, Spacing, Radii } from "../constants/theme";
+import { DuolingoButton } from "./ui/DuolingoButton";
+import { DuolingoMascot } from "./ui/DuolingoMascot";
 
 interface Props {
   children: ReactNode;
+  fallback?: ReactNode;
 }
 
 interface State {
@@ -23,7 +26,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+    console.error("Uncaught ErrorBoundary error:", error, errorInfo);
   }
 
   private handleReset = () => {
@@ -32,16 +35,27 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       return (
         <View style={styles.container}>
-          <Ionicons name="alert-circle-outline" size={56} color={Colors.neon.coral} />
-          <Text style={styles.title}>Đã xảy ra lỗi hệ thống</Text>
+          <DuolingoMascot expression="sad" size={80} speechBubbleText="Ối! Đã có lỗi xảy ra..." />
+
+          <Text style={styles.title}>ỨNG DỤNG GẶP SỰ CỐ TẠM THỜI</Text>
           <Text style={styles.message}>
-            {this.state.error?.message || 'Ứng dụng gặp sự cố ngoài dự kiến.'}
+            {this.state.error?.message || "Đã xảy ra lỗi ngoài dự kiến. Bạn hãy thử tải lại trang nhé!"}
           </Text>
-          <TouchableOpacity style={styles.btn} onPress={this.handleReset}>
-            <Text style={styles.btnText}>Thử lại</Text>
-          </TouchableOpacity>
+
+          <DuolingoButton
+            title="THỬ LẠI TRANG"
+            icon={<Ionicons name="refresh" size={18} color="#FFFFFF" />}
+            variant="primary"
+            size="lg"
+            onPress={this.handleReset}
+            style={styles.btn}
+          />
         </View>
       );
     }
@@ -53,35 +67,28 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.duolingo.bg,
+    alignItems: "center",
+    justifyContent: "center",
     padding: Spacing.xl,
   },
   title: {
-    fontSize: Typography.text.title2.fontSize,
-    fontWeight: Typography.weight.bold,
-    color: Colors.text.primary,
-    marginTop: Spacing.md,
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    marginTop: Spacing.lg,
+    textAlign: "center",
+    letterSpacing: 0.5,
   },
   message: {
-    fontSize: Typography.text.subhead.fontSize,
-    color: Colors.text.secondary,
-    textAlign: 'center',
-    marginTop: Spacing.xs,
+    fontSize: 13,
+    color: Colors.duolingo.textMuted,
+    textAlign: "center",
+    marginTop: 6,
     marginBottom: Spacing.xl,
+    lineHeight: 18,
   },
   btn: {
-    backgroundColor: Colors.accent.indigo,
-    borderRadius: Radii.card,
-    height: 44,
-    paddingHorizontal: Spacing.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnText: {
-    color: '#FFFFFF',
-    fontWeight: Typography.weight.bold,
-    fontSize: Typography.text.footnote.fontSize,
+    minWidth: 200,
   },
 });

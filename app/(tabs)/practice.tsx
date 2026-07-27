@@ -42,7 +42,8 @@ export default function PracticeScreen() {
     if (decks.length === 0) {
       fetchDecks();
     }
-  }, [fetchUserProgress, getStreakCount, fetchDecks, decks.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchUserProgress, fetchDecks, decks.length]);
 
   useEffect(() => {
     if (decks.length > 0) {

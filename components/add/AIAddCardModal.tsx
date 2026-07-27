@@ -41,12 +41,16 @@ interface WordItem {
   errorMsg?: string;
 }
 
-function parseWords(raw: string): string[] {
+function parseAllWords(raw: string): string[] {
   const words = raw
     .split(/[,，\n]/)
     .map((w) => w.trim())
     .filter((w) => w.length > 0);
-  return Array.from(new Set(words)).slice(0, MAX_WORDS);
+  return Array.from(new Set(words));
+}
+
+function parseWords(raw: string): string[] {
+  return parseAllWords(raw).slice(0, MAX_WORDS);
 }
 
 export interface AIAddCardModalProps {
@@ -109,6 +113,9 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     return decks.find((d) => d.id === selectedDeckId) || decks[0] || null;
   }, [decks, selectedDeckId]);
 
+  const parsedCount = useMemo(() => parseWords(input).length, [input]);
+  const totalInputCount = useMemo(() => parseAllWords(input).length, [input]);
+
   const handleGenerateBatch = async () => {
     const parsed = parseWords(input);
     if (parsed.length === 0) {
@@ -118,6 +125,13 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     if (!selectedDeckId) {
       Alert.alert("Thông báo", "Vui lòng chọn hoặc tạo 1 bộ thẻ trước");
       return;
+    }
+
+    if (totalInputCount > MAX_WORDS) {
+      Alert.alert(
+        "Giới hạn số từ AI",
+        `Bạn đã nhập ${totalInputCount} từ. Để đảm bảo tốc độ và chất lượng AI tốt nhất, hệ thống sẽ phân tích ${MAX_WORDS} từ đầu tiên.`,
+      );
     }
 
     const deckCardsList = cards[selectedDeckId] || [];
@@ -271,7 +285,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     }
   };
 
-  const parsedCount = useMemo(() => parseWords(input).length, [input]);
+
   const validItemsToSaveCount = useMemo(
     () => wordItems.filter((i) => i.status === "done" && i.data && !i.saved).length,
     [wordItems]
@@ -330,8 +344,15 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
             <DuolingoCard style={styles.sectionCard}>
               <View style={styles.inputHeaderRow}>
                 <Text style={styles.cardLabel}>NHẬP TỪ HOẶC CÂU TIẾNG TRUNG</Text>
-                <Text style={styles.wordCounter}>
-                  {parsedCount}/{MAX_WORDS} từ
+                <Text
+                  style={[
+                    styles.wordCounter,
+                    totalInputCount > MAX_WORDS && styles.wordCounterOverLimit,
+                  ]}
+                >
+                  {totalInputCount > MAX_WORDS
+                    ? `${totalInputCount}/${MAX_WORDS} từ (lấy 10)`
+                    : `${parsedCount}/${MAX_WORDS} từ`}
                 </Text>
               </View>
 
@@ -477,9 +498,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   wordCounter: {
-    fontSize: Typography.text.caption2.fontSize,
-    fontWeight: Typography.weight.bold,
+    fontSize: 12,
+    fontWeight: "700",
     color: Colors.duolingo.textMuted,
+  },
+  wordCounterOverLimit: {
+    color: Colors.duolingo.yellow,
   },
   textArea: {
     backgroundColor: Colors.duolingo.bg,
