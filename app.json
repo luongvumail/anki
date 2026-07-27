@@ -22,8 +22,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#08090C"
       },
-      "package": "com.luongvu.anki",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.luongvu.anki"
     },
     "web": {
       "bundler": "metro",
@@ -31,7 +30,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Ứng dụng cần truy cập microphone để luyện phát âm tiếng Trung cùng AI."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

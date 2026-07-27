@@ -247,11 +247,11 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.duolingo.bg, paddingHorizontal: Spacing.pageMargin },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: Spacing.md },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: Spacing.md },
   closeBtn: { padding: 4 },
-  timerBox: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
-  timerText: { fontSize: 14, fontWeight: "800", color: Colors.duolingo.yellow, width: 36 },
-  scoreBox: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Colors.duolingo.cardBg, paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radii.full },
+  timerBox: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, marginRight: 6 },
+  timerText: { fontSize: 13, fontWeight: "800", color: Colors.duolingo.yellow, minWidth: 32 },
+  scoreBox: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Colors.duolingo.cardBg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radii.full, borderWidth: 1, borderColor: Colors.duolingo.cardBorder },
   scoreText: { fontSize: 14, fontWeight: "800", color: "#FFFFFF" },
 
   titleSection: { marginBottom: Spacing.md, alignItems: "center" },

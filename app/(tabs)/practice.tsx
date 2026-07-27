@@ -20,6 +20,7 @@ import { SectionTitle } from "../../components/ui/SectionTitle";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { SpeedMatchModal } from "../../components/practice/SpeedMatchModal";
 import { SentenceBuilderModal } from "../../components/practice/SentenceBuilderModal";
+import { PronunciationTrainerModal } from "../../components/practice/PronunciationTrainerModal";
 
 export default function PracticeScreen() {
   const insets = useSafeAreaInsets();
@@ -33,6 +34,7 @@ export default function PracticeScreen() {
   const [streakCount, setStreakCount] = useState(0);
   const [showSpeedMatch, setShowSpeedMatch] = useState(false);
   const [showSentenceBuilder, setShowSentenceBuilder] = useState(false);
+  const [showPronunciationTrainer, setShowPronunciationTrainer] = useState(false);
 
   useEffect(() => {
     fetchUserProgress();
@@ -84,6 +86,17 @@ export default function PracticeScreen() {
       return;
     }
     setShowSentenceBuilder(true);
+  };
+
+  const handleOpenPronunciationTrainer = () => {
+    if (allCardsList.length === 0) {
+      Alert.alert(
+        "Chưa có từ vựng",
+        "Bạn cần nạp từ vựng vào bộ thẻ trước khi luyện phát âm."
+      );
+      return;
+    }
+    setShowPronunciationTrainer(true);
   };
 
   return (
@@ -164,6 +177,28 @@ export default function PracticeScreen() {
             style={{ marginTop: Spacing.md }}
           />
         </DuolingoCard>
+
+        {/* Mode 3: AI Pronunciation Trainer */}
+        <DuolingoCard style={styles.modeCard}>
+          <View style={styles.modeRow}>
+            <View style={[styles.modeIconTile, { backgroundColor: "rgba(168, 85, 247, 0.15)" }]}>
+              <Ionicons name="mic" size={28} color={Colors.duolingo.purple} />
+            </View>
+            <View style={styles.modeTextCol}>
+              <Text style={styles.modeTitle}>🗣️ PHÒNG LUYỆN PHÁT ÂM AI</Text>
+              <Text style={styles.modeDesc}>
+                Thu âm giọng đọc Tiếng Trung, AI phân tích nhận diện Pinyin & 4 thanh điệu chuẩn xác.
+              </Text>
+            </View>
+          </View>
+          <DuolingoButton
+            title="THU ÂM NGAY ➜"
+            variant="purple"
+            size="lg"
+            onPress={handleOpenPronunciationTrainer}
+            style={{ marginTop: Spacing.md }}
+          />
+        </DuolingoCard>
       </ScrollView>
 
       {/* Speed Match Modal */}
@@ -180,6 +215,15 @@ export default function PracticeScreen() {
         <SentenceBuilderModal
           visible={showSentenceBuilder}
           onClose={() => setShowSentenceBuilder(false)}
+          cards={allCardsList}
+        />
+      )}
+
+      {/* AI Pronunciation Trainer Modal */}
+      {showPronunciationTrainer && (
+        <PronunciationTrainerModal
+          visible={showPronunciationTrainer}
+          onClose={() => setShowPronunciationTrainer(false)}
           cards={allCardsList}
         />
       )}

@@ -83,7 +83,7 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
     id: "vocab_500",
     title: "Cây Cổ Thụ HSK",
     description: "Ghi nhớ thuộc 500 từ vựng",
-    icon: "tree",
+    icon: "planet",
     category: "vocab",
     target: 500,
   },
