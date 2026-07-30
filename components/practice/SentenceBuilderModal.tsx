@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import { useStore } from "../../store/useStore";
 import { recordReviewToday } from "../../lib/reviewTracker";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
+import { DuolingoCard } from "../ui/DuolingoCard";
+import { ProgressBar } from "../ui/ProgressBar";
 
 interface SentenceExercise {
   card: Card;
@@ -45,17 +47,24 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
   const [exercises, setExercises] = useState<SentenceExercise[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedChips, setSelectedChips] = useState<{ id: number; text: string }[]>([]);
-  const [availableChips, setAvailableChips] = useState<{ id: number; text: string }[]>([]);
+  const [allChips, setAllChips] = useState<{ id: number; text: string }[]>([]);
   const [isChecked, setIsChecked] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isDone, setIsDone] = useState(false);
+
+  const selectedChipIds = useMemo(
+    () => new Set(selectedChips.map((c) => c.id)),
+    [selectedChips]
+  );
 
   const drawerAnim = useRef(new Animated.Value(300)).current;
 
   // Prepare exercises from cards with examples
   useEffect(() => {
     if (visible && cards.length > 0) {
-      const validCards = cards.filter((c) => c.examples && c.examples.length > 0 && c.examples[0].chinese);
+      const validCards = cards.filter(
+        (c) => c.examples && c.examples.length > 0 && c.examples[0].chinese,
+      );
       const shuffledCards = [...validCards].sort(() => 0.5 - Math.random());
       const selected = shuffledCards.slice(0, 5);
 
@@ -88,21 +97,19 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
 
     const chips = ex.wordChips.map((text, idx) => ({ id: idx, text }));
     const shuffled = [...chips].sort(() => 0.5 - Math.random());
-    setAvailableChips(shuffled);
+    setAllChips(shuffled);
   };
 
   const handleSelectChip = (chip: { id: number; text: string }) => {
-    if (isChecked) return;
+    if (isChecked || selectedChipIds.has(chip.id)) return;
     triggerHaptic("selection");
     setSelectedChips((prev) => [...prev, chip]);
-    setAvailableChips((prev) => prev.filter((c) => c.id !== chip.id));
   };
 
   const handleUnselectChip = (chip: { id: number; text: string }) => {
     if (isChecked) return;
     triggerHaptic("selection");
     setSelectedChips((prev) => prev.filter((c) => c.id !== chip.id));
-    setAvailableChips((prev) => [...prev, chip]);
   };
 
   const handleCheck = () => {
@@ -145,11 +152,26 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
 
   if (exercises.length === 0) {
     return (
-      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>Chưa có câu ví dụ!</Text>
-          <Text style={styles.emptySub}>Thêm từ vựng bằng AI để tự động tạo các câu ví dụ luyện tập.</Text>
-          <DuolingoButton title="ĐÓNG" variant="secondary" size="md" onPress={onClose} style={{ marginTop: Spacing.md }} />
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={onClose}
+      >
+        <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>Chưa có câu ví dụ!</Text>
+            <Text style={styles.emptySub}>
+              Thêm từ vựng bằng AI để tự động tạo các câu ví dụ luyện tập.
+            </Text>
+            <DuolingoButton
+              title="ĐÓNG"
+              variant="secondary"
+              size="md"
+              onPress={onClose}
+              style={{ marginTop: Spacing.md }}
+            />
+          </View>
         </View>
       </Modal>
     );
@@ -159,22 +181,33 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 44) }]}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
         {/* Header Bar */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
             <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>XẾP TỪ THÀNH CÂU ({currentIndex + 1}/{exercises.length})</Text>
+          <ProgressBar
+            progress={(currentIndex + 1) / Math.max(1, exercises.length)}
+            height={12}
+            fillColor={Colors.duolingo.blue}
+            style={{ flex: 1 }}
+          />
+          <Text style={styles.headerProgressText}>
+            {currentIndex + 1}/{exercises.length}
+          </Text>
         </View>
 
         {!isDone ? (
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* Translation Prompt */}
-            <View style={styles.promptCard}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Translation Prompt Card */}
+            <DuolingoCard style={styles.promptCard}>
               <Text style={styles.promptLabel}>DỊCH CÂU SAU SANG TIẾNG TRUNG:</Text>
               <Text style={styles.promptTranslation}>"{currentEx.vietnamese}"</Text>
-            </View>
+            </DuolingoCard>
 
             {/* Selected Chips Drop Zone */}
             <View style={styles.dropZone}>
@@ -199,16 +232,24 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
             {/* Available Chips Pool */}
             <View style={styles.chipsPool}>
               <View style={styles.chipGrid}>
-                {availableChips.map((chip) => (
-                  <TouchableOpacity
-                    key={`avail-${chip.id}`}
-                    style={styles.chipAvailable}
-                    onPress={() => handleSelectChip(chip)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.chipTextAvailable}>{chip.text}</Text>
-                  </TouchableOpacity>
-                ))}
+                {allChips.map((chip) => {
+                  const isSelected = selectedChipIds.has(chip.id);
+                  return isSelected ? (
+                    <View key={`avail-empty-${chip.id}`} style={styles.chipSlotEmpty}>
+                      <Text style={[styles.chipTextAvailable, { opacity: 0 }]}>{chip.text}</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      key={`avail-${chip.id}`}
+                      style={styles.chipAvailable}
+                      onPress={() => handleSelectChip(chip)}
+                      activeOpacity={0.85}
+                      disabled={isChecked}
+                    >
+                      <Text style={styles.chipTextAvailable}>{chip.text}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           </ScrollView>
@@ -216,8 +257,16 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
           /* Completion Screen */
           <View style={styles.doneContainer}>
             <Text style={styles.doneTitle}>HOÀN THÀNH BÀI TẬP!</Text>
-            <Text style={styles.doneSub}>Bạn đã luyện tập thành công {exercises.length} câu ví dụ!</Text>
-            <DuolingoButton title="HOÀN TẤT" variant="primary" size="lg" onPress={onClose} style={{ marginTop: Spacing.lg }} />
+            <Text style={styles.doneSub}>
+              Bạn đã luyện tập thành công {exercises.length} câu ví dụ!
+            </Text>
+            <DuolingoButton
+              title="HOÀN TẤT"
+              variant="primary"
+              size="lg"
+              onPress={onClose}
+              style={{ marginTop: Spacing.lg }}
+            />
           </View>
         )}
 
@@ -236,14 +285,25 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
 
         {/* Feedback Sheet */}
         {isChecked && !isDone && (
-          <Animated.View style={[styles.resultDrawer, isCorrect ? styles.drawerCorrect : styles.drawerWrong, { transform: [{ translateY: drawerAnim }] }]}>
+          <Animated.View
+            style={[
+              styles.resultDrawer,
+              isCorrect ? styles.drawerCorrect : styles.drawerWrong,
+              { transform: [{ translateY: drawerAnim }] },
+            ]}
+          >
             <View style={styles.resultTitleRow}>
               <Ionicons
                 name={isCorrect ? "checkmark-circle" : "close-circle"}
                 size={26}
                 color={isCorrect ? Colors.duolingo.green : Colors.duolingo.red}
               />
-              <Text style={[styles.resultTitle, { color: isCorrect ? Colors.duolingo.green : Colors.duolingo.red }]}>
+              <Text
+                style={[
+                  styles.resultTitle,
+                  { color: isCorrect ? Colors.duolingo.green : Colors.duolingo.red },
+                ]}
+              >
                 {isCorrect ? "Chính xác! (+15 XP)" : "Chưa chính xác"}
               </Text>
             </View>
@@ -251,8 +311,12 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
               <View style={{ marginTop: 6 }}>
                 <Text style={styles.explainLabel}>CÂU CHUẨN & NGHĨA:</Text>
                 <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
-                {currentEx.pinyin ? <Text style={styles.explainPinyin}>Pinyin: {currentEx.pinyin}</Text> : null}
-                {currentEx.vietnamese ? <Text style={styles.explainPinyin}>Nghĩa: {currentEx.vietnamese}</Text> : null}
+                {currentEx.pinyin ? (
+                  <Text style={styles.explainPinyin}>Pinyin: {currentEx.pinyin}</Text>
+                ) : null}
+                {currentEx.vietnamese ? (
+                  <Text style={styles.explainPinyin}>Nghĩa: {currentEx.vietnamese}</Text>
+                ) : null}
               </View>
             ) : (
               <View style={{ marginTop: 6 }}>
@@ -260,7 +324,13 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
                 <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
               </View>
             )}
-            <DuolingoButton title={isCorrect ? "TIẾP TỤC" : "ĐÃ HIỂU"} variant={isCorrect ? "primary" : "error"} size="lg" onPress={handleContinue} style={{ marginTop: Spacing.sm }} />
+            <DuolingoButton
+              title={isCorrect ? "TIẾP TỤC" : "ĐÃ HIỂU"}
+              variant={isCorrect ? "primary" : "error"}
+              size="lg"
+              onPress={handleContinue}
+              style={{ marginTop: Spacing.sm }}
+            />
           </Animated.View>
         )}
       </View>
@@ -270,27 +340,103 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.duolingo.bg, position: "relative" },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.pageMargin, marginBottom: Spacing.md, gap: 12 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.pageMargin,
+    marginBottom: Spacing.md,
+    gap: 12,
+  },
   closeBtn: { padding: 4 },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: "#FFFFFF" },
+  headerProgressText: { fontSize: 13, fontWeight: "800", color: Colors.duolingo.blue },
   scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingBottom: 120 },
 
-  promptCard: { backgroundColor: Colors.duolingo.cardBg, borderRadius: Radii.xl, padding: Spacing.md, marginBottom: Spacing.md, borderBottomWidth: 3, borderBottomColor: Colors.duolingo.cardBottom },
-  promptLabel: { fontSize: 11, fontWeight: "800", color: Colors.duolingo.blue, letterSpacing: 0.5, marginBottom: 4 },
+  promptCard: {
+    backgroundColor: Colors.duolingo.cardBg,
+    borderRadius: Radii.xl,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.duolingo.cardBottom,
+  },
+  promptLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: Colors.duolingo.blue,
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
   promptTranslation: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", lineHeight: 24 },
 
-  dropZone: { minHeight: 110, backgroundColor: "#131F24", borderRadius: Radii.xl, padding: Spacing.md, marginBottom: Spacing.md, borderWidth: 2, borderColor: Colors.duolingo.border, borderStyle: "dashed", justifyContent: "center" },
-  dropZonePlaceholder: { color: Colors.duolingo.textMuted, fontSize: 14, textAlign: "center", fontStyle: "italic" },
+  dropZone: {
+    minHeight: 110,
+    backgroundColor: "#131F24",
+    borderRadius: Radii.xl,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 2,
+    borderColor: Colors.duolingo.border,
+    borderStyle: "dashed",
+    justifyContent: "center",
+  },
+  dropZonePlaceholder: {
+    color: Colors.duolingo.textMuted,
+    fontSize: 14,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
 
   chipsPool: { minHeight: 120 },
   chipGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  chipAvailable: { backgroundColor: Colors.duolingo.cardBg, borderRadius: Radii.md, paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 3, borderBottomColor: Colors.duolingo.cardBottom },
+  chipAvailable: {
+    backgroundColor: Colors.duolingo.cardBg,
+    borderRadius: Radii.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.duolingo.cardBottom,
+  },
   chipTextAvailable: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
-  chipSelected: { backgroundColor: Colors.duolingo.blue, borderRadius: Radii.md, paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 3, borderBottomColor: Colors.duolingo.blueDark },
+  chipSlotEmpty: {
+    backgroundColor: "#18242B",
+    borderRadius: Radii.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: "#2B3D4F",
+    borderStyle: "dashed",
+  },
+  chipSelected: {
+    backgroundColor: Colors.duolingo.blue,
+    borderRadius: Radii.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.duolingo.blueDark,
+  },
   chipTextSelected: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
 
-  bottomBar: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: Colors.duolingo.bg, paddingHorizontal: Spacing.pageMargin, paddingBottom: Spacing.md, paddingTop: Spacing.xs },
-  resultDrawer: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md, paddingBottom: Math.max(Spacing.lg, 24), borderTopLeftRadius: Radii.xl, borderTopRightRadius: Radii.xl },
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.duolingo.bg,
+    paddingHorizontal: Spacing.pageMargin,
+    paddingBottom: Spacing.md,
+    paddingTop: Spacing.xs,
+  },
+  resultDrawer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: Spacing.pageMargin,
+    paddingTop: Spacing.md,
+    paddingBottom: Math.max(Spacing.lg, 24),
+    borderTopLeftRadius: Radii.xl,
+    borderTopRightRadius: Radii.xl,
+  },
   drawerCorrect: { backgroundColor: "#193318" },
   drawerWrong: { backgroundColor: "#381616" },
   resultTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
@@ -299,7 +445,13 @@ const styles = StyleSheet.create({
   explainValue: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginTop: 2 },
   explainPinyin: { fontSize: 13, color: Colors.duolingo.blue, marginTop: 2, fontWeight: "600" },
 
-  emptyContainer: { flex: 1, backgroundColor: Colors.duolingo.bg, alignItems: "center", justifyContent: "center", padding: Spacing.xl },
+  emptyContainer: {
+    flex: 1,
+    backgroundColor: Colors.duolingo.bg,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.xl,
+  },
   emptyTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF" },
   emptySub: { fontSize: 14, color: Colors.duolingo.textMuted, textAlign: "center", marginTop: 6 },
   doneContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: Spacing.xl },

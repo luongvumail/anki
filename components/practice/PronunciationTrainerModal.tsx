@@ -33,65 +33,6 @@ export interface PronunciationTrainerModalProps {
   cards: Card[];
 }
 
-function AudioWaveform({ isRecording }: { isRecording: boolean }) {
-  const bar1 = useRef(new Animated.Value(6)).current;
-  const bar2 = useRef(new Animated.Value(6)).current;
-  const bar3 = useRef(new Animated.Value(6)).current;
-  const bar4 = useRef(new Animated.Value(6)).current;
-  const bar5 = useRef(new Animated.Value(6)).current;
-  const bar6 = useRef(new Animated.Value(6)).current;
-  const bar7 = useRef(new Animated.Value(6)).current;
-
-  useEffect(() => {
-    let anim: Animated.CompositeAnimation | null = null;
-    if (isRecording) {
-      const createBarAnim = (val: Animated.Value, minH: number, maxH: number, speed: number) => {
-        return Animated.loop(
-          Animated.sequence([
-            Animated.timing(val, { toValue: maxH, duration: speed, useNativeDriver: false }),
-            Animated.timing(val, { toValue: minH, duration: speed, useNativeDriver: false }),
-          ])
-        );
-      };
-
-      anim = Animated.parallel([
-        createBarAnim(bar1, 8, 28, 220),
-        createBarAnim(bar2, 12, 38, 180),
-        createBarAnim(bar3, 10, 32, 260),
-        createBarAnim(bar4, 14, 44, 150),
-        createBarAnim(bar5, 8, 26, 210),
-        createBarAnim(bar6, 12, 36, 190),
-        createBarAnim(bar7, 10, 30, 240),
-      ]);
-      anim.start();
-    } else {
-      [bar1, bar2, bar3, bar4, bar5, bar6, bar7].forEach((b) => b.setValue(6));
-    }
-    return () => {
-      if (anim) anim.stop();
-    };
-  }, [isRecording, bar1, bar2, bar3, bar4, bar5, bar6, bar7]);
-
-  if (!isRecording) return null;
-
-  return (
-    <View style={styles.waveContainer}>
-      {[bar1, bar2, bar3, bar4, bar5, bar6, bar7].map((barAnim, idx) => (
-        <Animated.View
-          key={idx}
-          style={[
-            styles.waveBar,
-            {
-              height: barAnim,
-              backgroundColor: idx % 2 === 0 ? Colors.duolingo.red : Colors.duolingo.yellow,
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
 export function PronunciationTrainerModal({
   visible,
   onClose,
@@ -288,7 +229,7 @@ export function PronunciationTrainerModal({
     [shuffledCards, currentIndex, addXP, drawerAnim],
   );
 
-  // Transcribe audio via Gemini API (supports audio/mp4 from expo-audio)
+  // Transcribe audio via Gemini API (supports audio/m4a, audio/mp4 from expo-audio)
   const transcribeWithGemini = async (uri: string): Promise<string> => {
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) throw new Error("Missing Gemini API key");
@@ -296,6 +237,12 @@ export function PronunciationTrainerModal({
     const base64Audio = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
     });
+
+    let mimeType = "audio/m4a";
+    if (uri.endsWith(".mp4")) mimeType = "audio/mp4";
+    else if (uri.endsWith(".wav")) mimeType = "audio/wav";
+    else if (uri.endsWith(".caf")) mimeType = "audio/caf";
+    else if (uri.endsWith(".aac")) mimeType = "audio/aac";
 
     const candidateModels = ["gemini-3.6-flash", "gemini-3.5-flash"];
 
@@ -314,7 +261,7 @@ export function PronunciationTrainerModal({
                   parts: [
                     {
                       inlineData: {
-                        mimeType: "audio/mp4",
+                        mimeType,
                         data: base64Audio,
                       },
                     },
@@ -355,6 +302,10 @@ export function PronunciationTrainerModal({
 
   const startListening = async () => {
     triggerHaptic("heavy");
+
+    // Critical for physical iOS devices: stop Speech TTS to release AVAudioSession playback lock
+    Speech.stop();
+    setSpeaking(false);
 
     try {
       // Request microphone permission via AudioModule
@@ -457,7 +408,7 @@ export function PronunciationTrainerModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 44) }]}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
         {/* Header Bar */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -479,13 +430,6 @@ export function PronunciationTrainerModal({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Exercise Title */}
-            <View style={styles.badgeRow}>
-              <View style={styles.typeBadge}>
-                <Text style={styles.typeBadgeText}>PHÒNG LUYỆN PHÁT ÂM AI</Text>
-              </View>
-            </View>
-
             {/* Main Character Display Card */}
             <View style={styles.cardTargetBox}>
               <Text style={styles.characterBig}>{currentCard.character}</Text>
@@ -514,9 +458,6 @@ export function PronunciationTrainerModal({
                   <Ionicons name={isRecording ? "stop" : "mic"} size={40} color="#FFFFFF" />
                 </TouchableOpacity>
               </Animated.View>
-
-              {/* Dynamic Animated Voice Line / Audio Meter Waveform */}
-              <AudioWaveform isRecording={isRecording} />
 
               <Text style={styles.micHintText}>
                 {analyzing

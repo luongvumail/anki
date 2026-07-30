@@ -173,7 +173,7 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 44) }]}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
         {/* Header Bar */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -181,19 +181,15 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
           </TouchableOpacity>
 
           <View style={styles.timerBox}>
-            <ProgressBar progress={timerProgress} height={14} fillColor={timeLeft < 10 ? Colors.duolingo.red : Colors.duolingo.yellow} />
+            <Ionicons name="stopwatch" size={18} color={timeLeft < 10 ? Colors.duolingo.red : Colors.duolingo.yellow} />
+            <ProgressBar progress={timerProgress} height={12} fillColor={timeLeft < 10 ? Colors.duolingo.red : Colors.duolingo.yellow} style={{ flex: 1 }} />
             <Text style={styles.timerText}>{timeLeft}s</Text>
           </View>
 
           <View style={styles.scoreBox}>
+            <Ionicons name="star" size={15} color={Colors.duolingo.yellow} />
             <Text style={styles.scoreText}>{score}</Text>
           </View>
-        </View>
-
-        {/* Game Title */}
-        <View style={styles.titleSection}>
-          <Text style={styles.titleText}>GAME GHÉP TỪ NHANH</Text>
-          <Text style={styles.subTitleText}>Ghép cặp Chữ Hán và Nghĩa tương ứng trước khi hết giờ!</Text>
         </View>
 
         {/* Tiles Grid */}
@@ -260,14 +256,31 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.duolingo.bg, paddingHorizontal: Spacing.pageMargin },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: Spacing.md },
   closeBtn: { padding: 4 },
-  timerBox: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, marginRight: 6 },
-  timerText: { fontSize: 13, fontWeight: "800", color: Colors.duolingo.yellow, minWidth: 32 },
+  timerBox: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
+  timerText: { fontSize: 13, fontWeight: "800", color: Colors.duolingo.yellow, width: 34, textAlign: "right" },
   scoreBox: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Colors.duolingo.cardBg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radii.full, borderWidth: 1, borderColor: Colors.duolingo.cardBorder },
-  scoreText: { fontSize: 14, fontWeight: "800", color: "#FFFFFF" },
+  scoreText: { fontSize: 14, fontWeight: "800", color: Colors.duolingo.yellow },
 
   titleSection: { marginBottom: Spacing.md, alignItems: "center" },
   titleText: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.5 },
   subTitleText: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 2, textAlign: "center" },
+
+  typeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    backgroundColor: "rgba(255, 200, 0, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Radii.sm,
+  },
+  typeBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: Colors.duolingo.yellow,
+    letterSpacing: 0.5,
+  },
 
   gridContainer: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", alignContent: "center" },
   tileBase: {
