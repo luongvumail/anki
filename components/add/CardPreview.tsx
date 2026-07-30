@@ -55,7 +55,7 @@ export const CardPreview = React.memo(function CardPreview({
         <SectionTitle>XEM TRƯỚC THẺ BÀI</SectionTitle>
         <View style={styles.previewHeaderActions}>
           <TouchableOpacity onPress={onReGenerate}>
-            <Text style={styles.reGenLink}>Tạo lại ↻</Text>
+            <Text style={styles.reGenLink}>Tạo lại</Text>
           </TouchableOpacity>
           {onRemove && (
             <TouchableOpacity
@@ -108,12 +108,12 @@ export const CardPreview = React.memo(function CardPreview({
           <DuolingoButton
             title={
               saved
-                ? "✅ ĐÃ LƯU VÀO BỘ THẺ"
+                ? "ĐÃ LƯU VÀO BỘ THẺ"
                 : saving
                 ? "ĐANG LƯU..."
                 : targetDeckName
-                ? `LƯU VÀO BỘ "${targetDeckName.toUpperCase()}" ➜`
-                : "LƯU VÀO BỘ THẺ ➜"
+                ? `LƯU VÀO BỘ "${targetDeckName.toUpperCase()}"`
+                : "LƯU VÀO BỘ THẺ"
             }
             variant={saved ? "success" : "primary"}
             size="lg"

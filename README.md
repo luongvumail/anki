@@ -1,56 +1,59 @@
 # Anki - Hệ Thống Học Từ Vựng Tiếng Trung Tích Hợp AI & Chuẩn Thiết Kế Duolingo 3D
 
-Ứng dụng học từ vựng tiếng Trung thông minh dựa trên phương pháp lặp lại ngắt quãng khoa học (**Spaced Repetition System - SRS SuperMemo-2**), kết hợp với trí tuệ nhân tạo (**Google Gemini AI**) và hệ thống Gamification chuẩn thiết kế **Duolingo 3D Tactile Design System**.
+Ứng dụng học từ vựng tiếng Trung thông minh dựa trên phương pháp lặp lại ngắt quãng khoa học (**Spaced Repetition System - SRS SuperMemo-2**), kết hợp với trí tuệ nhân tạo (**Google AI**) và hệ thống Gamification chuẩn thiết kế **Duolingo 3D Tactile Design System**.
 
 ---
 
 ## 🌟 Điểm Nổi Bật Về Giao Diện & Trải Nghiệm (Duolingo 3D Design)
 
-* **Hệ thống Nút Bấm 3D Tactile (`DuolingoButton.tsx`):** Nút bấm lún 3D đặc trưng Duolingo với phản hồi cảm ứng lực (Haptics), hỗ trợ 3 kích thước chuẩn mực (`size="lg"` [52px], `size="md"` [44px], `size="sm"` [36px]) cùng màu sắc nhận diện thương hiệu rực rỡ.
-* **Nút Tròn Nổi AI Kéo Di Chuyển (`FloatingAddButton.tsx`):** Nút tròn AI 3D màu xanh lá Duolingo (`52x52px`) cho phép người dùng **chạm giữ và kéo di chuyển tự do đến mọi vị trí trên màn hình** mà không lo che nội dung.
-* **Modal Nạp Từ AI Tự Động Lọc Trùng (`AIAddCardModal.tsx`):** Màn hình nạp từ vựng bằng Gemini AI tích hợp bộ lọc từ trùng lặp tự động, thông báo duy nhất và nút "THÊM TẤT CẢ" 1 chạm.
-* **Chuẩn Hoá Tương Phản Dark Mode 100%:** 100% tiêu đề & văn bản đọc sử dụng màu **Trắng Thuần (`#FFFFFF`) / Off-white Duolingo (`#F0F3F6`)**, loại bỏ hoàn toàn chữ màu xanh dương nền tối để chống mỏi mắt và tăng độ sắc nét.
+- **Hệ thống Nút Bấm 3D Tactile (`DuolingoButton.tsx`):** Nút bấm lún 3D đặc trưng Duolingo với phản hồi cảm ứng lực (Haptics), hỗ trợ 3 kích thước chuẩn mực (`size="lg"` [52px], `size="md"` [44px], `size="sm"` [36px]) cùng màu sắc nhận diện thương hiệu rực rỡ.
+- **Nút Tròn Nổi AI Kéo Di Chuyển (`FloatingAddButton.tsx`):** Nút tròn AI 3D màu xanh lá Duolingo (`52x52px`) cho phép người dùng **chạm giữ và kéo di chuyển tự do đến mọi vị trí trên màn hình** mà không lo che nội dung.
+- **Modal Nạp Từ AI Tự Động Lọc Trùng (`AIAddCardModal.tsx`):** Màn hình nạp từ vựng bằng AI tích hợp bộ lọc từ trùng lặp tự động, thông báo duy nhất và nút "THÊM TẤT CẢ" 1 chạm.
+- **Chuẩn Hoá Tương Phản Dark Mode 100%:** 100% tiêu đề & văn bản đọc sử dụng màu **Trắng Thuần (`#FFFFFF`) / Off-white Duolingo (`#F0F3F6`)**, loại bỏ hoàn toàn chữ màu xanh dương nền tối để chống mỏi mắt và tăng độ sắc nét.
 
 ---
 
 ## 🧠 Cơ Sở Khoa Học & Thuật Toán Học Tập
 
 ### 1. Thuật Toán Lặp Lại Ngắt Quãng (SuperMemo-2 SRS)
-* Áp dụng đường cong quên của Ebbinghaus để tự động tính toán thời điểm lật lại từ vựng chuẩn xác từng ngày.
-* Người học đánh giá thẻ dựa trên 3 mức độ: **Quên (Again)**, **Khó (Hard)**, **Dễ (Easy)**.
+
+- Áp dụng đường cong quên của Ebbinghaus để tự động tính toán thời điểm lật lại từ vựng chuẩn xác từng ngày.
+- Người học đánh giá thẻ dựa trên 3 mức độ: **Quên (Again)**, **Khó (Hard)**, **Dễ (Easy)**.
 
 ### 2. Chế Độ Ôn Tập Phản Xạ Thích Ứng (Adaptive Quiz Mode)
-* Ứng dụng tự động sinh ra 4 dạng bài tập trắc nghiệm khách quan:
+
+- Ứng dụng tự động sinh ra 4 dạng bài tập trắc nghiệm khách quan:
   1. **Meaning Choice:** Chọn nghĩa Tiếng Việt từ chữ Hán (dành cho từ mới).
   2. **Pinyin Choice:** Chọn Pinyin & thanh điệu đúng trong 4 đáp án.
   3. **Listening Test:** Nghe phát âm TTS tiếng Trung và chọn chữ Hán khớp.
   4. **Cloze Test:** Điền chữ Hán còn thiếu vào câu ví dụ ngữ cảnh.
 
 ### 3. Trung Tâm Luyện Tập Tự Do (Practice Hub) & Mini-Games
-* **🧩 Game Ghép Từ Nhanh 60s (Speed Match Arcade):** Thử thách 60 giây ghép cặp Chữ Hán ↔ Nghĩa/Pinyin rèn phản xạ nhanh tay lẹ mắt.
-* **🔤 Xếp Từ Thành Câu (Sentence Builder):** Kéo/bấm từ xáo trộn để sắp xếp thành câu ví dụ chuẩn ngữ pháp.
-* **🎖️ Điểm XP & Huy Hiệu Cá Nhân:** Tích lũy điểm XP để thăng cấp danh hiệu Hán ngữ (`初学者` ➔ `汉字宗师`) và mở khóa Bộ Huy Hiệu thành tích cá nhân.
+
+- **🧩 Game Ghép Từ Nhanh 60s (Speed Match Arcade):** Thử thách 60 giây ghép cặp Chữ Hán ↔ Nghĩa/Pinyin rèn phản xạ nhanh tay lẹ mắt.
+- **🔤 Xếp Từ Thành Câu (Sentence Builder):** Kéo/bấm từ xáo trộn để sắp xếp thành câu ví dụ chuẩn ngữ pháp.
+- **🎖️ Điểm XP & Huy Hiệu Cá Nhân:** Tích lũy điểm XP để thăng cấp danh hiệu Hán ngữ (`初学者` ➔ `汉字宗师`) và mở khóa Bộ Huy Hiệu thành tích cá nhân.
 
 ---
 
 ## 🚀 Các Tính Năng Chính
 
-* **⚡ Nạp Thẻ AI Tự Động (Gemini API):** Phân tích chữ Hán, Pinyin kèm dấu thanh, cấp độ HSK, bộ thủ, nghĩa tiếng Việt và câu ví dụ ngữ cảnh.
-* **🔊 Phát Âm Text-to-Speech (TTS):** Hỗ trợ giọng đọc Hán ngữ chuẩn (`expo-speech`).
-* **🔥 Chuỗi Streak & Thống Kê 7 Ngày:** Đếm chuỗi ngày học liên tục, biểu đồ 7 ngày gần nhất và bộ sưu tập huy hiệu cá nhân.
-* **🌐 Hỗ Trợ Web PWA (Vĩnh Viễn trên iPhone):** Đóng gói Web PWA mượt mà, hỗ trợ thêm vào màn hình chính iPhone sử dụng vĩnh viễn không lo bị văng hay hết hạn 7 ngày.
+- **⚡ Nạp Thẻ AI Tự Động (Gemini API):** Phân tích chữ Hán, Pinyin kèm dấu thanh, cấp độ HSK, bộ thủ, nghĩa tiếng Việt và câu ví dụ ngữ cảnh.
+- **🔊 Phát Âm Text-to-Speech (TTS):** Hỗ trợ giọng đọc Hán ngữ chuẩn (`expo-speech`).
+- **🔥 Chuỗi Streak & Thống Kê 7 Ngày:** Đếm chuỗi ngày học liên tục, biểu đồ 7 ngày gần nhất và bộ sưu tập huy hiệu cá nhân.
+- **🌐 Hỗ Trợ Web PWA (Vĩnh Viễn trên iPhone):** Đóng gói Web PWA mượt mà, hỗ trợ thêm vào màn hình chính iPhone sử dụng vĩnh viễn không lo bị văng hay hết hạn 7 ngày.
 
 ---
 
 ## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
 
-* **Core Framework:** React Native (v0.86) & Expo (SDK 57) bật **New Architecture**.
-* **Routing:** Expo Router v3 (File-based Routing với 4 Tabs).
-* **State Management:** Zustand (v5) chia nhỏ Slices (`deckSlice`, `cardSlice`, `userProgressSlice`).
-* **Database & Auth:** Firebase Web SDK v12 (Authentication & Cloud Firestore).
-* **AI Engine:** Google Generative AI SDK (Gemini 2.5 / 1.5 Flash).
-* **Styling & Theme:** Vanilla CSS StyleSheet + Duolingo Design System Tokens (`theme.ts`).
-* **Audio & Haptics:** Expo Speech, Expo Haptics, Expo Notifications.
+- **Core Framework:** React Native (v0.86) & Expo (SDK 57) bật **New Architecture**.
+- **Routing:** Expo Router v3 (File-based Routing với 4 Tabs).
+- **State Management:** Zustand (v5) chia nhỏ Slices (`deckSlice`, `cardSlice`, `userProgressSlice`).
+- **Database & Auth:** Firebase Web SDK v12 (Authentication & Cloud Firestore).
+- **AI Engine:** Google Generative AI SDK (Gemini 2.5 / 1.5 Flash).
+- **Styling & Theme:** Vanilla CSS StyleSheet + Duolingo Design System Tokens (`theme.ts`).
+- **Audio & Haptics:** Expo Speech, Expo Haptics, Expo Notifications.
 
 ---
 
@@ -72,7 +75,7 @@ Anki/
 │   ├── study/                # FlashcardView, QuizCardView, SessionDoneScreen
 │   └── ui/                   # DuolingoButton, DuolingoCard, DuolingoHeader, FloatingAddButton, SectionTitle, ProgressBar
 ├── constants/                # Design Tokens: Colors, Typography, Spacing, Radii (theme.ts)
-├── lib/                      # Services (Firebase, Gemini AI, SRS Algorithm, Quiz Generator, Notifications)
+├── lib/                      # Services (Firebase, AI, SRS Algorithm, Quiz Generator, Notifications)
 ├── store/                    # Zustand Global Store & Slices (`userProgressSlice.ts`)
 ├── package.json              # Dependencies & Terminal Scripts
 └── tsconfig.json             # TypeScript Configuration
@@ -83,12 +86,14 @@ Anki/
 ## 💻 Hướng Dẫn Khởi Chạy & Deploy Web PWA
 
 ### 1. Cài đặt & Chạy Server Development
+
 ```bash
 npm install
 npm run start
 ```
 
 ### 2. Đóng gói Web & Deploy PWA (Chạy vĩnh viễn trên iPhone)
+
 ```bash
 # Export bản web static
 npx expo export -p web
@@ -96,5 +101,5 @@ npx expo export -p web
 # Deploy lên Vercel miễn phí trong 30s
 npx vercel --prod
 ```
-Sau đó mở link web trên Safari iPhone ➔ Chọn **Chia sẻ (Share)** ➔ **Thêm vào Màn hình chính (Add to Home Screen)**.
 
+Sau đó mở link web trên Safari iPhone ➔ Chọn **Chia sẻ (Share)** ➔ **Thêm vào Màn hình chính (Add to Home Screen)**.

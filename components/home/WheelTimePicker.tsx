@@ -128,7 +128,6 @@ export const WheelTimePicker = React.memo(function WheelTimePicker({
       </View>
 
       <View style={styles.statusRow}>
-        <Ionicons name="notifications-outline" size={15} color={Colors.accent.indigoLight} />
         <Text style={styles.statusText}>Nhắc học hàng ngày lúc {formattedTime}</Text>
       </View>
     </View>

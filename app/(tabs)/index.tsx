@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   updatePassword,
@@ -74,8 +74,13 @@ export default function DashboardScreen() {
       setReminderHour(res.hour);
       setReminderMinute(res.minute);
     });
-    getStreakCount().then(setStreakCount);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      getStreakCount().then(setStreakCount);
+    }, [])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

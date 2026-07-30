@@ -43,7 +43,7 @@ export function DuolingoHeader({
           activeOpacity={0.8}
           onPress={onStreakPress}
         >
-          <Ionicons name="flame" size={16} color={Colors.duolingo.yellow} />
+          <Ionicons name="flame" size={18} color={Colors.duolingo.yellow} />
           <Text style={[styles.statValue, { color: Colors.duolingo.yellow }]}>{streakCount}</Text>
         </TouchableOpacity>
 

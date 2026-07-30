@@ -128,19 +128,6 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
           {/* Badge indicator */}
           <View style={styles.badgeRow}>
             <View style={styles.typeBadge}>
-              <Ionicons
-                name={
-                  question.type === "meaning_choice"
-                    ? "book"
-                    : question.type === "listening"
-                    ? "volume-high"
-                    : question.type === "cloze"
-                    ? "create"
-                    : "sparkles"
-                }
-                size={13}
-                color={Colors.duolingo.blue}
-              />
               <Text style={styles.typeBadgeText}>
                 {question.type === "meaning_choice"
                   ? "BÀI TẬP CHỌN NGHĨA"
@@ -164,11 +151,6 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
                 onPress={() => playTTS(question.card.character)}
                 activeOpacity={0.8}
               >
-                <Ionicons
-                  name={speaking ? "volume-high" : "volume-medium"}
-                  size={20}
-                  color={Colors.duolingo.blue}
-                />
                 <Text style={styles.speakBtnText}>Nghe phát âm</Text>
               </TouchableOpacity>
             </View>
@@ -196,7 +178,7 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
               <Text style={styles.clozeSentenceText}>{question.clozeSentence}</Text>
               {question.clozeTranslation ? (
                 <Text style={styles.clozeTranslationText}>
-                  💡 "{question.clozeTranslation}"
+                  "{question.clozeTranslation}"
                 </Text>
               ) : null}
             </View>
@@ -293,7 +275,11 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
         >
           <View style={styles.resultHeader}>
             <View style={styles.resultTitleRow}>
-              <Text style={{ fontSize: 26 }}>{isCorrect ? "🎉" : "✗"}</Text>
+              <Ionicons
+                name={isCorrect ? "checkmark-circle" : "close-circle"}
+                size={26}
+                color={isCorrect ? Colors.duolingo.green : Colors.duolingo.red}
+              />
               <Text
                 style={[
                   styles.resultTitleText,
@@ -304,20 +290,29 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
               </Text>
             </View>
 
-            {!isCorrect && (
+            {isCorrect ? (
+              <View style={styles.answerExplainBox}>
+                <Text style={styles.explainLabel}>TỪ VỰNG & NGHĨA CHUẨN:</Text>
+                <Text style={styles.explainValue}>
+                  {question.card.character}
+                  {question.card.pinyin ? ` (${question.card.pinyin})` : ""}
+                </Text>
+                {question.card.translation ? (
+                  <Text style={styles.correctSubText}>
+                    Nghĩa: {question.card.translation}
+                  </Text>
+                ) : null}
+              </View>
+            ) : (
               <View style={styles.answerExplainBox}>
                 <Text style={styles.explainLabel}>ĐÁP ÁN ĐÚNG LÀ:</Text>
                 <Text style={styles.explainValue}>{question.correctAnswer}</Text>
               </View>
             )}
-
-            {isCorrect && (
-              <Text style={styles.correctSubText}>Chính xác! Tiếp tục phát huy.</Text>
-            )}
           </View>
 
           <DuolingoButton
-            title={isCorrect ? "TIẾP TỤC ➜" : "ĐÃ HIỂU ➜"}
+            title={isCorrect ? "TIẾP TỤC" : "ĐÃ HIỂU"}
             variant={isCorrect ? "primary" : "error"}
             size="lg"
             onPress={handleContinue}

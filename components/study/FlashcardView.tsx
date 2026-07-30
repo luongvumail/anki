@@ -180,7 +180,6 @@ export function FlashcardView({ card, onGrade }: FlashcardViewProps) {
             {activeSwipe === "again" && (
               <View style={[styles.swipeBadge, styles.swipeBadgeAgain]}>
                 <View style={styles.badgeIconRow}>
-                  <Ionicons name="arrow-back" size={14} color="#FFFFFF" />
                   <Text style={styles.swipeBadgeText}>QUÊN</Text>
                 </View>
               </View>
@@ -188,7 +187,6 @@ export function FlashcardView({ card, onGrade }: FlashcardViewProps) {
             {activeSwipe === "hard" && (
               <View style={[styles.swipeBadge, styles.swipeBadgeHard]}>
                 <View style={styles.badgeIconRow}>
-                  <Ionicons name="arrow-up" size={14} color="#FFFFFF" />
                   <Text style={styles.swipeBadgeText}>KHÓ</Text>
                 </View>
               </View>
@@ -197,7 +195,6 @@ export function FlashcardView({ card, onGrade }: FlashcardViewProps) {
               <View style={[styles.swipeBadge, styles.swipeBadgeEasy]}>
                 <View style={styles.badgeIconRow}>
                   <Text style={styles.swipeBadgeText}>DỄ</Text>
-                  <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
                 </View>
               </View>
             )}
@@ -205,7 +202,6 @@ export function FlashcardView({ card, onGrade }: FlashcardViewProps) {
             {/* CARD TOP HEADER: HSK BADGE */}
             <View style={styles.cardTopHeader}>
               <View style={styles.hskBadge}>
-                <Ionicons name="sparkles" size={14} color={Colors.duolingo.blue} />
                 <Text style={styles.hskBadgeText}>HÁN TỰ</Text>
               </View>
             </View>
@@ -219,7 +215,6 @@ export function FlashcardView({ card, onGrade }: FlashcardViewProps) {
 
                 {/* BORDERLESS TAP HINT AT BOTTOM OF UNREVEALED CARD */}
                 <View style={styles.tapHintBox}>
-                  <Ionicons name="sparkles" size={16} color={Colors.duolingo.blue} />
                   <Text style={styles.tapHintText}>CHẠM VÀO THẺ ĐỂ MỞ ĐÁP ÁN</Text>
                 </View>
               </View>
@@ -297,19 +292,16 @@ export function FlashcardView({ card, onGrade }: FlashcardViewProps) {
             <View style={styles.swipeGuideFooter}>
               <View style={[styles.swipeGuidePill, styles.swipeGuideAgain]}>
                 <View style={styles.guidePillRow}>
-                  <Ionicons name="arrow-back" size={12} color={Colors.duolingo.red} />
                   <Text style={styles.swipeGuideText}>Trái: Quên</Text>
                 </View>
               </View>
               <View style={[styles.swipeGuidePill, styles.swipeGuideHard]}>
                 <View style={styles.guidePillRow}>
-                  <Ionicons name="arrow-up" size={12} color={Colors.duolingo.yellow} />
                   <Text style={styles.swipeGuideText}>Lên: Khó</Text>
                 </View>
               </View>
               <View style={[styles.swipeGuidePill, styles.swipeGuideEasy]}>
                 <View style={styles.guidePillRow}>
-                  <Ionicons name="arrow-forward" size={12} color={Colors.duolingo.green} />
                   <Text style={styles.swipeGuideText}>Phải: Dễ</Text>
                 </View>
               </View>

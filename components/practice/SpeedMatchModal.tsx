@@ -36,6 +36,7 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const addXP = useStore((s) => s.addXP);
+  const unlockBadge = useStore((s) => s.unlockBadge);
 
   const [timeLeft, setTimeLeft] = useState(60);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -108,13 +109,19 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
       setIsGameOver(true);
       const earnedXP = matchedPairs * 2 + 15;
       addXP(earnedXP);
+      if (matchedPairs >= 25) {
+        unlockBadge("speed_25");
+        unlockBadge("speed_15");
+      } else if (matchedPairs >= 15) {
+        unlockBadge("speed_15");
+      }
       triggerHaptic("success");
     }
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isPlaying, timeLeft, matchedPairs, addXP]);
+  }, [isPlaying, timeLeft, matchedPairs, addXP, unlockBadge]);
 
   const handleTilePress = (tile: MatchTile) => {
     if (!isPlaying || tile.matched || tile.id === selectedTileId) return;
@@ -179,14 +186,13 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
           </View>
 
           <View style={styles.scoreBox}>
-            <Ionicons name="trophy" size={16} color={Colors.duolingo.yellow} />
             <Text style={styles.scoreText}>{score}</Text>
           </View>
         </View>
 
         {/* Game Title */}
         <View style={styles.titleSection}>
-          <Text style={styles.titleText}>🧩 GAME GHÉP TỪ NHANH</Text>
+          <Text style={styles.titleText}>GAME GHÉP TỪ NHANH</Text>
           <Text style={styles.subTitleText}>Ghép cặp Chữ Hán và Nghĩa tương ứng trước khi hết giờ!</Text>
         </View>
 
@@ -232,18 +238,16 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
         ) : (
           /* Game Over Drawer */
           <View style={styles.gameOverCard}>
-            <Text style={{ fontSize: 48, marginBottom: 8 }}>🎉</Text>
             <Text style={styles.gameOverTitle}>HẾT GIỜ!</Text>
             <Text style={styles.gameOverSub}>
               Bạn đã ghép thành công <Text style={{ color: Colors.duolingo.yellow, fontWeight: "800" }}>{matchedPairs} cặp từ</Text>!
             </Text>
 
             <View style={styles.xpRewardBox}>
-              <Ionicons name="sparkles" size={24} color={Colors.duolingo.yellow} />
               <Text style={styles.xpRewardText}>+{matchedPairs * 2 + 15} XP Thưởng</Text>
             </View>
 
-            <DuolingoButton title="CHƠI LẠI ↺" variant="primary" size="lg" onPress={startGame} style={{ marginTop: Spacing.md }} />
+            <DuolingoButton title="CHƠI LẠI" variant="primary" size="lg" onPress={startGame} style={{ marginTop: Spacing.md }} />
             <DuolingoButton title="THOÁT" variant="secondary" size="md" onPress={onClose} style={{ marginTop: Spacing.xs }} />
           </View>
         )}

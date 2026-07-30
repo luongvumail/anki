@@ -105,7 +105,6 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
                       ]}
                     >
                       <View style={styles.badgeTextRow}>
-                        <Ionicons name="flame" size={12} color="#FFFFFF" />
                         <Text style={styles.startBadgeText}>{dueCount} CẦN ÔN</Text>
                       </View>
                       <View style={[styles.badgeArrow, styles.badgeArrowDue]} />
@@ -113,7 +112,6 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
                   ) : isCompleted ? (
                     <View style={[styles.startBadge, styles.startBadgeDone]}>
                       <View style={styles.badgeTextRow}>
-                        <Ionicons name="checkmark-circle" size={12} color="#FFFFFF" />
                         <Text style={styles.startBadgeText}>HOÀN THÀNH</Text>
                       </View>
                       <View style={[styles.badgeArrow, styles.badgeArrowDone]} />
@@ -121,7 +119,6 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
                   ) : (
                     <View style={[styles.startBadge, styles.startBadgeNew]}>
                       <View style={styles.badgeTextRow}>
-                        <Ionicons name="play" size={11} color="#FFFFFF" />
                         <Text style={styles.startBadgeText}>BẮT ĐẦU</Text>
                       </View>
                       <View style={[styles.badgeArrow, styles.badgeArrowNew]} />

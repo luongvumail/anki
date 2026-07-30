@@ -34,16 +34,12 @@ export function ActiveDeckHeroCard({
           onPress={onChangeDeck}
           activeOpacity={0.8}
         >
-          <View style={styles.iconTile}>
-            <DeckIcon name={deck.icon} size={22} color={Colors.duolingo.blue} />
-          </View>
           <View style={styles.titleTextGroup}>
             <Text style={styles.deckLabel}>BỘ THẺ ĐANG HỌC</Text>
             <View style={styles.nameRow}>
               <Text style={styles.deckNameText} numberOfLines={1}>
                 {deck.name}
               </Text>
-              <Ionicons name="chevron-down" size={16} color={Colors.duolingo.blue} />
             </View>
           </View>
         </TouchableOpacity>
@@ -53,7 +49,7 @@ export function ActiveDeckHeroCard({
           onPress={onChangeDeck}
           activeOpacity={0.8}
         >
-          <Text style={styles.switchBadgeText}>Đổi bộ ▾</Text>
+          <Text style={styles.switchBadgeText}>Đổi bộ</Text>
         </TouchableOpacity>
       </View>
 
@@ -61,7 +57,6 @@ export function ActiveDeckHeroCard({
       <View style={styles.statsGrid}>
         {/* DUE COUNT (RED) */}
         <View style={[styles.statBox, styles.statBoxDue]}>
-          <Text style={styles.statEmoji}>🔥</Text>
           <View>
             <Text style={[styles.statValueText, { color: Colors.duolingo.red }]}>
               {dueCount}
@@ -72,7 +67,6 @@ export function ActiveDeckHeroCard({
 
         {/* LEARNED COUNT (GREEN) */}
         <View style={[styles.statBox, styles.statBoxLearned]}>
-          <Text style={styles.statEmoji}>✅</Text>
           <View>
             <Text style={[styles.statValueText, { color: Colors.duolingo.green }]}>
               {learnedCount}
@@ -83,7 +77,6 @@ export function ActiveDeckHeroCard({
 
         {/* NEW COUNT (BLUE) */}
         <View style={[styles.statBox, styles.statBoxNew]}>
-          <Text style={styles.statEmoji}>🆕</Text>
           <View>
             <Text style={[styles.statValueText, { color: "#FFFFFF" }]}>
               {newCount}
@@ -97,10 +90,10 @@ export function ActiveDeckHeroCard({
       <DuolingoButton
         title={
           dueCount > 0
-            ? `🚀 ÔN TẬP NGAY (${dueCount} TỪ CẦN ÔN)`
+            ? `ÔN TẬP NGAY (${dueCount} TỪ CẦN ÔN)`
             : totalCards > 0
-            ? "🚀 BẮT ĐẦU HỌC BÀI KẾ TIẾP"
-            : "➕ THÊM TỪ VỰNG VÀO BỘ"
+            ? "BẮT ĐẦU HỌC BÀI KẾ TIẾP"
+            : "THÊM TỪ VỰNG VÀO BỘ"
         }
         variant="primary"
         size="lg"

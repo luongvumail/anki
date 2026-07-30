@@ -135,6 +135,7 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
   const handleContinue = () => {
     const nextIdx = currentIndex + 1;
     if (nextIdx >= exercises.length) {
+      setIsChecked(false);
       setIsDone(true);
     } else {
       setCurrentIndex(nextIdx);
@@ -164,7 +165,7 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
             <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>🔤 XẾP TỪ THÀNH CÂU ({currentIndex + 1}/{exercises.length})</Text>
+          <Text style={styles.headerTitle}>XẾP TỪ THÀNH CÂU ({currentIndex + 1}/{exercises.length})</Text>
         </View>
 
         {!isDone ? (
@@ -214,7 +215,6 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
         ) : (
           /* Completion Screen */
           <View style={styles.doneContainer}>
-            <Text style={{ fontSize: 48, marginBottom: 8 }}>🎉</Text>
             <Text style={styles.doneTitle}>HOÀN THÀNH BÀI TẬP!</Text>
             <Text style={styles.doneSub}>Bạn đã luyện tập thành công {exercises.length} câu ví dụ!</Text>
             <DuolingoButton title="HOÀN TẤT" variant="primary" size="lg" onPress={onClose} style={{ marginTop: Spacing.lg }} />
@@ -235,22 +235,32 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
         )}
 
         {/* Feedback Sheet */}
-        {isChecked && (
+        {isChecked && !isDone && (
           <Animated.View style={[styles.resultDrawer, isCorrect ? styles.drawerCorrect : styles.drawerWrong, { transform: [{ translateY: drawerAnim }] }]}>
             <View style={styles.resultTitleRow}>
-              <Text style={{ fontSize: 24 }}>{isCorrect ? "🎉" : "✗"}</Text>
+              <Ionicons
+                name={isCorrect ? "checkmark-circle" : "close-circle"}
+                size={26}
+                color={isCorrect ? Colors.duolingo.green : Colors.duolingo.red}
+              />
               <Text style={[styles.resultTitle, { color: isCorrect ? Colors.duolingo.green : Colors.duolingo.red }]}>
-                {isCorrect ? "Chính xác! (+15 XP)" : "Chưa đúng"}
+                {isCorrect ? "Chính xác! (+15 XP)" : "Chưa chính xác"}
               </Text>
             </View>
-            {!isCorrect && (
+            {isCorrect ? (
+              <View style={{ marginTop: 6 }}>
+                <Text style={styles.explainLabel}>CÂU CHUẨN & NGHĨA:</Text>
+                <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
+                {currentEx.pinyin ? <Text style={styles.explainPinyin}>Pinyin: {currentEx.pinyin}</Text> : null}
+                {currentEx.vietnamese ? <Text style={styles.explainPinyin}>Nghĩa: {currentEx.vietnamese}</Text> : null}
+              </View>
+            ) : (
               <View style={{ marginTop: 6 }}>
                 <Text style={styles.explainLabel}>CÂU ĐÚNG CHUẨN LÀ:</Text>
                 <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
-                {currentEx.pinyin ? <Text style={styles.explainPinyin}>Pinyin: {currentEx.pinyin}</Text> : null}
               </View>
             )}
-            <DuolingoButton title={isCorrect ? "TIẾP TỤC ➜" : "ĐÃ HIỂU ➜"} variant={isCorrect ? "primary" : "error"} size="lg" onPress={handleContinue} style={{ marginTop: Spacing.sm }} />
+            <DuolingoButton title={isCorrect ? "TIẾP TỤC" : "ĐÃ HIỂU"} variant={isCorrect ? "primary" : "error"} size="lg" onPress={handleContinue} style={{ marginTop: Spacing.sm }} />
           </Animated.View>
         )}
       </View>

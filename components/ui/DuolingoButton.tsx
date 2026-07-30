@@ -148,7 +148,6 @@ export function DuolingoButton({
         style,
       ]}
     >
-      {icon}
       <Text
         style={[
           styles.buttonText,

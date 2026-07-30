@@ -123,9 +123,6 @@ export function AccountModal({
         >
           {/* Profile Hero Avatar Card - Sleek & Compact */}
           <DuolingoCard style={styles.profileHeroCard}>
-            <View style={styles.avatarCircle}>
-              <Ionicons name="person" size={32} color={Colors.duolingo.blue} />
-            </View>
             <Text style={styles.displayNameText}>{displayName}</Text>
             <Text style={styles.emailText}>{email || "Chưa cập nhật email"}</Text>
           </DuolingoCard>
@@ -180,7 +177,7 @@ export function AccountModal({
               />
 
               <DuolingoButton
-                title={loadingPass ? "ĐANG ĐỔI MẬT KHẨU..." : "CẬP NHẬT MẬT KHẨU ➜"}
+                title={loadingPass ? "ĐANG ĐỔI MẬT KHẨU..." : "CẬP NHẬT MẬT KHẨU"}
                 variant="primary"
                 size="lg"
                 disabled={!newPassword || loadingPass}

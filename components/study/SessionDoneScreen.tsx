@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Spacing, triggerHaptic } from "../../constants/theme";
 import { StudySession } from "../../store/slices/types";
+import { useStore } from "../../store/useStore";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { DuolingoMascot } from "../ui/DuolingoMascot";
@@ -15,10 +16,14 @@ interface SessionDoneScreenProps {
 
 export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
   const insets = useSafeAreaInsets();
+  const addXP = useStore((s) => s.addXP);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     triggerHaptic("success");
+    const earnedXP = Math.max(15, (session.reviewedCount || 0) * 10);
+    addXP(earnedXP);
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
@@ -50,13 +55,11 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
         {/* Celebratory Stats Grid Cards */}
         <View style={styles.statsGrid}>
           <DuolingoCard style={styles.statBox}>
-            <Ionicons name="checkmark-circle" size={22} color={Colors.duolingo.green} />
             <Text style={[styles.statVal, { color: Colors.duolingo.green }]}>{accuracy}%</Text>
             <Text style={styles.statLabel}>ĐỘ CHÍNH XÁC</Text>
           </DuolingoCard>
 
           <DuolingoCard style={styles.statBox}>
-            <Ionicons name="book" size={22} color={Colors.duolingo.blue} />
             <Text style={[styles.statVal, { color: Colors.duolingo.blue }]}>{session.reviewedCount}</Text>
             <Text style={styles.statLabel}>TỪ ĐÃ ÔN</Text>
           </DuolingoCard>

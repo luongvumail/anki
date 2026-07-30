@@ -280,7 +280,8 @@ export default function AuthScreen() {
 
         {/* 3D Primary Button */}
         <DuolingoButton
-          title={loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP ➜" : "TẠO TÀI KHOẢN ➜"}
+          title={loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
+          icon={loading ? undefined : <Ionicons name={mode === "login" ? "log-in" : "person-add"} size={20} color="#FFFFFF" />}
           variant="primary"
           size="lg"
           disabled={loading}

@@ -106,7 +106,7 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
   {
     id: "ai_50",
     title: "Khai Thác AI",
-    description: "Nạp 50 từ vựng bằng Gemini AI",
+    description: "Nạp 50 từ vựng bằng AI",
     icon: "sparkles",
     category: "ai",
     target: 50,
@@ -137,7 +137,35 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
     await AsyncStorage.setItem(ASYNC_KEY_XP, newXP.toString());
   },
 
-  checkAndUnlockBadges: async () => {
-    // Can be invoked after actions to check unlocked criteria
+  unlockBadge: async (badgeId: string) => {
+    const current = get().unlockedBadgeIds || [];
+    if (!current.includes(badgeId)) {
+      const updated = [...current, badgeId];
+      set({ unlockedBadgeIds: updated });
+      await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(updated));
+    }
+  },
+
+  checkAndUnlockBadges: async (streak = 0, learnedCards = 0) => {
+    const current = get().unlockedBadgeIds || [];
+    const newUnlocked = [...current];
+    let changed = false;
+
+    ALL_BADGES.forEach((badge) => {
+      if (!newUnlocked.includes(badge.id)) {
+        if (badge.category === "streak" && streak >= badge.target) {
+          newUnlocked.push(badge.id);
+          changed = true;
+        } else if (badge.category === "vocab" && learnedCards >= badge.target) {
+          newUnlocked.push(badge.id);
+          changed = true;
+        }
+      }
+    });
+
+    if (changed) {
+      set({ unlockedBadgeIds: newUnlocked });
+      await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(newUnlocked));
+    }
   },
 });

@@ -56,6 +56,7 @@ export interface UserProgressState {
   xp: number;
   unlockedBadgeIds: string[];
   addXP: (amount: number) => void;
-  checkAndUnlockBadges: () => void;
+  unlockBadge: (badgeId: string) => Promise<void>;
+  checkAndUnlockBadges: (streak?: number, learnedCards?: number) => Promise<void>;
   fetchUserProgress: () => Promise<void>;
 }

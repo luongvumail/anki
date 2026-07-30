@@ -220,9 +220,6 @@ export default function DeckDetailScreen() {
             {/* Deck Summary Hero Card */}
             <DuolingoCard style={styles.summaryCard}>
               <View style={styles.summaryTopRow}>
-                <View style={styles.iconBox}>
-                  <DeckIcon name={deck.icon} size={28} color={Colors.duolingo.blue} />
-                </View>
                 <View style={styles.summaryTextMain}>
                   <Text style={styles.summaryTitle}>{deck.name}</Text>
                   <Text style={styles.summarySub}>{deckCards.length} thẻ từ vựng</Text>
@@ -242,7 +239,7 @@ export default function DeckDetailScreen() {
 
               {/* Action Buttons */}
               <DuolingoButton
-                title="BẮT ĐẦU ÔN BỘ NÀY ➜"
+                title="BẮT ĐẦU ÔN BỘ NÀY"
                 variant="primary"
                 size="lg"
                 disabled={deckCards.length === 0}
@@ -263,7 +260,6 @@ export default function DeckDetailScreen() {
             {weakCards.length > 0 && (
               <DuolingoCard style={styles.weakWarningCard}>
                 <View style={styles.weakWarningHeader}>
-                  <Ionicons name="warning" size={18} color={Colors.duolingo.yellow} />
                   <Text style={styles.weakWarningTitle}>
                     CẦN CHÚ Ý: {weakCards.length} TỪ DỄ QUÊN!
                   </Text>
@@ -281,7 +277,6 @@ export default function DeckDetailScreen() {
             {/* Smart Search Bar */}
             {deckCards.length > 0 && (
               <View style={styles.searchBarBox}>
-                <Ionicons name="search" size={18} color={Colors.duolingo.textMuted} />
                 <TextInput
                   style={styles.searchInput}
                   placeholder="Tìm theo Hán tự, Pinyin hoặc nghĩa..."
@@ -315,7 +310,7 @@ export default function DeckDetailScreen() {
                 Không có từ nào khớp với từ khóa "{searchQuery}".
               </Text>
               <TouchableOpacity style={styles.resetSearchBtn} onPress={() => setSearchQuery("")}>
-                <Text style={styles.resetSearchText}>✖️ Xóa từ khóa tìm kiếm</Text>
+                <Text style={styles.resetSearchText}>Xóa từ khóa tìm kiếm</Text>
               </TouchableOpacity>
             </DuolingoCard>
           ) : (

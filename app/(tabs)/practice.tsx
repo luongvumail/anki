@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore, Card } from "../../store/useStore";
 import { getLevelInfo } from "../../store/slices/userProgressSlice";
@@ -36,14 +37,18 @@ export default function PracticeScreen() {
   const [showSentenceBuilder, setShowSentenceBuilder] = useState(false);
   const [showPronunciationTrainer, setShowPronunciationTrainer] = useState(false);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProgress();
+      getStreakCount().then(setStreakCount);
+    }, [fetchUserProgress])
+  );
+
   useEffect(() => {
-    fetchUserProgress();
-    getStreakCount().then(setStreakCount);
     if (decks.length === 0) {
       fetchDecks();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUserProgress, fetchDecks, decks.length]);
+  }, [fetchDecks, decks.length]);
 
   useEffect(() => {
     if (decks.length > 0) {
@@ -114,13 +119,16 @@ export default function PracticeScreen() {
         {/* User Level & XP Banner */}
         <DuolingoCard style={styles.levelCard}>
           <View style={styles.levelHeaderRow}>
-            <View style={styles.levelBadgeBox}>
-              <Text style={styles.levelBadgeTitle}>{levelInfo.title}</Text>
-              <Text style={styles.levelBadgeSub}>{levelInfo.titleVi}</Text>
+            <View style={[styles.levelBadgeBox, { flexDirection: "row", alignItems: "center", gap: 8 }]}>
+              <Ionicons name="ribbon" size={22} color={Colors.duolingo.purple} />
+              <View>
+                <Text style={styles.levelBadgeTitle}>{levelInfo.title}</Text>
+                <Text style={styles.levelBadgeSub}>{levelInfo.titleVi}</Text>
+              </View>
             </View>
 
             <View style={styles.xpBox}>
-              <Ionicons name="sparkles" size={18} color={Colors.duolingo.yellow} />
+              <Ionicons name="flash" size={16} color={Colors.duolingo.yellow} />
               <Text style={styles.xpValText}>{xp} XP</Text>
             </View>
           </View>
@@ -139,17 +147,18 @@ export default function PracticeScreen() {
         <DuolingoCard style={styles.modeCard}>
           <View style={styles.modeRow}>
             <View style={[styles.modeIconTile, { backgroundColor: "rgba(255, 200, 0, 0.15)" }]}>
-              <Ionicons name="extension-puzzle" size={28} color={Colors.duolingo.yellow} />
+              <Ionicons name="stopwatch" size={28} color={Colors.duolingo.yellow} />
             </View>
             <View style={styles.modeTextCol}>
-              <Text style={styles.modeTitle}>🧩 GAME GHÉP TỪ NHANH 60S</Text>
+              <Text style={styles.modeTitle}>GAME GHÉP TỪ NHANH 60S</Text>
               <Text style={styles.modeDesc}>
                 Ghép ngẫu nhiên Chữ Hán & Nghĩa tương ứng trong 60 giây. Luyện phản xạ siêu tốc!
               </Text>
             </View>
           </View>
           <DuolingoButton
-            title="CHƠI NGAY ➜"
+            title="CHƠI NGAY"
+            icon={<Ionicons name="play" size={18} color="#FFFFFF" />}
             variant="yellow"
             size="lg"
             onPress={handleOpenSpeedMatch}
@@ -160,18 +169,19 @@ export default function PracticeScreen() {
         {/* Mode 2: Sentence Builder */}
         <DuolingoCard style={styles.modeCard}>
           <View style={styles.modeRow}>
-            <View style={[styles.modeIconTile, { backgroundColor: "rgba(28, 176, 246, 0.15)" }]}>
-              <Ionicons name="create" size={28} color={Colors.duolingo.blue} />
+            <View style={[styles.modeIconTile, { backgroundColor: "rgba(88, 204, 2, 0.15)" }]}>
+              <Ionicons name="build" size={28} color={Colors.duolingo.green} />
             </View>
             <View style={styles.modeTextCol}>
-              <Text style={styles.modeTitle}>🔤 XẾP TỪ THÀNH CÂU</Text>
+              <Text style={styles.modeTitle}>XẾP TỪ THÀNH CÂU</Text>
               <Text style={styles.modeDesc}>
                 Sắp xếp các từ bị xáo trộn thành câu Tiếng Trung hoàn chỉnh theo câu ví dụ AI.
               </Text>
             </View>
           </View>
           <DuolingoButton
-            title="BẮT ĐẦU ➜"
+            title="BẮT ĐẦU"
+            icon={<Ionicons name="play" size={18} color="#FFFFFF" />}
             variant="primary"
             size="lg"
             onPress={handleOpenSentenceBuilder}
@@ -186,14 +196,15 @@ export default function PracticeScreen() {
               <Ionicons name="mic" size={28} color={Colors.duolingo.purple} />
             </View>
             <View style={styles.modeTextCol}>
-              <Text style={styles.modeTitle}>🗣️ PHÒNG LUYỆN PHÁT ÂM AI</Text>
+              <Text style={styles.modeTitle}>PHÒNG LUYỆN PHÁT ÂM AI</Text>
               <Text style={styles.modeDesc}>
                 Thu âm giọng đọc Tiếng Trung, AI phân tích nhận diện Pinyin & 4 thanh điệu chuẩn xác.
               </Text>
             </View>
           </View>
           <DuolingoButton
-            title="THU ÂM NGAY ➜"
+            title="THU ÂM NGAY"
+            icon={<Ionicons name="mic-circle" size={20} color="#FFFFFF" />}
             variant="purple"
             size="lg"
             onPress={handleOpenPronunciationTrainer}

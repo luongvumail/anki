@@ -140,10 +140,10 @@ export default function CardDetailScreen() {
             >
               <Text style={styles.statusBadgeText}>
                 {isDue(card.srs)
-                  ? "⚡ CẦN ÔN TẬP"
+                  ? "CẦN ÔN TẬP"
                   : card.srs?.repetitions > 0
-                    ? "✓ ĐÃ THUỘC"
-                    : "✨ TỪ MỚI"}
+                    ? "ĐÃ THUỘC"
+                    : "TỪ MỚI"}
               </Text>
             </View>
           </View>

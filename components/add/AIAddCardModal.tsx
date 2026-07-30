@@ -78,7 +78,10 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
   useEffect(() => {
     if (initialDeckId && decks.some((d) => d.id === initialDeckId)) {
       setSelectedDeckId(initialDeckId);
-    } else if (decks.length > 0 && (!selectedDeckId || !decks.some((d) => d.id === selectedDeckId))) {
+    } else if (
+      decks.length > 0 &&
+      (!selectedDeckId || !decks.some((d) => d.id === selectedDeckId))
+    ) {
       setSelectedDeckId(decks[0].id);
     }
   }, [decks, initialDeckId, selectedDeckId]);
@@ -144,7 +147,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     if (newWords.length === 0) {
       Alert.alert(
         "Tất cả từ đã tồn tại",
-        `Tất cả ${parsed.length} từ bạn nhập đều đã có sẵn trong bộ thẻ này!`
+        `Tất cả ${parsed.length} từ bạn nhập đều đã có sẵn trong bộ thẻ này!`,
       );
       return;
     }
@@ -202,7 +205,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
       if (totalSkipped > 0) {
         Alert.alert(
           "Lọc từ trùng lặp",
-          `Đã tự động loại bỏ ${totalSkipped} từ bị trùng với các thẻ đã có trong bộ.`
+          `Đã tự động loại bỏ ${totalSkipped} từ bị trùng với các thẻ đã có trong bộ.`,
         );
       }
     } catch (e: any) {
@@ -211,7 +214,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
           ...item,
           status: "error",
           errorMsg: getGeminiErrorMessage(e),
-        }))
+        })),
       );
     } finally {
       setAnalyzingBatch(false);
@@ -220,7 +223,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
 
   const handleSaveAll = async () => {
     const validItemsToSave = wordItems.filter(
-      (item) => item.status === "done" && item.data && !item.saved
+      (item) => item.status === "done" && item.data && !item.saved,
     );
 
     if (validItemsToSave.length === 0) return;
@@ -250,9 +253,23 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
         savedCount++;
       }
 
+      if (savedCount > 0) {
+        try {
+          const aiCountStr = await AsyncStorage.getItem("@anki_ai_added_count");
+          const currentAiCount = aiCountStr ? parseInt(aiCountStr, 10) : 0;
+          const newAiCount = currentAiCount + savedCount;
+          await AsyncStorage.setItem("@anki_ai_added_count", newAiCount.toString());
+          if (newAiCount >= 50) {
+            useStore.getState().unlockBadge("ai_50");
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       Alert.alert(
-        "🎉 Thêm thẻ thành công",
-        `Đã thêm ${savedCount} thẻ mới vào bộ "${currentDeck?.name || ""}".`
+        "Thêm thẻ thành công",
+        `Đã thêm ${savedCount} thẻ mới vào bộ "${currentDeck?.name || ""}".`,
       );
 
       // Clear input and generated list after successful add!
@@ -285,10 +302,9 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     }
   };
 
-
   const validItemsToSaveCount = useMemo(
     () => wordItems.filter((i) => i.status === "done" && i.data && !i.saved).length,
-    [wordItems]
+    [wordItems],
   );
 
   return (
@@ -302,13 +318,9 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
         {/* Header Modal */}
         <View style={styles.header}>
           <View style={styles.headerTitleRow}>
-            <Ionicons name="sparkles" size={22} color={Colors.duolingo.blue} />
             <Text style={styles.headerTitle}>NẠP TỪ VỰNG BẰNG AI</Text>
           </View>
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={onClose}
-          >
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
             <Ionicons name="close-circle" size={26} color={Colors.duolingo.textMuted} />
           </TouchableOpacity>
         </View>
@@ -384,7 +396,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
               )}
 
               <DuolingoButton
-                title={analyzingBatch ? "ĐANG PHÂN TÍCH AI..." : `✨ TẠO THẺ AI (${parsedCount}/${MAX_WORDS}) ➜`}
+                title={analyzingBatch ? "ĐANG PHÂN TÍCH AI..." : `TẠO THẺ AI (${parsedCount}/${MAX_WORDS})`}
                 variant="primary"
                 size="lg"
                 disabled={analyzingBatch || parsedCount === 0}
@@ -398,9 +410,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
               <DuolingoCard style={styles.singleLoadingCard}>
                 <ActivityIndicator size="small" color={Colors.duolingo.blue} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.singleLoadingTitle}>
-                    🤖 Gemini AI đang phân tích dữ liệu...
-                  </Text>
+                  <Text style={styles.singleLoadingTitle}>Gemini AI đang phân tích dữ liệu...</Text>
                   <Text style={styles.singleLoadingSub}>
                     Đang tự động tạo Pinyin, nghĩa Hán-Việt, bộ thủ & câu ví dụ cho các từ vựng.
                   </Text>
@@ -425,9 +435,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
                             <Ionicons name="trash-outline" size={18} color={Colors.duolingo.red} />
                           </TouchableOpacity>
                         </View>
-                        <Text style={styles.errorItemDesc}>
-                          {item.errorMsg || "Lỗi tạo từ."}
-                        </Text>
+                        <Text style={styles.errorItemDesc}>{item.errorMsg || "Lỗi tạo từ."}</Text>
                       </DuolingoCard>
                     ) : item.data ? (
                       <CardPreview
@@ -445,7 +453,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
                     title={
                       bulkSaving
                         ? "ĐANG LƯU TẤT CẢ..."
-                        : `THÊM TẤT CẢ ${validItemsToSaveCount} THẺ VÀO BỘ "${currentDeck?.name.toUpperCase() || ""}" ➜`
+                        : `THÊM TẤT CẢ ${validItemsToSaveCount} THẺ VÀO BỘ "${currentDeck?.name.toUpperCase() || ""}"`
                     }
                     variant="success"
                     size="lg"
@@ -532,7 +540,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.duolingo.border,
   },
-  chipText: { fontSize: Typography.text.caption2.fontSize, color: "#FFFFFF", fontWeight: Typography.weight.semibold },
+  chipText: {
+    fontSize: Typography.text.caption2.fontSize,
+    color: "#FFFFFF",
+    fontWeight: Typography.weight.semibold,
+  },
   resultsContainer: { marginTop: Spacing.xs },
   resultsHeaderRow: {
     flexDirection: "row",

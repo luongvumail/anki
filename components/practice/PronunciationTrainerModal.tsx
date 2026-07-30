@@ -33,6 +33,65 @@ export interface PronunciationTrainerModalProps {
   cards: Card[];
 }
 
+function AudioWaveform({ isRecording }: { isRecording: boolean }) {
+  const bar1 = useRef(new Animated.Value(6)).current;
+  const bar2 = useRef(new Animated.Value(6)).current;
+  const bar3 = useRef(new Animated.Value(6)).current;
+  const bar4 = useRef(new Animated.Value(6)).current;
+  const bar5 = useRef(new Animated.Value(6)).current;
+  const bar6 = useRef(new Animated.Value(6)).current;
+  const bar7 = useRef(new Animated.Value(6)).current;
+
+  useEffect(() => {
+    let anim: Animated.CompositeAnimation | null = null;
+    if (isRecording) {
+      const createBarAnim = (val: Animated.Value, minH: number, maxH: number, speed: number) => {
+        return Animated.loop(
+          Animated.sequence([
+            Animated.timing(val, { toValue: maxH, duration: speed, useNativeDriver: false }),
+            Animated.timing(val, { toValue: minH, duration: speed, useNativeDriver: false }),
+          ])
+        );
+      };
+
+      anim = Animated.parallel([
+        createBarAnim(bar1, 8, 28, 220),
+        createBarAnim(bar2, 12, 38, 180),
+        createBarAnim(bar3, 10, 32, 260),
+        createBarAnim(bar4, 14, 44, 150),
+        createBarAnim(bar5, 8, 26, 210),
+        createBarAnim(bar6, 12, 36, 190),
+        createBarAnim(bar7, 10, 30, 240),
+      ]);
+      anim.start();
+    } else {
+      [bar1, bar2, bar3, bar4, bar5, bar6, bar7].forEach((b) => b.setValue(6));
+    }
+    return () => {
+      if (anim) anim.stop();
+    };
+  }, [isRecording, bar1, bar2, bar3, bar4, bar5, bar6, bar7]);
+
+  if (!isRecording) return null;
+
+  return (
+    <View style={styles.waveContainer}>
+      {[bar1, bar2, bar3, bar4, bar5, bar6, bar7].map((barAnim, idx) => (
+        <Animated.View
+          key={idx}
+          style={[
+            styles.waveBar,
+            {
+              height: barAnim,
+              backgroundColor: idx % 2 === 0 ? Colors.duolingo.red : Colors.duolingo.yellow,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
 export function PronunciationTrainerModal({
   visible,
   onClose,
@@ -198,7 +257,8 @@ export function PronunciationTrainerModal({
             }
           }
 
-          const overlapRatio = normalizedTarget.length > 0 ? matchedCharsCount / normalizedTarget.length : 0;
+          const overlapRatio =
+            normalizedTarget.length > 0 ? matchedCharsCount / normalizedTarget.length : 0;
 
           if (overlapRatio > 0 || (targetPinyin && spokenLower.includes(targetPinyin))) {
             // Case 3: Partial Match
@@ -349,7 +409,7 @@ export function PronunciationTrainerModal({
 
       setUserAudioUri(uri);
 
-      // Transcribe with Gemini AI
+      // Transcribe with AI
       const transcript = await transcribeWithGemini(uri);
       evaluateSpeech(transcript);
     } catch (err: any) {
@@ -422,7 +482,6 @@ export function PronunciationTrainerModal({
             {/* Exercise Title */}
             <View style={styles.badgeRow}>
               <View style={styles.typeBadge}>
-                <Ionicons name="mic" size={14} color={Colors.duolingo.purple} />
                 <Text style={styles.typeBadgeText}>PHÒNG LUYỆN PHÁT ÂM AI</Text>
               </View>
             </View>
@@ -439,11 +498,6 @@ export function PronunciationTrainerModal({
                 onPress={() => playTTS(currentCard.character)}
                 activeOpacity={0.8}
               >
-                <Ionicons
-                  name={speaking ? "volume-high" : "volume-medium"}
-                  size={22}
-                  color={Colors.duolingo.purple}
-                />
                 <Text style={styles.listenBtnText}>Nghe phát âm mẫu</Text>
               </TouchableOpacity>
             </View>
@@ -461,11 +515,14 @@ export function PronunciationTrainerModal({
                 </TouchableOpacity>
               </Animated.View>
 
+              {/* Dynamic Animated Voice Line / Audio Meter Waveform */}
+              <AudioWaveform isRecording={isRecording} />
+
               <Text style={styles.micHintText}>
                 {analyzing
-                  ? "🤖 AI đang chấm điểm phát âm..."
+                  ? "AI đang chấm điểm phát âm..."
                   : isRecording
-                    ? "🔴 ĐANG THU ÂM... BẤM LẠI NÚT ĐỂ AI CHẤM ĐIỂM"
+                    ? "ĐANG THU ÂM... BẤM LẠI NÚT ĐỂ AI CHẤM ĐIỂM"
                     : "Chạm nút Micro để bắt đầu đọc"}
               </Text>
 
@@ -482,8 +539,8 @@ export function PronunciationTrainerModal({
                   style={styles.userAudioBtn}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="play-circle" size={18} color={Colors.duolingo.purple} />
-                  <Text style={styles.userAudioBtnText}>Nghe lại giọng mình 🎧</Text>
+                  <Ionicons name="volume-high" size={18} color={Colors.duolingo.purple} />
+                  <Text style={styles.userAudioBtnText}>Nghe lại giọng mình</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -491,7 +548,6 @@ export function PronunciationTrainerModal({
         ) : (
           /* Completion Card */
           <View style={styles.doneContainer}>
-            <Text style={{ fontSize: 48, marginBottom: 8 }}>🎉</Text>
             <Text style={styles.doneTitle}>HOÀN THÀNH LUYỆN NÓI!</Text>
             <Text style={styles.doneSub}>Bạn đã phát âm xong {shuffledCards.length} từ vựng!</Text>
             <DuolingoButton
@@ -518,9 +574,22 @@ export function PronunciationTrainerModal({
             ]}
           >
             <View style={styles.scoreRow}>
-              <Text style={styles.scoreStarText}>⭐ {score}/100 ĐIỂM</Text>
+              <Text style={styles.scoreStarText}>{score}/100 ĐIỂM</Text>
               {score >= 60 && <Text style={styles.xpBonusBadge}>+{score >= 90 ? 20 : 10} XP</Text>}
             </View>
+
+            {score >= 60 && (
+              <View style={{ marginTop: 2, marginBottom: 4 }}>
+                <Text style={{ fontSize: 16, fontWeight: "800", color: "#FFFFFF" }}>
+                  Từ mẫu: {currentCard.character} ({currentCard.pinyin})
+                </Text>
+                {currentCard.translation ? (
+                  <Text style={{ fontSize: 13, color: Colors.duolingo.textMuted, fontWeight: "600", marginTop: 1 }}>
+                    Nghĩa: {currentCard.translation}
+                  </Text>
+                ) : null}
+              </View>
+            )}
 
             {recognizedText ? (
               <Text style={styles.recognizedText}>
@@ -539,21 +608,21 @@ export function PronunciationTrainerModal({
                 style={styles.drawerUserAudioBtn}
                 activeOpacity={0.8}
               >
-                <Ionicons name="volume-high" size={16} color="#FFFFFF" />
-                <Text style={styles.drawerUserAudioBtnText}>Nghe lại giọng bạn vừa đọc 🎧</Text>
+                <Ionicons name="volume-high" size={20} color="#FFFFFF" />
+                <Text style={styles.drawerUserAudioBtnText}>NGHE LẠI GIỌNG BẠN VỪA ĐỌC</Text>
               </TouchableOpacity>
             )}
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: Spacing.md }}>
               <DuolingoButton
-                title="ĐỌC LẠI ↺"
+                title="ĐỌC LẠI"
                 variant="secondary"
                 size="lg"
                 onPress={handleRetryWord}
                 style={{ flex: 1 }}
               />
               <DuolingoButton
-                title="TỪ TIẾP THEO ➜"
+                title="TỪ TIẾP THEO"
                 variant={score >= 60 ? "primary" : "purple"}
                 size="lg"
                 onPress={handleNext}
@@ -689,21 +758,37 @@ const styles = StyleSheet.create({
     color: Colors.duolingo.purple,
   },
 
+  waveContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    height: 48,
+    marginVertical: 8,
+  },
+  waveBar: {
+    width: 6,
+    borderRadius: Radii.full,
+  },
+
   drawerUserAudioBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: Radii.md,
-    marginTop: 8,
+    backgroundColor: Colors.duolingo.purple,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: Radii.lg,
+    marginTop: 12,
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.duolingo.purpleDark,
   },
   drawerUserAudioBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 13,
+    fontWeight: "800",
     color: "#FFFFFF",
+    letterSpacing: 0.5,
   },
 
   resultDrawer: {

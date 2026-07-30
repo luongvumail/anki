@@ -7,16 +7,31 @@ import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { SectionTitle } from "../ui/SectionTitle";
 
-export function BadgesGallery() {
+interface BadgesGalleryProps {
+  streakCount?: number;
+  learnedCards?: number;
+}
+
+export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearned }: BadgesGalleryProps) {
   const unlockedBadgeIds = useStore((s) => s.unlockedBadgeIds || []);
-  const streakCount = useStore((s) => s.decks.length); // fallback or review history
-  const allCards = useStore((s) => {
+  const checkAndUnlockBadges = useStore((s) => s.checkAndUnlockBadges);
+
+  const fallbackCards = useStore((s) => {
     let count = 0;
     Object.values(s.cards).forEach((list) => {
       count += list.filter((c) => c.srs && c.srs.repetitions > 0).length;
     });
     return count;
   });
+
+  const streakCount = propStreak ?? 0;
+  const learnedCardsCount = propLearned ?? fallbackCards;
+
+  React.useEffect(() => {
+    if (checkAndUnlockBadges) {
+      checkAndUnlockBadges(streakCount, learnedCardsCount);
+    }
+  }, [streakCount, learnedCardsCount, checkAndUnlockBadges]);
 
   return (
     <View style={styles.container}>
@@ -31,8 +46,8 @@ export function BadgesGallery() {
             progressText = `${Math.min(badge.target, streakCount)}/${badge.target} ngày`;
             if (streakCount >= badge.target) isUnlocked = true;
           } else if (badge.category === "vocab") {
-            progressText = `${Math.min(badge.target, allCards)}/${badge.target} từ`;
-            if (allCards >= badge.target) isUnlocked = true;
+            progressText = `${Math.min(badge.target, learnedCardsCount)}/${badge.target} từ`;
+            if (learnedCardsCount >= badge.target) isUnlocked = true;
           } else {
             progressText = isUnlocked ? "Đã đạt" : `Chưa mở`;
           }
@@ -62,7 +77,7 @@ export function BadgesGallery() {
               </Text>
 
               <Text style={[styles.progressText, isUnlocked && styles.progressUnlockedText]}>
-                {isUnlocked ? "✓ ĐÃ MỞ KHÓA" : progressText}
+                {isUnlocked ? "ĐÃ MỞ KHÓA" : progressText}
               </Text>
             </DuolingoCard>
           );

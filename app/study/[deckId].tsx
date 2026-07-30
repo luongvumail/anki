@@ -276,7 +276,6 @@ export default function StudyScreen() {
         {/* Extra Practice Badge */}
         {isExtraPractice && (
           <View style={styles.extraPracticeBadge}>
-            <Ionicons name="star" size={11} color={Colors.duolingo.yellow} />
             <Text style={styles.extraPracticeText}>TỰ DO</Text>
           </View>
         )}
@@ -298,7 +297,7 @@ export default function StudyScreen() {
               mode === "flashcard" && styles.modeSegmentTextActive,
             ]}
           >
-            🎴 LẬT THẺ FLASHCARD
+            LẬT THẺ FLASHCARD
           </Text>
         </TouchableOpacity>
 
@@ -316,7 +315,7 @@ export default function StudyScreen() {
               mode === "quiz" && styles.modeSegmentTextActive,
             ]}
           >
-            🎯 BÀI TẬP QUIZ
+            BÀI TẬP QUIZ
           </Text>
         </TouchableOpacity>
       </View>

@@ -7,6 +7,16 @@ let _reviewHistoryCache: Record<string, number> | null = null;
 let _writeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
+ * Returns YYYY-MM-DD string formatted in local system time.
+ */
+export function getLocalDateString(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Returns a map of YYYY-MM-DD -> count of reviews completed on that day.
  */
 export async function getReviewHistory(): Promise<Record<string, number>> {
@@ -28,7 +38,7 @@ export async function getReviewHistory(): Promise<Record<string, number>> {
 export async function recordReviewToday(): Promise<void> {
   try {
     const history = await getReviewHistory();
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = getLocalDateString();
     history[todayStr] = (history[todayStr] || 0) + 1;
     _reviewHistoryCache = history;
 
@@ -55,12 +65,11 @@ export async function getStreakCount(): Promise<number> {
     const history = await getReviewHistory();
     let streak = 0;
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0];
+      const dateStr = getLocalDateString(d);
       if (history[dateStr] && history[dateStr] > 0) {
         streak++;
       } else {

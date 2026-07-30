@@ -48,7 +48,7 @@ export function getAuthErrorMessage(error: any): string {
 }
 
 /**
- * Maps Gemini AI & API errors to friendly Vietnamese messages.
+ * Maps AI & API errors to friendly Vietnamese messages.
  */
 export function getGeminiErrorMessage(error: any): string {
   if (!error) return "Không thể tạo từ vựng bằng AI. Vui lòng thử lại.";

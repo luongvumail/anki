@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useStore } from "../../store/useStore";
 import { getFirestoreErrorMessage } from "../../lib/errorHandler";
 import { Colors, Spacing, VECTOR_DECK_ICONS, triggerHaptic } from "../../constants/theme";
@@ -26,6 +26,7 @@ import { ProgressBar } from "../../components/ui/ProgressBar";
 
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
+import { getStreakCount } from "../../lib/reviewTracker";
 
 import {
   computeDueCount,
@@ -44,10 +45,17 @@ export default function DecksScreen() {
   const isLoading = useStore((s) => s.isLoading);
   const userId = useStore((s) => s.userId);
 
+  const [streakCount, setStreakCount] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [showAIAddModal, setShowAIAddModal] = useState(false);
   const [deckName, setDeckName] = useState("");
   const [deckDesc, setDeckDesc] = useState("");
+
+  useFocusEffect(
+    useCallback(() => {
+      getStreakCount().then(setStreakCount);
+    }, [])
+  );
   const [selectedIcon, setSelectedIcon] = useState(VECTOR_DECK_ICONS[0]);
   const [creating, setCreating] = useState(false);
 
@@ -121,7 +129,7 @@ export default function DecksScreen() {
   return (
     <View style={styles.container}>
       {/* Top Header Bar */}
-      <DuolingoHeader courseName="Anki" streakCount={1} gemsCount={150} heartsCount={5} />
+      <DuolingoHeader courseName="Anki" streakCount={streakCount} />
 
       <ScrollView
         contentContainerStyle={[
@@ -134,9 +142,6 @@ export default function DecksScreen() {
         {/* Create Deck Banner Button */}
         <DuolingoCard style={styles.createCardBanner}>
           <View style={styles.bannerRow}>
-            <View style={styles.bannerIconBox}>
-              <Ionicons name="add-circle" size={32} color={Colors.duolingo.blue} />
-            </View>
             <View style={styles.bannerText}>
               <Text style={styles.bannerTitle}>Tạo Bộ Thẻ Từ Vựng Mới</Text>
               <Text style={styles.bannerSub}>Tự do phân loại từ vựng theo chủ đề HSK hoặc sở thích</Text>
@@ -170,10 +175,6 @@ export default function DecksScreen() {
                 onPress={() => router.push(`/deck/${deck.id}`)}
               >
                 <View style={styles.deckCardTop}>
-                  <View style={styles.deckIconBox}>
-                    <DeckIcon name={deck.icon} size={24} color={Colors.duolingo.blue} />
-                  </View>
-
                   <View style={styles.deckCardMain}>
                     <Text style={styles.deckTitle} numberOfLines={1}>{deck.name}</Text>
                     <Text style={styles.deckSubInfo}>
@@ -201,7 +202,7 @@ export default function DecksScreen() {
                 />
 
                 <DuolingoButton
-                  title={due > 0 ? `ÔN NGAY (${due} THẺ)` : "XEM CHI TIẾT ➜"}
+                  title={due > 0 ? `ÔN NGAY (${due} THẺ)` : "XEM CHI TIẾT"}
                   variant={due > 0 ? "primary" : "secondary"}
                   size="lg"
                   onPress={() => {
@@ -263,7 +264,7 @@ export default function DecksScreen() {
             </View>
 
             <DuolingoButton
-              title={creating ? "ĐANG TẠO..." : "TẠO BỘ THẺ ➜"}
+              title={creating ? "ĐANG TẠO..." : "TẠO BỘ THẺ"}
               variant="primary"
               size="lg"
               disabled={creating || !deckName.trim()}

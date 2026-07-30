@@ -49,13 +49,6 @@ export const DeckPicker = React.memo(function DeckPicker({
         activeOpacity={0.8}
       >
         <View style={styles.triggerLeftRow}>
-          <View style={styles.triggerIconTile}>
-            <DeckIcon
-              name={currentDeck?.icon || "folder-open"}
-              size={20}
-              color={Colors.duolingo.blue}
-            />
-          </View>
           <View style={styles.triggerTextContainer}>
             <Text style={styles.triggerDeckTitle} numberOfLines={1}>
               {currentDeck?.name || "Chọn bộ thẻ mục tiêu"}
@@ -68,7 +61,6 @@ export const DeckPicker = React.memo(function DeckPicker({
 
         <View style={styles.triggerRightBadge}>
           <Text style={styles.triggerChangeText}>ĐỔI</Text>
-          <Ionicons name="chevron-down" size={16} color={Colors.duolingo.blue} />
         </View>
       </TouchableOpacity>
 
@@ -86,7 +78,6 @@ export const DeckPicker = React.memo(function DeckPicker({
               <View style={styles.sheetHeader}>
                 <View style={styles.dragHandle} />
                 <View style={styles.headerTitleRow}>
-                  <Ionicons name="folder-open" size={20} color={Colors.duolingo.blue} />
                   <Text style={styles.sheetTitle}>CHỌN BỘ THẺ LƯU TỪ</Text>
                 </View>
 
@@ -118,13 +109,6 @@ export const DeckPicker = React.memo(function DeckPicker({
                       activeOpacity={0.85}
                     >
                       <View style={styles.deckCardLeft}>
-                        <View style={styles.deckIconTile}>
-                          <DeckIcon
-                            name={deck.icon}
-                            size={20}
-                            color={isSelected ? Colors.duolingo.blue : Colors.duolingo.textMuted}
-                          />
-                        </View>
                         <View style={styles.deckInfo}>
                           <Text
                             style={[
@@ -143,12 +127,9 @@ export const DeckPicker = React.memo(function DeckPicker({
 
                       {isSelected ? (
                         <View style={styles.selectedBadge}>
-                          <Ionicons name="checkmark-circle" size={18} color={Colors.duolingo.blue} />
                           <Text style={styles.selectedBadgeText}>ĐÃ CHỌN</Text>
                         </View>
-                      ) : (
-                        <Ionicons name="chevron-forward" size={18} color={Colors.duolingo.textMuted} />
-                      )}
+                      ) : null}
                     </TouchableOpacity>
                   );
                 })}
