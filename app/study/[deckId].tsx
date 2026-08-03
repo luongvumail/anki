@@ -12,16 +12,16 @@ import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore } from "../../store/useStore";
 import { generateQuizQuestion, QuizQuestion } from "../../lib/quizGenerator";
-import { isDue, calculateSRS, createDefaultSRSState, SRSGrade, SRS_GRADES } from "../../lib/srs";
+import { isDue, calculateQuizSRS, createDefaultSRSState } from "../../lib/srs";
 import { recordReviewToday } from "../../lib/reviewTracker";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
-import { FlashcardView, ShortTermGrade } from "../../components/study/FlashcardView";
-import { QuizCardView } from "../../components/study/QuizCardView";
+import { FlashcardView } from "../../components/study/FlashcardView";
+import { QuizCardView, WeakTagType } from "../../components/study/QuizCardView";
 import { SessionDoneScreen } from "../../components/study/SessionDoneScreen";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { StudySession, Card } from "../../store/slices/types";
 
-type StudyMode = "flashcard" | "quiz";
+type SessionStage = "preview" | "validation" | "repair" | "done";
 
 export default function StudyScreen() {
   const insets = useSafeAreaInsets();
@@ -33,17 +33,22 @@ export default function StudyScreen() {
 
   const deckCards = useMemo(() => cards[deckId] || [], [cards, deckId]);
 
-  const [mode, setMode] = useState<StudyMode>("flashcard");
+  const [stage, setStage] = useState<SessionStage>("preview");
   const [session, setSession] = useState<StudySession | null>(null);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [targetCards, setTargetCards] = useState<Card[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [isDone, setIsDone] = useState(false);
   const [isExtraPractice, setIsExtraPractice] = useState(false);
+
+  // Track missed or slow response cards during validation for Fast Repair Loop
+  const [missedOrSlowCardIds, setMissedOrSlowCardIds] = useState<string[]>([]);
+  const [repairQuestions, setRepairQuestions] = useState<QuizQuestion[]>([]);
+  const [repairIndex, setRepairIndex] = useState(0);
 
   // Track cards rated for SRS in the current session (prevents inflating SRS interval on intra-session re-attempts)
   const ratedCardIdsInSession = useRef<Set<string>>(new Set());
 
-  // Guard: prevent session from being re-initialized when Zustand re-renders after each updateCard
+  // Guard: prevent session from being re-initialized when Zustand re-renders
   const sessionInitialized = useRef(false);
 
   useEffect(() => {
@@ -51,26 +56,28 @@ export default function StudyScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId]);
 
-  const MAX_SESSION_CARDS = 20;
+  const MAX_SESSION_CARDS = 10;
 
   useEffect(() => {
-    if (deckCards.length > 0 && !sessionInitialized.current && !isDone) {
+    if (deckCards.length > 0 && !sessionInitialized.current && stage !== "done") {
       sessionInitialized.current = true;
       ratedCardIdsInSession.current = new Set();
       const dueCards = deckCards.filter((c) => isDue(c.srs));
       const isExtra = dueCards.length === 0;
       setIsExtraPractice(isExtra);
       const pool = isExtra ? deckCards : dueCards;
-      // Cap session to MAX_SESSION_CARDS, prioritize newest (repetitions === 0) first
+
+      // Prioritize newest (repetitions === 0) first, cap to MAX_SESSION_CARDS
       const sorted = [...pool].sort((a, b) => (a.srs?.repetitions ?? 0) - (b.srs?.repetitions ?? 0));
       const chosenCards = sorted.slice(0, MAX_SESSION_CARDS);
       const generatedQuestions: QuizQuestion[] = chosenCards
         .map((c) => generateQuizQuestion(c, deckCards))
         .filter((q): q is QuizQuestion => q !== null);
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetCards(chosenCards);
       setQuestions(generatedQuestions);
+      setPreviewIndex(0);
+      setStage("preview");
       setSession({
         deckId,
         queue: chosenCards,
@@ -80,98 +87,65 @@ export default function StudyScreen() {
         startTime: new Date(),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deckCards, deckId, isDone]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+  }, [deckCards, deckId]);
 
-  // Handle Flashcard Short-Term Memory Rating (Quên, Khó, Dễ)
-  const handleFlashcardGrade = async (grade: ShortTermGrade) => {
-    if (!session || targetCards.length === 0) return;
-
-    const currentCard = targetCards[session.currentIndex];
-    const srsGrade: SRSGrade = grade === "again" ? SRS_GRADES.AGAIN : grade === "hard" ? SRS_GRADES.HARD : SRS_GRADES.EASY;
-    const currentSRS = currentCard.srs || createDefaultSRSState();
-    const cardIsDue = isDue(currentSRS);
-
-    // Chỉ cập nhật thuật toán SRS ở LẦN ĐẦU TIÊN gặp thẻ trong phiên này (tránh làm sai lệch ngày ôn ngắt quãng khi làm lại)
-    if (!ratedCardIdsInSession.current.has(currentCard.id)) {
-      ratedCardIdsInSession.current.add(currentCard.id);
-      if (cardIsDue || grade === "again" || grade === "hard") {
-        const newSRS = calculateSRS(srsGrade, currentSRS);
-        await updateCard(currentCard.id, deckId, { srs: newSRS });
-      }
-    }
-
-    await recordReviewToday();
-
-    let updatedQueue = [...targetCards];
-    const currIdx = session.currentIndex;
-
-    if (grade === "again") {
-      // QUÊN: Đưa thẻ trở lại hàng đợi sau 2 thẻ nữa để người dùng ôn lại sớm!
-      const targetPos = Math.min(updatedQueue.length, currIdx + 3);
-      updatedQueue.splice(targetPos, 0, currentCard);
-    } else if (grade === "hard") {
-      // KHÓ: Đưa thẻ trở lại hàng đợi sau 4 thẻ nữa để người dùng ôn lại trước khi kết thúc phiên!
-      const targetPos = Math.min(updatedQueue.length, currIdx + 5);
-      updatedQueue.splice(targetPos, 0, currentCard);
-    }
-    // DỄ / THUỘC: Thẻ được đánh giá thuộc hoàn toàn -> Không đưa lại vào hàng đợi phiên này!
-
-    // Keep questions in sync with targetCards
-    const syncedQuestions = updatedQueue
-      .map((c) => generateQuizQuestion(c, deckCards))
-      .filter((q): q is QuizQuestion => q !== null);
-
-    const nextIndex = currIdx + 1;
-    const isCorrect = grade === "easy";
-    const newCorrect = isCorrect ? session.correctCount + 1 : session.correctCount;
-    const newReviewed = session.reviewedCount + 1;
-
-    setTargetCards(updatedQueue);
-    setQuestions(syncedQuestions);
-
-    setSession({
-      ...session,
-      queue: updatedQueue,
-      currentIndex: nextIndex,
-      correctCount: newCorrect,
-      reviewedCount: newReviewed,
-    });
-
-    if (nextIndex >= updatedQueue.length) {
-      setIsDone(true);
+  // Stage 1: Flashcard Preview Navigation
+  const handleNextPreview = () => {
+    if (previewIndex < targetCards.length - 1) {
+      setPreviewIndex((prev) => prev + 1);
+    } else {
+      // Transition from Preview ➔ Validation Quiz
+      triggerHaptic("success");
+      setStage("validation");
+      setSession((prev) => (prev ? { ...prev, currentIndex: 0 } : null));
     }
   };
 
-  // Handle Quiz Answer (Correct / Wrong - Short-Term Memory Re-study Loop)
-  const handleQuizAnswer = async (isCorrect: boolean) => {
+  const handlePrevPreview = () => {
+    if (previewIndex > 0) {
+      setPreviewIndex((prev) => prev - 1);
+    }
+  };
+
+
+  // Stage 2: Quiz Validation Callback with Objective SRS calculation
+  const handleQuizAnswer = async (
+    isCorrect: boolean,
+    responseTimeMs: number,
+    weakTag?: WeakTagType
+  ) => {
     if (!session || questions.length === 0) return;
 
     const currIdx = session.currentIndex;
     const currentQuestion = questions[currIdx];
     const card = currentQuestion.card;
 
-    const grade: SRSGrade = isCorrect ? SRS_GRADES.EASY : SRS_GRADES.AGAIN;
+    const isRetry = ratedCardIdsInSession.current.has(card.id);
     const currentSRS = card.srs || createDefaultSRSState();
-    const cardIsDue = isDue(currentSRS);
 
-    // Chỉ cập nhật thuật toán SRS ở LẦN ĐẦU TIÊN gặp thẻ trong phiên này
-    if (!ratedCardIdsInSession.current.has(card.id)) {
+    // Update SRS state only on 1st attempt or if incorrect
+    if (!isRetry || !isCorrect) {
       ratedCardIdsInSession.current.add(card.id);
-      if (cardIsDue || !isCorrect) {
-        const newSRS = calculateSRS(grade, currentSRS);
-        await updateCard(card.id, deckId, { srs: newSRS });
-      }
+      const { newSRS } = calculateQuizSRS(isCorrect, isRetry, responseTimeMs, currentSRS);
+      await updateCard(card.id, deckId, { srs: newSRS });
     }
 
     await recordReviewToday();
 
+    // Track missed or slow cards for Fast Repair Stage
+    if (!isCorrect || responseTimeMs > 4000) {
+      setMissedOrSlowCardIds((prev) => (prev.includes(card.id) ? prev : [...prev, card.id]));
+    }
+
     let updatedQuestions = [...questions];
     let updatedCards = [...targetCards];
+
     if (!isCorrect) {
-      // Short-Term Memory Queue: Re-insert wrong Quiz question 3 slots later so the user must get it right!
+      // Re-queue missed question 2 slots later
+      const nextQuestion = generateQuizQuestion(card, deckCards, undefined, weakTag);
       const targetPos = Math.min(updatedQuestions.length, currIdx + 3);
-      updatedQuestions.splice(targetPos, 0, currentQuestion);
+      updatedQuestions.splice(targetPos, 0, nextQuestion);
       updatedCards.splice(targetPos, 0, card);
     }
 
@@ -191,38 +165,51 @@ export default function StudyScreen() {
     });
 
     if (nextIndex >= updatedQuestions.length) {
-      setIsDone(true);
+      // Check if Fast Repair Loop is needed
+      const weakCards = targetCards.filter(
+        (c) => !isCorrect || responseTimeMs > 4000 || missedOrSlowCardIds.includes(c.id)
+      );
+
+      if (weakCards.length > 0) {
+        const repairQs = weakCards.map((c) => generateQuizQuestion(c, deckCards));
+        setRepairQuestions(repairQs);
+        setRepairIndex(0);
+        setStage("repair");
+      } else {
+        setStage("done");
+      }
     }
   };
 
-  const handleSwitchMode = useCallback((newMode: StudyMode) => {
-    if (newMode === "quiz" && targetCards.length > 0) {
-      const syncedQuestions = targetCards
-        .map((c) => generateQuizQuestion(c, deckCards))
-        .filter((q): q is QuizQuestion => q !== null);
-      if (syncedQuestions.length > 0) {
-        setQuestions(syncedQuestions);
-      }
+  // Stage 3: Fast Repair Callback
+  const handleRepairAnswer = (isCorrect: boolean) => {
+    const nextIdx = repairIndex + 1;
+    setRepairIndex(nextIdx);
+    if (nextIdx >= repairQuestions.length) {
+      setStage("done");
     }
-    setMode(newMode);
-  }, [targetCards, deckCards]);
+  };
+
+  const handleSwitchStage = (targetStage: SessionStage) => {
+    setStage(targetStage);
+  };
 
   const handleExitSession = useCallback(() => {
     if (session && session.reviewedCount > 0) {
       Alert.alert(
         "Thoát phiên học?",
-        "Tiến trình SRS của các thẻ đã ôn vẫn được lưu. Bạn có muốn thoát không?",
+        "Tiến trình SRS của các thẻ đã làm Quiz đã được tự động lưu. Bạn có muốn thoát không?",
         [
           { text: "Tiếp tục học", style: "cancel" },
           { text: "Thoát", style: "destructive", onPress: () => router.back() },
-        ],
+        ]
       );
     } else {
       router.back();
     }
   }, [session]);
 
-  if (isLoading || (!session && !isDone)) {
+  if (isLoading || (!session && stage !== "done")) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="small" color={Colors.duolingo.green} />
@@ -230,28 +217,37 @@ export default function StudyScreen() {
     );
   }
 
-  // Use current mode array length for totalCount so re-inserted questions are properly counted
-  const totalCount = mode === "flashcard" ? targetCards.length : questions.length;
-  const progress = Math.min(1, (session?.currentIndex ?? 0) / Math.max(1, totalCount));
-
-  if (isDone || !session || session.currentIndex >= totalCount) {
+  if (stage === "done" || !session) {
     return (
       <SessionDoneScreen
-        session={session || {
-          deckId,
-          queue: [],
-          currentIndex: 0,
-          correctCount: 0,
-          reviewedCount: 0,
-          startTime: new Date(),
-        }}
+        session={
+          session || {
+            deckId,
+            queue: [],
+            currentIndex: 0,
+            correctCount: 0,
+            reviewedCount: 0,
+            startTime: new Date(),
+          }
+        }
         onDone={() => router.back()}
       />
     );
   }
 
-  const currentCard = targetCards[session.currentIndex];
-  const currentQuestion = questions[session.currentIndex];
+  // Calculate Progress
+  let progress = 0;
+  if (stage === "preview") {
+    progress = Math.min(1, (previewIndex + 1) / Math.max(1, targetCards.length));
+  } else if (stage === "validation") {
+    progress = Math.min(1, session.currentIndex / Math.max(1, questions.length));
+  } else if (stage === "repair") {
+    progress = Math.min(1, (repairIndex + 1) / Math.max(1, repairQuestions.length));
+  }
+
+  const currentPreviewCard = targetCards[previewIndex];
+  const currentValidationQuestion = questions[session.currentIndex];
+  const currentRepairQuestion = repairQuestions[repairIndex];
 
   return (
     <View style={styles.container}>
@@ -269,75 +265,69 @@ export default function StudyScreen() {
           <ProgressBar
             progress={progress}
             height={16}
-            fillColor={Colors.duolingo.green}
+            fillColor={
+              stage === "preview"
+                ? Colors.duolingo.blue
+                : stage === "repair"
+                ? Colors.duolingo.yellow
+                : Colors.duolingo.green
+            }
           />
         </View>
 
-        {/* Extra Practice Badge */}
-        {isExtraPractice && (
-          <View style={styles.extraPracticeBadge}>
-            <Text style={styles.extraPracticeText}>TỰ DO</Text>
-          </View>
-        )}
+        {/* Phase Indicator Badge */}
+        <View
+          style={[
+            styles.stageBadge,
+            stage === "preview"
+              ? styles.stageBadgePreview
+              : stage === "repair"
+              ? styles.stageBadgeRepair
+              : styles.stageBadgeValidation,
+          ]}
+        >
+          <Text style={styles.stageBadgeText}>
+            {stage === "preview"
+              ? "NẠP TỪ"
+              : stage === "repair"
+              ? "⚡ CẮM CỜ"
+              : "KIỂM TRA"}
+          </Text>
+        </View>
       </View>
 
-      {/* Short Term Memory Study Mode Segment Bar */}
-      <View style={styles.modeSegmentBar}>
-        <TouchableOpacity
-          style={[
-            styles.modeSegmentBtn,
-            mode === "flashcard" && styles.modeSegmentBtnActive,
-          ]}
-          onPress={() => handleSwitchMode("flashcard")}
-          activeOpacity={0.8}
-        >
-          <Text
-            style={[
-              styles.modeSegmentText,
-              mode === "flashcard" && styles.modeSegmentTextActive,
-            ]}
-          >
-            LẬT THẺ FLASHCARD
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.modeSegmentBtn,
-            mode === "quiz" && styles.modeSegmentBtnActive,
-          ]}
-          onPress={() => handleSwitchMode("quiz")}
-          activeOpacity={0.8}
-        >
-          <Text
-            style={[
-              styles.modeSegmentText,
-              mode === "quiz" && styles.modeSegmentTextActive,
-            ]}
-          >
-            BÀI TẬP QUIZ
-          </Text>
-        </TouchableOpacity>
+      {/* MAIN VIEW STAGE CONTENT - WRAPPED WITH OVERFLOW HIDDEN */}
+      <View style={styles.stageContentContainer}>
+        {stage === "preview" ? (
+          currentPreviewCard ? (
+            <FlashcardView
+              key={`fc-${currentPreviewCard.id}-${previewIndex}`}
+              card={currentPreviewCard}
+              currentIndex={previewIndex}
+              totalCards={targetCards.length}
+              onNext={handleNextPreview}
+              onPrev={handlePrevPreview}
+            />
+          ) : null
+        ) : stage === "validation" ? (
+          currentValidationQuestion ? (
+            <QuizCardView
+              key={`qz-${currentValidationQuestion.card.id}-${session.currentIndex}`}
+              question={currentValidationQuestion}
+              onAnswer={handleQuizAnswer}
+            />
+          ) : null
+        ) : stage === "repair" ? (
+          currentRepairQuestion ? (
+            <QuizCardView
+              key={`rp-${currentRepairQuestion.card.id}-${repairIndex}`}
+              question={currentRepairQuestion}
+              isFastRepairMode={true}
+              onAnswer={handleRepairAnswer}
+            />
+          ) : null
+        ) : null}
       </View>
-
-      {/* MAIN VIEW CONTENT */}
-      {mode === "flashcard" ? (
-        currentCard ? (
-          <FlashcardView
-            key={`fc-${currentCard.id}-${session.currentIndex}`}
-            card={currentCard}
-            onGrade={handleFlashcardGrade}
-          />
-        ) : null
-      ) : (
-        currentQuestion ? (
-          <QuizCardView
-            key={`qz-${currentQuestion.card.id}-${session.currentIndex}`}
-            question={currentQuestion}
-            onAnswer={handleQuizAnswer}
-          />
-        ) : null
-      )}
     </View>
   );
 }
@@ -368,70 +358,28 @@ const styles = StyleSheet.create({
   headerCenter: {
     flex: 1,
   },
-  heartsBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.duolingo.cardBg,
+  stageBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: Radii.full,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBottom,
   },
-  heartsText: {
-    fontSize: 13,
+  stageBadgePreview: {
+    backgroundColor: Colors.duolingo.blueDim,
+  },
+  stageBadgeValidation: {
+    backgroundColor: "rgba(88, 204, 2, 0.15)",
+  },
+  stageBadgeRepair: {
+    backgroundColor: Colors.duolingo.yellow,
+  },
+  stageBadgeText: {
+    fontSize: 11,
     fontWeight: "800",
-    color: Colors.duolingo.red,
-  },
-
-  modeSegmentBar: {
-    flexDirection: "row",
-    backgroundColor: Colors.duolingo.cardBg,
-    marginHorizontal: Spacing.pageMargin,
-    marginTop: 6,
-    marginBottom: 4,
-    borderRadius: Radii.full,
-    padding: 3,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBottom,
-  },
-  modeSegmentBtn: {
-    flex: 1,
-    paddingVertical: 7,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: Radii.full,
-  },
-  modeSegmentBtnActive: {
-    backgroundColor: Colors.duolingo.blue,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.blueDark,
-  },
-  modeSegmentText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
-    letterSpacing: 0.5,
-  },
-  modeSegmentTextActive: {
     color: "#FFFFFF",
-  },
-  extraPracticeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: Colors.duolingo.cardBg,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    borderRadius: Radii.full,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBottom,
-  },
-  extraPracticeText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: Colors.duolingo.yellow,
     letterSpacing: 0.5,
+  },
+  stageContentContainer: {
+    flex: 1,
+    overflow: "hidden",
   },
 });

@@ -45,16 +45,16 @@ export function DuolingoButton({
 }: DuolingoButtonProps) {
   const [pressed, setPressed] = useState(false);
 
-  // Size Presets (Hoạt động giống CSS classes: btn-lg=52px, btn-md=44px, btn-sm=36px)
+  // Size Presets (Sleek & Compact: lg=46px, md=40px, sm=32px)
   const getSizeStyle = () => {
     switch (size) {
       case "sm":
-        return { height: height || 36, fontSize: 13, paddingHorizontal: 12 };
+        return { height: height || 32, fontSize: 12, paddingHorizontal: 12 };
       case "md":
-        return { height: height || 44, fontSize: 14, paddingHorizontal: 14 };
+        return { height: height || 40, fontSize: 13, paddingHorizontal: 14 };
       case "lg":
       default:
-        return { height: height || 52, fontSize: 16, paddingHorizontal: 16 };
+        return { height: height || 46, fontSize: 14, paddingHorizontal: 16 };
     }
   };
 
@@ -142,8 +142,8 @@ export function DuolingoButton({
           paddingHorizontal: sizeStyle.paddingHorizontal,
           backgroundColor: vColors.bg,
           borderBottomColor: vColors.bottom,
-          borderBottomWidth: pressed ? 0 : 4,
-          transform: [{ translateY: pressed ? 4 : 0 }],
+          borderBottomWidth: pressed ? 0 : 3,
+          transform: [{ translateY: pressed ? 3 : 0 }],
         },
         style,
       ]}

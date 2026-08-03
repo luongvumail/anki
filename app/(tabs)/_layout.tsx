@@ -4,55 +4,61 @@ import { StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 
+import { View } from "react-native";
+import { GlobalAccountModal } from "../../components/home/GlobalAccountModal";
+
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: Colors.duolingo.green,
-        tabBarInactiveTintColor: Colors.duolingo.textMuted,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarItemStyle: styles.tabItem,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Học",
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
-          ),
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: Colors.duolingo.green,
+          tabBarInactiveTintColor: Colors.duolingo.textMuted,
+          tabBarLabelStyle: styles.tabLabel,
+          tabBarItemStyle: styles.tabItem,
         }}
-      />
-      <Tabs.Screen
-        name="decks"
-        options={{
-          title: "Từ vựng",
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? "book" : "book-outline"} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="practice"
-        options={{
-          title: "Luyện tập",
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? "extension-puzzle" : "extension-puzzle-outline"} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="stats"
-        options={{
-          title: "Thống kê",
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={24} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Học",
+            tabBarIcon: ({ focused, color }) => (
+              <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="decks"
+          options={{
+            title: "Từ vựng",
+            tabBarIcon: ({ focused, color }) => (
+              <Ionicons name={focused ? "book" : "book-outline"} size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="practice"
+          options={{
+            title: "Luyện tập",
+            tabBarIcon: ({ focused, color }) => (
+              <Ionicons name={focused ? "extension-puzzle" : "extension-puzzle-outline"} size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="stats"
+          options={{
+            title: "Thống kê",
+            tabBarIcon: ({ focused, color }) => (
+              <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={24} color={color} />
+            ),
+          }}
+        />
+      </Tabs>
+      <GlobalAccountModal />
+    </View>
   );
 }
 

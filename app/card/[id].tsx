@@ -79,10 +79,7 @@ export default function CardDetailScreen() {
     <View style={styles.container}>
       {/* Header Bar */}
       <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + 8, 44) }]}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
@@ -113,13 +110,36 @@ export default function CardDetailScreen() {
           {/* 3D Speaker Audio Button - Strict Vector Icon */}
           <DuolingoButton
             title=""
-            icon={<Ionicons name={speaking ? "volume-high" : "volume-medium"} size={26} color="#FFFFFF" />}
+            icon={
+              <Ionicons
+                name={speaking ? "volume-high" : "volume-medium"}
+                size={26}
+                color="#FFFFFF"
+              />
+            }
             variant="blue"
             size="md"
             onPress={speak}
             style={{ marginTop: Spacing.md, width: 64, alignSelf: "center" }}
           />
         </DuolingoCard>
+
+        {/* Radical Breakdown Section - Strictly from DB */}
+        {card.radical ? (
+          <>
+            <DuolingoCard style={styles.detailCard}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <Ionicons name="layers-outline" size={18} color={Colors.duolingo.purple} />
+                <Text style={{ fontSize: 13, fontWeight: "800", color: Colors.duolingo.purple }}>
+                  CẤU TẠO BỘ THỦ & MẸO NHỚ
+                </Text>
+              </View>
+              <Text style={{ fontSize: 14, color: "#FFFFFF", fontWeight: "600", lineHeight: 20 }}>
+                {card.radical}
+              </Text>
+            </DuolingoCard>
+          </>
+        ) : null}
 
         {/* SRS Learning Status Card */}
         <SectionTitle>TRẠNG THÁI TRÍ NHỚ (SRS)</SectionTitle>
@@ -139,11 +159,7 @@ export default function CardDetailScreen() {
               ]}
             >
               <Text style={styles.statusBadgeText}>
-                {isDue(card.srs)
-                  ? "CẦN ÔN TẬP"
-                  : card.srs?.repetitions > 0
-                    ? "ĐÃ THUỘC"
-                    : "TỪ MỚI"}
+                {isDue(card.srs) ? "CẦN ÔN TẬP" : card.srs?.repetitions > 0 ? "ĐÃ THUỘC" : "TỪ MỚI"}
               </Text>
             </View>
           </View>

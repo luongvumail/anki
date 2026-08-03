@@ -433,8 +433,8 @@ export function PronunciationTrainerModal({
             {/* Main Character Display Card */}
             <View style={styles.cardTargetBox}>
               <Text style={styles.characterBig}>{currentCard.character}</Text>
-              <Text style={styles.pinyinText}>Pinyin: {currentCard.pinyin}</Text>
-              <Text style={styles.translationText}>Nghĩa: {currentCard.translation}</Text>
+              <Text style={styles.pinyinText}>{currentCard.pinyin}</Text>
+              <Text style={styles.translationText}>{currentCard.translation}</Text>
 
               {/* TTS Listen Button */}
               <TouchableOpacity
@@ -521,12 +521,12 @@ export function PronunciationTrainerModal({
 
             {score >= 60 && (
               <View style={{ marginTop: 2, marginBottom: 4 }}>
-                <Text style={{ fontSize: 16, fontWeight: "800", color: "#FFFFFF" }}>
-                  Từ mẫu: {currentCard.character} ({currentCard.pinyin})
+                <Text style={{ fontSize: 20, fontWeight: "800", color: "#FFFFFF" }}>
+                  {currentCard.character} {currentCard.pinyin ? `· ${currentCard.pinyin}` : ""}
                 </Text>
                 {currentCard.translation ? (
-                  <Text style={{ fontSize: 13, color: Colors.duolingo.textMuted, fontWeight: "600", marginTop: 1 }}>
-                    Nghĩa: {currentCard.translation}
+                  <Text style={{ fontSize: 16, color: "rgba(255, 255, 255, 0.85)", fontWeight: "600", marginTop: 2 }}>
+                    {currentCard.translation}
                   </Text>
                 ) : null}
               </View>
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
   },
 
   promptTitle: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "800",
     color: "#FFFFFF",
     marginVertical: Spacing.xs,
@@ -629,9 +629,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderBottomColor: Colors.duolingo.cardBottom,
   },
-  characterBig: { fontSize: 44, fontWeight: "800", color: "#FFFFFF", marginBottom: 4 },
-  pinyinText: { fontSize: 18, fontWeight: "700", color: Colors.duolingo.purple, marginBottom: 2 },
-  translationText: { fontSize: 14, color: Colors.duolingo.textMuted, marginBottom: Spacing.sm },
+  characterBig: { fontSize: 48, fontWeight: "800", color: "#FFFFFF", marginBottom: 4 },
+  pinyinText: { fontSize: 20, fontWeight: "700", color: Colors.duolingo.blue, marginBottom: 2 },
+  translationText: { fontSize: 16, fontWeight: "600", color: "rgba(255, 255, 255, 0.85)", marginBottom: Spacing.sm },
   listenBtn: {
     flexDirection: "row",
     alignItems: "center",

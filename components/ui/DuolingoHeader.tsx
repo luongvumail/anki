@@ -5,6 +5,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { auth } from "../../lib/firebase";
 import { Colors, Radii, Spacing } from "../../constants/theme";
 
+import { useStore } from "../../store/useStore";
+
 interface DuolingoHeaderProps {
   userName?: string;
   courseName?: string;
@@ -24,9 +26,12 @@ export function DuolingoHeader({
   onStreakPress,
 }: DuolingoHeaderProps) {
   const insets = useSafeAreaInsets();
+  const openAccountModal = useStore((s) => s.openAccountModal);
   const authUser = auth.currentUser;
   const resolvedName =
     userName || authUser?.displayName || (authUser?.email ? authUser.email.split("@")[0] : "Bạn");
+
+  const handleAvatarPress = onProfilePress || openAccountModal;
 
   return (
     <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 8, 44) }]}>
@@ -47,16 +52,14 @@ export function DuolingoHeader({
           <Text style={[styles.statValue, { color: Colors.duolingo.yellow }]}>{streakCount}</Text>
         </TouchableOpacity>
 
-        {/* Profile Avatar */}
-        {onProfilePress ? (
-          <TouchableOpacity
-            style={styles.avatarBtn}
-            onPress={onProfilePress}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="person-circle" size={28} color={Colors.duolingo.blue} />
-          </TouchableOpacity>
-        ) : null}
+        {/* Profile Avatar - Always rendered for 100% header layout stability */}
+        <TouchableOpacity
+          style={styles.avatarBtn}
+          onPress={handleAvatarPress}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="person-circle" size={28} color={Colors.duolingo.blue} />
+        </TouchableOpacity>
       </View>
     </View>
   );

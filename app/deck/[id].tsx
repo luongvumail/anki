@@ -140,6 +140,15 @@ export default function DeckDetailScreen() {
               <Text style={styles.cardMeaning} numberOfLines={1}>
                 {item.translation}
               </Text>
+
+              {item.radical ? (
+                <View style={styles.cardRadicalTag}>
+                  <Ionicons name="layers-outline" size={12} color={Colors.duolingo.purple} />
+                  <Text style={styles.cardRadicalText} numberOfLines={1}>
+                    {item.radical}
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
             {/* Speaker Audio Btn */}
@@ -364,7 +373,7 @@ const styles = StyleSheet.create({
   backBtn: { padding: 4 },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
     color: "#FFFFFF",
     textAlign: "center",
@@ -395,8 +404,25 @@ const styles = StyleSheet.create({
   cardMainInfo: { flex: 1, paddingRight: 8 },
   charRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
   cardCharacter: { fontSize: 24, fontWeight: "800", color: "#FFFFFF" },
-  cardPinyin: { fontSize: 15, fontWeight: "700" },
-  cardMeaning: { fontSize: 14, color: Colors.duolingo.textMuted, marginTop: 2 },
+  cardPinyin: { fontSize: 16, fontWeight: "700" },
+  cardMeaning: { fontSize: 15, color: "rgba(255, 255, 255, 0.85)", marginTop: 2, fontWeight: "600" },
+  cardRadicalTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(206, 130, 255, 0.1)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radii.sm,
+    marginTop: 6,
+    alignSelf: "flex-start",
+  },
+  cardRadicalText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: Colors.duolingo.purple,
+    flexShrink: 1,
+  },
   speakSmallBtn: {
     width: 36,
     height: 36,
@@ -412,7 +438,7 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
     marginTop: Spacing.md,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
+  emptyTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF" },
   emptySub: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 4, textAlign: "center" },
 
   weakWarningCard: {

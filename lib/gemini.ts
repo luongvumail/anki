@@ -90,11 +90,12 @@ export async function generateCardData(input: string): Promise<CardData> {
   const cleanInput = sanitizeInput(input);
   const prompt = `Bạn là chuyên gia Hán-Việt. Phân tích chi tiết từ tiếng Trung: "${cleanInput}"
 
-LƯU Ý QUAN TRỌNG VỀ BỘ THỦ:
-Trường "radical" phải phân tích rõ cấu tạo chữ từ các bộ thủ chính VÀ TÊN HÁN VIỆT CỦA CÁC BỘ THỦ ĐÓ.
+BẮT BUỘC VỀ TRƯỜNG "radical":
+Trường "radical" BẮT BUỘC phải phân tích rõ ràng chữ Hán đó được ghép từ các bộ thủ chính nào, tên Hán-Việt và ý nghĩa của từng bộ thủ. KHÔNG ĐƯỢC bỏ trống hoặc trả về chung chung.
 Ví dụ:
-- "休": "Gồm bộ Nhân (人/亻 - người) + bộ Mộc (木 - cây)"
-- "语": "Gồm bộ Ngôn (言/讠 - lời nói) + bộ Ngũ (五) + bộ Khẩu (口 - miệng)"
+- "休": "Gồm bộ Nhân (亻 - người) + bộ Mộc (木 - cây). Người tựa vào gốc cây nghỉ ngơi."
+- "语": "Gồm bộ Ngôn (讠 - lời nói) + bộ Ngũ (五) + bộ Khẩu (口 - miệng). Lời nói phát ra từ miệng."
+- "好": "Gồm bộ Nữ (女 - phụ nữ) + bộ Tử (子 - con). Mẹ ôm con tượng trưng cho sự tốt đẹp."
 
 Trả về JSON (CHỈ JSON, không markdown):
 {
@@ -109,7 +110,7 @@ Trả về JSON (CHỈ JSON, không markdown):
       "vietnamese": "dịch nghĩa"
     }
   ],
-  "radical": "tên bộ thủ và cấu tạo chữ đầy đủ",
+  "radical": "tên bộ thủ và cấu tạo chiết tự đầy đủ",
   "strokeCount": 0,
   "hskLevel": 1,
   "tags": ["loại từ"]
@@ -135,11 +136,12 @@ export async function generateCardDataBatch(inputs: string[]): Promise<CardData[
   const prompt = `Bạn là chuyên gia Hán-Việt. Phân tích chi tiết các từ tiếng Trung sau đây:
 ${wordList}
 
-LƯU Ý QUAN TRỌNG VỀ BỘ THỦ:
-Trường "radical" phải phân tích rõ cấu tạo chữ từ các bộ thủ chính VÀ TÊN HÁN VIỆT CỦA CÁC BỘ THỦ ĐÓ.
+BẮT BUỘC VỀ TRƯỜNG "radical":
+Trường "radical" BẮT BUỘC phải phân tích rõ ràng từng chữ Hán được ghép từ các bộ thủ chính nào, tên Hán-Việt và ý nghĩa của từng bộ thủ. KHÔNG ĐƯỢC bỏ trống hoặc trả về chung chung.
 Ví dụ:
-- "休": "Gồm bộ Nhân (人/亻 - người) + bộ Mộc (木 - cây)"
-- "语": "Gồm bộ Ngôn (言/讠 - lời nói) + bộ Ngũ (五) + bộ Khẩu (口 - miệng)"
+- "休": "Gồm bộ Nhân (亻 - người) + bộ Mộc (木 - cây). Người tựa vào gốc cây nghỉ ngơi."
+- "语": "Gồm bộ Ngôn (讠 - lời nói) + bộ Ngũ (五) + bộ Khẩu (口 - miệng). Lời nói phát ra từ miệng."
+- "好": "Gồm bộ Nữ (女 - phụ nữ) + bộ Tử (子 - con). Mẹ ôm con tượng trưng cho sự tốt đẹp."
 
 Trả về JSON array (CHỈ JSON array, không markdown), với mỗi phần tử theo thứ tự tương ứng:
 [
@@ -155,7 +157,7 @@ Trả về JSON array (CHỈ JSON array, không markdown), với mỗi phần t�
         "vietnamese": "dịch nghĩa"
       }
     ],
-    "radical": "tên bộ thủ và cấu tạo chữ đầy đủ",
+    "radical": "tên bộ thủ và cấu tạo chiết tự đầy đủ",
     "strokeCount": 0,
     "hskLevel": 1,
     "tags": ["loại từ"]

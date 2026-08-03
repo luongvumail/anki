@@ -149,11 +149,7 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       {/* Header Bar with Personalized User Greeting */}
-      <DuolingoHeader
-        userName={displayName}
-        streakCount={streakCount}
-        onProfilePress={() => setShowAccountModal(true)}
-      />
+      <DuolingoHeader streakCount={streakCount} />
 
       <ScrollView
         contentContainerStyle={[
@@ -215,24 +211,6 @@ export default function DashboardScreen() {
         />
       )}
 
-      {/* Account Settings Modal */}
-      {showAccountModal && (
-        <AccountModal
-          visible={showAccountModal}
-          onClose={() => setShowAccountModal(false)}
-          displayName={displayName}
-          email={user?.email || null}
-          reminderEnabled={reminderEnabled}
-          reminderHour={reminderHour}
-          reminderMinute={reminderMinute}
-          onToggleReminder={handleReminderToggle}
-          onHourChange={(h) => setReminderHour(h)}
-          onMinuteChange={(m) => setReminderMinute(m)}
-          onChangePassword={handleChangePassword}
-          onSendResetEmail={handleSendResetEmail}
-          onSignOut={handleSignOut}
-        />
-      )}
     </View>
   );
 }
@@ -254,7 +232,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
     color: "#FFFFFF",
   },

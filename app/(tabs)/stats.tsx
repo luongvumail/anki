@@ -126,7 +126,7 @@ export default function StatsScreen() {
 
   return (
     <View style={styles.container}>
-      <DuolingoHeader courseName="Anki" streakCount={streakCount} />
+      <DuolingoHeader streakCount={streakCount} />
 
       <ScrollView
         contentContainerStyle={[
@@ -155,7 +155,7 @@ export default function StatsScreen() {
                     Bạn đã ghi nhớ thuộc {retentionRatePct}% tổng từ vựng
                   </Text>
                 </View>
-              </View>
+              </View> 
 
               <ProgressBar
                 progress={retentionRatePct / 100}
@@ -441,8 +441,7 @@ export default function StatsScreen() {
                   <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>
                     Streak
                   </Text>
-                  . Việc học đều đặn 5-10 phút mỗi ngày hiệu quả hơn gấp nhiều lần so với học dồn
-                  dập vào cuối tuần!
+                  . Việc học đều đặn 5-10 phút mỗi ngày hiệu quả hơn gấp nhiều lần so với học dồn dập vào cuối tuần!
                 </Text>
               </DuolingoCard>
             </View>
@@ -469,14 +468,14 @@ const styles = StyleSheet.create({
   },
   trophyText: { flex: 1 },
   trophyTitle: {
-    fontSize: 12,
-    fontWeight: Typography.weight.extraBold,
+    fontSize: 14,
+    fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: 0.8,
   },
   trophySub: {
     fontSize: 13,
-    fontWeight: Typography.weight.semibold,
+    fontWeight: "600",
     color: Colors.duolingo.textMuted,
     marginTop: 2,
   },
@@ -486,7 +485,7 @@ const styles = StyleSheet.create({
   statCardIcon: { fontSize: 20 },
   statCardVal: {
     fontSize: 20,
-    fontWeight: Typography.weight.extraBold,
+    fontWeight: "800",
     color: "#FFFFFF",
     marginTop: 4,
   },
@@ -494,7 +493,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.duolingo.textMuted,
     marginTop: 2,
-    fontWeight: Typography.weight.semibold,
+    fontWeight: "600",
   },
 
   chartCard: { padding: Spacing.md, marginBottom: Spacing.md },
@@ -534,10 +533,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   guideHeaderText: { flex: 1 },
-  guideTitle: { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
+  guideTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
   guideSub: { fontSize: 12, fontWeight: "600", color: Colors.duolingo.textMuted, marginTop: 2 },
   guideDesc: { fontSize: 13, color: Colors.duolingo.textMuted, lineHeight: 18, fontWeight: "500" },
   gestureGuideList: { gap: 8, marginTop: 4 },
   gestureRowItem: { flexDirection: "row", alignItems: "center", gap: 8 },
   gestureText: { fontSize: 13, color: Colors.duolingo.textMuted, flex: 1 },
-});
+});   

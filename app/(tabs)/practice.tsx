@@ -107,7 +107,7 @@ export default function PracticeScreen() {
 
   return (
     <View style={styles.container}>
-      <DuolingoHeader courseName="TRUNG TÂM LUYỆN TẬP" streakCount={streakCount} />
+      <DuolingoHeader streakCount={streakCount} />
 
       <ScrollView
         contentContainerStyle={[
@@ -239,6 +239,7 @@ export default function PracticeScreen() {
           cards={allCardsList}
         />
       )}
+
     </View>
   );
 }
@@ -263,6 +264,6 @@ const styles = StyleSheet.create({
   modeRow: { flexDirection: "row", gap: 12, alignItems: "center" },
   modeIconTile: { width: 52, height: 52, borderRadius: Radii.lg, alignItems: "center", justifyContent: "center" },
   modeTextCol: { flex: 1 },
-  modeTitle: { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
-  modeDesc: { fontSize: 12, color: Colors.duolingo.textMuted, marginTop: 3, lineHeight: 16 },
+  modeTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
+  modeDesc: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 4, lineHeight: 17 },
 });

@@ -311,18 +311,17 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <View style={styles.container}>
         {/* Header Modal */}
-        <View style={styles.header}>
-          <View style={styles.headerTitleRow}>
-            <Text style={styles.headerTitle}>NẠP TỪ VỰNG BẰNG AI</Text>
-          </View>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Ionicons name="close-circle" size={26} color={Colors.duolingo.textMuted} />
+        <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 16) }]}>
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>NẠP TỪ VỰNG BẰNG AI</Text>
+          <View style={{ width: 26 }} />
         </View>
 
         <KeyboardAvoidingView

@@ -13,6 +13,7 @@ export interface QuizQuestion {
   clozeTranslation?: string;
   options: string[]; // 4 choices
   correctAnswer: string;
+  weakTag?: "pinyin" | "character" | "meaning";
 }
 
 /**
@@ -176,13 +177,13 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
 }
 
 /**
- * Select question type adaptively based on SRS repetitions:
- * - reps == 0: "meaning_choice" (Lần học đầu tiên -> Ưu tiên học Nghĩa & Phát âm!)
- * - reps 1..2: "pinyin_choice" (Lần 2 -> Chuẩn hoá Pinyin & Thanh điệu)
- * - reps 3..4: "listening" (Lần 3 -> Phản xạ Nghe âm thanh chọn Chữ Hán)
- * - reps >= 5: "cloze" (Nâng cao -> Điền từ vào câu ngữ cảnh)
+ * Select question type adaptively based on SRS repetitions & weak tag:
  */
-export function determineQuestionType(card: Card): QuestionType {
+export function determineQuestionType(card: Card, weakTag?: "pinyin" | "character" | "meaning"): QuestionType {
+  if (weakTag === "pinyin") return "pinyin_choice";
+  if (weakTag === "meaning") return "meaning_choice";
+  if (weakTag === "character") return "listening";
+
   const reps = card.srs?.repetitions ?? 0;
   const hasExamples = card.examples && card.examples.length > 0 && card.examples[0].chinese;
 
@@ -202,8 +203,14 @@ export function determineQuestionType(card: Card): QuestionType {
 /**
  * Generate a complete QuizQuestion for a card given all deck cards
  */
-export function generateQuizQuestion(card: Card, allCards: Card[], forcedType?: QuestionType): QuizQuestion {
-  const type = forcedType || determineQuestionType(card);
+export function generateQuizQuestion(
+  card: Card,
+  allCards: Card[],
+  forcedType?: QuestionType,
+  weakTag?: "pinyin" | "character" | "meaning"
+): QuizQuestion {
+  const type = forcedType || determineQuestionType(card, weakTag);
+
 
   if (type === "meaning_choice") {
     const distractors = getTranslationDistractors(card, allCards);

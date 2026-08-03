@@ -52,10 +52,7 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
   const [isCorrect, setIsCorrect] = useState(false);
   const [isDone, setIsDone] = useState(false);
 
-  const selectedChipIds = useMemo(
-    () => new Set(selectedChips.map((c) => c.id)),
-    [selectedChips]
-  );
+  const selectedChipIds = useMemo(() => new Set(selectedChips.map((c) => c.id)), [selectedChips]);
 
   const drawerAnim = useRef(new Animated.Value(300)).current;
 
@@ -180,7 +177,12 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
   const currentEx = exercises[currentIndex];
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
       <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
         {/* Header Bar */}
         <View style={styles.header}>
@@ -307,23 +309,15 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
                 {isCorrect ? "Chính xác! (+15 XP)" : "Chưa chính xác"}
               </Text>
             </View>
-            {isCorrect ? (
-              <View style={{ marginTop: 6 }}>
-                <Text style={styles.explainLabel}>CÂU CHUẨN & NGHĨA:</Text>
-                <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
-                {currentEx.pinyin ? (
-                  <Text style={styles.explainPinyin}>Pinyin: {currentEx.pinyin}</Text>
-                ) : null}
-                {currentEx.vietnamese ? (
-                  <Text style={styles.explainPinyin}>Nghĩa: {currentEx.vietnamese}</Text>
-                ) : null}
-              </View>
-            ) : (
-              <View style={{ marginTop: 6 }}>
-                <Text style={styles.explainLabel}>CÂU ĐÚNG CHUẨN LÀ:</Text>
-                <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
-              </View>
-            )}
+            <View style={{ marginTop: 4 }}>
+              <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
+              {currentEx.pinyin ? (
+                <Text style={styles.explainPinyin}>{currentEx.pinyin}</Text>
+              ) : null}
+              {currentEx.vietnamese ? (
+                <Text style={styles.explainSubText}>{currentEx.vietnamese}</Text>
+              ) : null}
+            </View>
             <DuolingoButton
               title={isCorrect ? "TIẾP TỤC" : "ĐÃ HIỂU"}
               variant={isCorrect ? "primary" : "error"}
@@ -441,9 +435,9 @@ const styles = StyleSheet.create({
   drawerWrong: { backgroundColor: "#381616" },
   resultTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
   resultTitle: { fontSize: 22, fontWeight: "800" },
-  explainLabel: { fontSize: 11, fontWeight: "800", color: Colors.duolingo.red, letterSpacing: 0.8 },
-  explainValue: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginTop: 2 },
-  explainPinyin: { fontSize: 13, color: Colors.duolingo.blue, marginTop: 2, fontWeight: "600" },
+  explainValue: { fontSize: 20, fontWeight: "800", color: "#FFFFFF", marginTop: 2 },
+  explainPinyin: { fontSize: 16, fontWeight: "700", color: Colors.duolingo.blue, marginTop: 2 },
+  explainSubText: { fontSize: 15, fontWeight: "600", color: "rgba(255, 255, 255, 0.85)", marginTop: 2 },
 
   emptyContainer: {
     flex: 1,

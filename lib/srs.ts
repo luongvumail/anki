@@ -1,12 +1,13 @@
 /**
- * SuperMemo-2 (SM-2) Spaced Repetition Algorithm
- * Ported to TypeScript for the Anki app.
+ * Standard Anki 4-Grade Spaced Repetition Algorithm (SM-2 / Anki Standard)
+ * Adapted for Objective Quiz Validation & Short-Term Recall.
  */
 
 export const SRS_GRADES = {
-  AGAIN: 1, // Quên — ôn lại ngay trong phiên (interval = 0)
-  HARD: 3,  // Khó — ôn lại cuối phiên (interval = 1d)
-  EASY: 5,  // Thuộc — nhớ tốt, hoàn thành phiên (interval scaling 1d -> 6d -> EF)
+  AGAIN: 1, // Quên — reset interval = 0, Ease Factor -0.20
+  HARD: 2,  // Khó — interval = 1d, Ease Factor -0.15
+  GOOD: 3,  // Tốt — interval tăng mượt (1d -> 3d -> interval * EF), Ease Factor +0.00
+  EASY: 4,  // Dễ — interval vượt cấp (1d -> 6d -> interval * EF * 1.3), Ease Factor +0.15
 } as const;
 
 export type SRSGrade = (typeof SRS_GRADES)[keyof typeof SRS_GRADES];
@@ -28,7 +29,7 @@ export function createDefaultSRSState(): SRSState {
 }
 
 /**
- * Calculates the next SRS state based on the 3 simplified grades given.
+ * Calculates the next SRS state based on 4 Anki grades (AGAIN, HARD, GOOD, EASY).
  */
 export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
   let repetitions = current?.repetitions ?? 0;
@@ -43,21 +44,32 @@ export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
     interval = 0;
     easeFactor -= 0.2;
   } else if (grade === SRS_GRADES.HARD) {
-    // Khó: Giữ trong phiên ôn lại cuối bài, interval = 1d
+    // Khó (vừa mới sai / làm lại trong phiên): interval = 1d
     repetitions = Math.max(0, repetitions - 1);
     interval = 1;
     easeFactor -= 0.15;
+  } else if (grade === SRS_GRADES.GOOD) {
+    // Tốt (Đúng lần đầu nhưng do dự > 3.5s): tăng mượt 1d -> 3d -> interval * EF
+    if (repetitions === 0) {
+      interval = 1;
+    } else if (repetitions === 1) {
+      interval = 3;
+    } else {
+      interval = Math.ceil(interval * easeFactor);
+    }
+    repetitions += 1;
+    // Ease factor unchanged (+0.00)
   } else if (grade === SRS_GRADES.EASY) {
-    // Thuộc: Đạt tiêu chuẩn hoàn thành bài, tăng interval chuẩn lặp ngắt quãng SM-2
+    // Dễ (Đúng lần đầu & Phản xạ nhanh <= 3.5s): tăng tốc 1d -> 6d -> interval * EF * 1.3
     if (repetitions === 0) {
       interval = 1;
     } else if (repetitions === 1) {
       interval = 6;
     } else {
-      interval = Math.ceil(interval * easeFactor);
+      interval = Math.ceil(interval * easeFactor * 1.3);
     }
     repetitions += 1;
-    easeFactor += 0.1;
+    easeFactor += 0.15;
   }
 
   if (easeFactor < 1.3) easeFactor = 1.3;
@@ -86,7 +98,7 @@ export function isDue(srs: SRSState): boolean {
 }
 
 /**
- * Returns a human-readable next-interval label for SRS buttons.
+ * Returns a human-readable next-interval label for SRS buttons/badges.
  */
 export function getIntervalLabel(grade: SRSGrade, current: SRSState): string {
   const next = calculateSRS(grade, current);
@@ -96,4 +108,33 @@ export function getIntervalLabel(grade: SRSGrade, current: SRSState): string {
   if (next.interval < 30) return `${Math.round(next.interval / 7)} tuần`;
   if (next.interval < 365) return `${Math.round(next.interval / 30)} tháng`;
   return `${Math.round(next.interval / 365)} năm`;
+}
+
+/**
+ * Calculates SRS state from objective Quiz performance metrics using the 4-level Anki Model:
+ * 1. AGAIN: Incorrect answer
+ * 2. HARD: Correct on retry (after previous mistake in same session)
+ * 3. GOOD: Correct on 1st attempt, but slow response (> 3.5 seconds)
+ * 4. EASY: Correct on 1st attempt with fast response (<= 3.5 seconds)
+ */
+export function calculateQuizSRS(
+  isCorrect: boolean,
+  isRetry: boolean,
+  responseTimeMs: number,
+  current: SRSState
+): { newSRS: SRSState; grade: SRSGrade } {
+  let grade: SRSGrade;
+
+  if (!isCorrect) {
+    grade = SRS_GRADES.AGAIN;
+  } else if (isRetry) {
+    grade = SRS_GRADES.HARD;
+  } else if (responseTimeMs > 3500) {
+    grade = SRS_GRADES.GOOD;
+  } else {
+    grade = SRS_GRADES.EASY;
+  }
+
+  const newSRS = calculateSRS(grade, current);
+  return { newSRS, grade };
 }

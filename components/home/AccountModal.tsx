@@ -94,24 +94,26 @@ export function AccountModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <View style={styles.modalContainer}>
-        {/* Header Bar - Compact top padding for PageSheet */}
+        {/* Header Bar */}
         <View
           style={[
             styles.modalHeader,
-            { paddingTop: Platform.OS === "ios" ? 14 : Math.max(insets.top, 14) },
+            { paddingTop: Math.max(insets.top + 8, 16) },
           ]}
         >
-          <Text style={styles.modalTitle}>HỒ SƠ CÁ NHÂN</Text>
           <TouchableOpacity
             style={styles.doneBtn}
             onPress={onClose}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close-circle" size={28} color={Colors.duolingo.textMuted} />
+            <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
           </TouchableOpacity>
+          <Text style={styles.modalTitle}>HỒ SƠ CÁ NHÂN</Text>
+          <View style={{ width: 26 }} />
         </View>
 
         <ScrollView

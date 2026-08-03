@@ -14,20 +14,28 @@ import { QuizQuestion } from "../../lib/quizGenerator";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 
+export type WeakTagType = "pinyin" | "character" | "meaning";
+
 interface QuizCardViewProps {
   question: QuizQuestion;
-  onAnswer: (isCorrect: boolean) => void;
+  onAnswer: (isCorrect: boolean, responseTimeMs: number, weakTag?: WeakTagType) => void;
+  isFastRepairMode?: boolean;
 }
 
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
-export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
+export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardViewProps) {
   const { width } = useWindowDimensions();
   const cardWidth = width - Spacing.pageMargin * 2;
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isChecked, setIsChecked] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(5);
+
+  const startTimeRef = useRef<number>(Date.now());
+  const responseTimeMsRef = useRef<number>(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Animation Refs
   const drawerAnim = useRef(new Animated.Value(300)).current;
@@ -46,19 +54,55 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
   }, []);
 
   useEffect(() => {
-    // Reset on new question
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // Reset timer & timing on new question
+    startTimeRef.current = Date.now();
+    responseTimeMsRef.current = 0;
     setSelectedIndex(null);
     setIsChecked(false);
+    setTimeLeft(5);
     drawerAnim.setValue(300);
     shakeAnim.setValue(0);
     bounceAnim.setValue(1);
+
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    if (isFastRepairMode) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            // Auto timeout trigger
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
 
     // Auto play audio if listening question
     if (question.type === "listening") {
       playTTS(question.audioText || question.card.character);
     }
-  }, [question, playTTS, drawerAnim, shakeAnim, bounceAnim]);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [question, playTTS, drawerAnim, shakeAnim, bounceAnim, isFastRepairMode]);
+
+  // Handle timeout in fast repair mode
+  useEffect(() => {
+    if (isFastRepairMode && timeLeft === 0 && !isChecked) {
+      responseTimeMsRef.current = 5000;
+      setIsChecked(true);
+      triggerHaptic("error");
+      Animated.spring(drawerAnim, {
+        toValue: 0,
+        tension: 65,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [timeLeft, isFastRepairMode, isChecked, drawerAnim]);
 
   const handleSelectOption = (index: number) => {
     if (isChecked) return;
@@ -67,7 +111,9 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
 
   const handleCheck = () => {
     if (selectedIndex === null || isChecked) return;
+    if (timerRef.current) clearInterval(timerRef.current);
 
+    responseTimeMsRef.current = Date.now() - startTimeRef.current;
     const selectedOption = question.options[selectedIndex];
     const isCorrect = selectedOption === question.correctAnswer;
 
@@ -77,7 +123,12 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
       triggerHaptic("success");
       Animated.sequence([
         Animated.timing(bounceAnim, { toValue: 1.08, duration: 100, useNativeDriver: true }),
-        Animated.spring(bounceAnim, { toValue: 1, friction: 4, tension: 40, useNativeDriver: true }),
+        Animated.spring(bounceAnim, {
+          toValue: 1,
+          friction: 4,
+          tension: 40,
+          useNativeDriver: true,
+        }),
       ]).start();
     } else {
       triggerHaptic("error");
@@ -100,10 +151,14 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
   };
 
   const handleContinue = () => {
-    if (selectedIndex === null) return;
-    const selectedOption = question.options[selectedIndex];
+    const selectedOption = selectedIndex !== null ? question.options[selectedIndex] : null;
     const isCorrect = selectedOption === question.correctAnswer;
-    onAnswer(isCorrect);
+
+    let weakTag: WeakTagType = "meaning";
+    if (question.type === "pinyin_choice") weakTag = "pinyin";
+    else if (question.type === "listening" || question.type === "cloze") weakTag = "character";
+
+    onAnswer(isCorrect, responseTimeMsRef.current || 4000, weakTag);
   };
 
   const selectedOption = selectedIndex !== null ? question.options[selectedIndex] : null;
@@ -111,10 +166,7 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Question Prompt Speech Bubble */}
         <Animated.View
           style={[
@@ -132,12 +184,21 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
                 {question.type === "meaning_choice"
                   ? "BÀI TẬP CHỌN NGHĨA"
                   : question.type === "listening"
-                  ? "BÀI TẬP ÂM THANH"
-                  : question.type === "cloze"
-                  ? "ĐIỀN VÀO CHỖ TRỐNG"
-                  : "TRẮC NGHIỆM PINYIN"}
+                    ? "BÀI TẬP ÂM THANH"
+                    : question.type === "cloze"
+                      ? "ĐIỀN VÀO CHỖ TRỐNG"
+                      : "TRẮC NGHIỆM PINYIN"}
               </Text>
             </View>
+
+            {isFastRepairMode && (
+              <View style={[styles.typeBadge, { backgroundColor: Colors.duolingo.yellow }]}>
+                <Ionicons name="flash" size={12} color="#000000" />
+                <Text style={[styles.typeBadgeText, { color: "#000000", fontWeight: "900" }]}>
+                  CẮM CỜ NGUY CƠ: {timeLeft}s
+                </Text>
+              </View>
+            )}
           </View>
 
           <Text style={styles.promptText}>{question.prompt}</Text>
@@ -145,7 +206,9 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
           {/* Question Body */}
           {(question.type === "pinyin_choice" || question.type === "meaning_choice") && (
             <View style={styles.centerTargetBox}>
-              <Text style={styles.characterBig}>{question.targetText || question.card.character}</Text>
+              <Text style={styles.characterBig}>
+                {question.targetText || question.card.character}
+              </Text>
               <TouchableOpacity
                 style={styles.speakBtn}
                 onPress={() => playTTS(question.card.character)}
@@ -177,9 +240,7 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
             <View style={styles.clozeTargetBox}>
               <Text style={styles.clozeSentenceText}>{question.clozeSentence}</Text>
               {question.clozeTranslation ? (
-                <Text style={styles.clozeTranslationText}>
-                  "{question.clozeTranslation}"
-                </Text>
+                <Text style={styles.clozeTranslationText}>"{question.clozeTranslation}"</Text>
               ) : null}
             </View>
           )}
@@ -240,10 +301,20 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
 
                 {/* Status Indicator Icon */}
                 {isChecked && option === question.correctAnswer && (
-                  <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" style={{ marginLeft: "auto" }} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={24}
+                    color="#FFFFFF"
+                    style={{ marginLeft: "auto" }}
+                  />
                 )}
                 {isChecked && isSelected && !isCorrect && (
-                  <Ionicons name="close-circle" size={24} color="#FFFFFF" style={{ marginLeft: "auto" }} />
+                  <Ionicons
+                    name="close-circle"
+                    size={24}
+                    color="#FFFFFF"
+                    style={{ marginLeft: "auto" }}
+                  />
                 )}
               </TouchableOpacity>
             );
@@ -292,21 +363,20 @@ export function QuizCardView({ question, onAnswer }: QuizCardViewProps) {
 
             {isCorrect ? (
               <View style={styles.answerExplainBox}>
-                <Text style={styles.explainLabel}>TỪ VỰNG & NGHĨA CHUẨN:</Text>
                 <Text style={styles.explainValue}>
                   {question.card.character}
-                  {question.card.pinyin ? ` (${question.card.pinyin})` : ""}
+                  {question.card.pinyin ? ` · ${question.card.pinyin}` : ""}
                 </Text>
                 {question.card.translation ? (
-                  <Text style={styles.correctSubText}>
-                    Nghĩa: {question.card.translation}
-                  </Text>
+                  <Text style={styles.correctSubText}>{question.card.translation}</Text>
                 ) : null}
               </View>
             ) : (
               <View style={styles.answerExplainBox}>
-                <Text style={styles.explainLabel}>ĐÁP ÁN ĐÚNG LÀ:</Text>
                 <Text style={styles.explainValue}>{question.correctAnswer}</Text>
+                {question.card.translation && question.correctAnswer !== question.card.translation ? (
+                  <Text style={styles.correctSubText}>{question.card.translation}</Text>
+                ) : null}
               </View>
             )}
           </View>
@@ -575,21 +645,16 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   correctSubText: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.85)",
     fontWeight: "600",
+    marginTop: 2,
   },
   answerExplainBox: {
     marginTop: 4,
   },
-  explainLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: Colors.duolingo.red,
-    letterSpacing: 0.8,
-  },
   explainValue: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "800",
     color: "#FFFFFF",
     marginTop: 2,

@@ -262,8 +262,8 @@ const styles = StyleSheet.create({
   scoreText: { fontSize: 14, fontWeight: "800", color: Colors.duolingo.yellow },
 
   titleSection: { marginBottom: Spacing.md, alignItems: "center" },
-  titleText: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.5 },
-  subTitleText: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 2, textAlign: "center" },
+  titleText: { fontSize: 20, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.5 },
+  subTitleText: { fontSize: 13, fontWeight: "600", color: Colors.duolingo.textMuted, marginTop: 2, textAlign: "center" },
 
   typeBadge: {
     flexDirection: "row",
