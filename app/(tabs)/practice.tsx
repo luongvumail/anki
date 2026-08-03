@@ -116,30 +116,6 @@ export default function PracticeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Level & XP Banner */}
-        <DuolingoCard style={styles.levelCard}>
-          <View style={styles.levelHeaderRow}>
-            <View style={[styles.levelBadgeBox, { flexDirection: "row", alignItems: "center", gap: 8 }]}>
-              <Ionicons name="ribbon" size={22} color={Colors.duolingo.purple} />
-              <View>
-                <Text style={styles.levelBadgeTitle}>{levelInfo.title}</Text>
-                <Text style={styles.levelBadgeSub}>{levelInfo.titleVi}</Text>
-              </View>
-            </View>
-
-            <View style={styles.xpBox}>
-              <Ionicons name="flash" size={16} color={Colors.duolingo.yellow} />
-              <Text style={styles.xpValText}>{xp} XP</Text>
-            </View>
-          </View>
-
-          <View style={styles.levelProgressRow}>
-            <Text style={styles.levelNumText}>Level {levelInfo.level}</Text>
-            <ProgressBar progress={levelInfo.progress} height={12} fillColor={Colors.duolingo.yellow} style={{ flex: 1 }} />
-            <Text style={styles.nextLevelXPText}>{levelInfo.nextLevelXP} XP</Text>
-          </View>
-        </DuolingoCard>
-
         {/* Practice Arcade Modes List */}
         <SectionTitle>CHẾ ĐỘ LUYỆN TẬP TỰ DO</SectionTitle>
 

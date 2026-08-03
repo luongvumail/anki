@@ -232,19 +232,39 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
             })}
           </View>
         ) : (
-          /* Game Over Drawer */
+          /* Game Over Drawer with Adaptive Evaluation Message */
           <View style={styles.gameOverCard}>
-            <Text style={styles.gameOverTitle}>HẾT GIỜ!</Text>
+            <View style={styles.gameOverIconCircle}>
+              <Ionicons
+                name={matchedPairs >= 15 ? "trophy" : matchedPairs >= 5 ? "stopwatch" : "alert-circle"}
+                size={44}
+                color={matchedPairs >= 15 ? Colors.duolingo.yellow : matchedPairs >= 5 ? Colors.duolingo.blue : Colors.duolingo.red}
+              />
+            </View>
+
+            <Text style={styles.gameOverTitle}>
+              {matchedPairs >= 15
+                ? "BẬC THẦY TỐC ĐỘ!"
+                : matchedPairs >= 5
+                  ? "KẾT QUẢ TỐT!"
+                  : "CẦN LUYỆN TẬP THÊM!"}
+            </Text>
+
             <Text style={styles.gameOverSub}>
-              Bạn đã ghép thành công <Text style={{ color: Colors.duolingo.yellow, fontWeight: "800" }}>{matchedPairs} cặp từ</Text>!
+              {matchedPairs >= 15
+                ? `Bạn đã ghép xuất sắc ${matchedPairs} cặp từ trong 60 giây!`
+                : matchedPairs >= 5
+                  ? `Bạn đã ghép thành công ${matchedPairs} cặp từ!`
+                  : `Bạn chỉ ghép được ${matchedPairs} cặp từ. Hãy thử lại để rèn phản xạ nhanh hơn nhé!`}
             </Text>
 
             <View style={styles.xpRewardBox}>
+              <Ionicons name="sparkles" size={18} color={Colors.duolingo.yellow} />
               <Text style={styles.xpRewardText}>+{matchedPairs * 2 + 15} XP Thưởng</Text>
             </View>
 
             <DuolingoButton title="CHƠI LẠI" variant="primary" size="lg" onPress={startGame} style={{ marginTop: Spacing.md }} />
-            <DuolingoButton title="THOÁT" variant="secondary" size="md" onPress={onClose} style={{ marginTop: Spacing.xs }} />
+            <DuolingoButton title="THOÁT" variant="ghost" size="md" onPress={onClose} style={{ marginTop: Spacing.xs }} />
           </View>
         )}
       </View>
@@ -303,8 +323,17 @@ const styles = StyleSheet.create({
   tileSubText: { fontSize: 11, color: Colors.duolingo.blue, marginTop: 2, fontWeight: "700" },
 
   gameOverCard: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: Spacing.lg },
-  gameOverTitle: { fontSize: 28, fontWeight: "800", color: "#FFFFFF" },
-  gameOverSub: { fontSize: 16, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center" },
-  xpRewardBox: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(255, 200, 0, 0.15)", paddingHorizontal: 16, paddingVertical: 10, borderRadius: Radii.full, marginVertical: Spacing.lg },
+  gameOverIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.duolingo.cardBg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+  },
+  gameOverTitle: { fontSize: 28, fontWeight: "800", color: Colors.text.white },
+  gameOverSub: { fontSize: 15, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center", lineHeight: 22 },
+  xpRewardBox: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: Colors.duolingo.yellowDim, paddingHorizontal: 16, paddingVertical: 10, borderRadius: Radii.full, marginVertical: Spacing.lg },
   xpRewardText: { fontSize: 18, fontWeight: "800", color: Colors.duolingo.yellow },
 });

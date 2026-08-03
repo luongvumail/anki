@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore, Card } from "../../store/useStore";
-import { Colors, Typography, Spacing } from "../../constants/theme";
+import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
@@ -13,6 +13,7 @@ import { ProgressBar } from "../../components/ui/ProgressBar";
 import { getReviewHistory, getStreakCount, getLocalDateString } from "../../lib/reviewTracker";
 import { isDue } from "../../lib/srs";
 import { BadgesGallery } from "../../components/stats/BadgesGallery";
+import { getLevelInfo } from "../../store/slices/userProgressSlice";
 
 interface DayActivity {
   dateStr: string;
@@ -124,6 +125,9 @@ export default function StatsScreen() {
     return max > 0 ? max : 1;
   }, [weeklyActivity]);
 
+  const xp = useStore((s) => s.xp || 0);
+  const levelInfo = useMemo(() => getLevelInfo(xp), [xp]);
+
   return (
     <View style={styles.container}>
       <DuolingoHeader streakCount={streakCount} />
@@ -143,6 +147,28 @@ export default function StatsScreen() {
           />
         ) : (
           <Animated.View style={{ opacity: fadeAnim }}>
+            {/* Level & Rank Hero Banner */}
+            <DuolingoCard style={styles.levelBanner}>
+              <View style={styles.levelRow}>
+                <View style={styles.levelBadgeCircle}>
+                  <Text style={styles.levelBadgeText}>Lv.{levelInfo.level}</Text>
+                </View>
+                <View style={styles.levelTextContainer}>
+                  <View style={styles.levelTitleRow}>
+                    <Text style={styles.levelTitleCn}>{levelInfo.title}</Text>
+                    <Text style={styles.levelTitleVi}>({levelInfo.titleVi})</Text>
+                  </View>
+                  <Text style={styles.xpText}>{xp} XP Tích Lũy</Text>
+                </View>
+              </View>
+              <ProgressBar
+                progress={levelInfo.progress}
+                height={12}
+                fillColor={Colors.duolingo.yellow}
+                style={{ marginTop: Spacing.sm }}
+              />
+            </DuolingoCard>
+
             {/* Main Trophy Progress Card */}
             <DuolingoCard style={styles.trophyBanner}>
               <View style={styles.trophyRow}>
@@ -152,14 +178,19 @@ export default function StatsScreen() {
                 <View style={styles.trophyText}>
                   <Text style={styles.trophyTitle}>TIẾN ĐỘ THUỘC TỪ VỰNG</Text>
                   <Text style={styles.trophySub}>
-                    Bạn đã ghi nhớ thuộc {retentionRatePct}% tổng từ vựng
+                    {retentionRatePct === 100
+                      ? "Xuất sắc! Bạn đã thuộc 100% vốn từ hiện tại"
+                      : `Bạn đã ghi nhớ thuộc ${retentionRatePct}% tổng từ vựng`}
                   </Text>
                 </View>
-              </View> 
+                <View style={styles.retentionBadge}>
+                  <Text style={styles.retentionBadgeText}>{retentionRatePct}%</Text>
+                </View>
+              </View>
 
               <ProgressBar
                 progress={retentionRatePct / 100}
-                height={12}
+                height={10}
                 fillColor={Colors.duolingo.green}
                 style={{ marginTop: Spacing.sm }}
               />
@@ -233,76 +264,56 @@ export default function StatsScreen() {
             <BadgesGallery streakCount={streakCount} learnedCards={learnedCount} />
 
             {/* Comprehensive User Guide & SRS Mechanics Section */}
-            <SectionTitle>HƯỚNG DẪN SỬ DỤNG & NGUYÊN LÝ HOẠT ĐỘNG</SectionTitle>
+            <SectionTitle>HƯỚNG DẪN SỬ DỤNG & QUY TRÌNH HỌC</SectionTitle>
 
             <View style={styles.guideListContainer}>
-              {/* Step 1: SRS Mechanics */}
+              {/* Step 1: SRS SM-2 Algorithm */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View style={[styles.guideIconTile, { backgroundColor: "rgba(168, 85, 247, 0.15)" }]}>
                     <Ionicons name="analytics" size={22} color={Colors.duolingo.purple} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>1. Nguyên lý Trí nhớ Ngắt quãng (SRS)</Text>
-                    <Text style={styles.guideSub}>Thuật toán SuperMemo-2 (SM-2)</Text>
+                    <Text style={styles.guideTitle}>1. Thuật toán Trí nhớ Ngắt quãng (SRS SM-2)</Text>
+                    <Text style={styles.guideSub}>Tự động tính thời điểm tối ưu nhắc ôn bài</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Bộ não con người sẽ quên tới 70% từ mới sau 24 giờ. Thuật toán SRS tự động tính
-                  toán chính xác thời điểm từ vựng sắp bị quên để nhắc bạn ôn tập. Mỗi lần trả lời
-                  đúng, khoảng cách ngày ôn sẽ nhân lên (1 ngày ➔ 6 ngày ➔ 15 ngày ➔ 1 tháng...),
-                  đưa từ vựng vào trí nhớ dài hạn vĩnh viễn.
+                  Bộ não con người sẽ quên tới 70% từ mới sau 24h. Thuật toán SRS SM-2 tự động tính toán thời gian phản xạ (ms) và số lần ôn tập để xếp lịch nhắc bài trước khi từ vựng bị quên, đưa từ vựng vào trí nhớ dài hạn vĩnh viễn.
                 </Text>
               </DuolingoCard>
 
-              {/* Step 2: Swipe Gestures */}
+              {/* Step 2: 3-Stage Study Loop */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View style={[styles.guideIconTile, { backgroundColor: "rgba(28, 176, 246, 0.15)" }]}>
-                    <Ionicons name="card" size={22} color={Colors.duolingo.blue} />
+                    <Ionicons name="git-network" size={22} color={Colors.duolingo.blue} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>2. Chế độ Lật Thẻ Flashcard</Text>
-                    <Text style={styles.guideSub}>
-                      Tự đánh giá mức độ thuộc từ bằng thao tác vuốt
-                    </Text>
+                    <Text style={styles.guideTitle}>2. Lộ trình Học 3 Giai đoạn Thông minh</Text>
+                    <Text style={styles.guideSub}>Nạp từ ➔ Kiểm tra Quiz ➔ Sửa lỗi Cắm cờ</Text>
                   </View>
                 </View>
                 <View style={styles.gestureGuideList}>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: "#FFFFFF" }}>Chạm mặt thẻ:</Text> Mở
-                      đáp án Pinyin, âm thanh phát âm, dịch nghĩa & câu ví dụ.
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.blue }}>Giai đoạn 1 (Nạp từ):</Text> Lật thẻ Flashcard xem Hán tự, Pinyin, Phát âm, Dịch nghĩa & Bộ thủ.
                     </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: Colors.duolingo.red }}>
-                        Vuốt Trái (Quên):
-                      </Text>{" "}
-                      Thẻ xuất hiện lại sau 2 thẻ nữa để ôn lại trong phiên.
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>Giai đoạn 2 (Kiểm tra):</Text> Làm bài Quiz kiểm tra kiến thức đa dạng dạng bài.
                     </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>
-                        Vuốt Lên (Khó):
-                      </Text>{" "}
-                      Ôn lại ở cuối phiên và lặp lại vào ngày mai (1 ngày).
-                    </Text>
-                  </View>
-                  <View style={styles.gestureRowItem}>
-                    <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>
-                        Vuốt Phải (Dễ):
-                      </Text>{" "}
-                      Thuộc từ hoàn toàn, hệ thống tự động tăng khoảng cách ôn tập tiếp theo.
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Giai đoạn 3 (Cắm cờ):</Text> Tự động lập vòng lặp sửa lỗi nhanh cho các câu làm sai hoặc làm chậm (&gt;4 giây).
                     </Text>
                   </View>
                 </View>
               </DuolingoCard>
 
-              {/* Step 3: Quiz Mode - Adaptive Questions */}
+              {/* Step 3: Adaptive Quiz Types */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View style={[styles.guideIconTile, { backgroundColor: "rgba(88, 204, 2, 0.15)" }]}>
@@ -310,138 +321,92 @@ export default function StatsScreen() {
                   </View>
                   <View style={styles.guideHeaderText}>
                     <Text style={styles.guideTitle}>3. Chế độ Trắc nghiệm Thích ứng (Quiz)</Text>
-                    <Text style={styles.guideSub}>
-                      Dạng bài tập tự động thay đổi theo độ thuộc từ
-                    </Text>
+                    <Text style={styles.guideSub}>4 Dạng bài tập biến hóa theo độ thuộc từ</Text>
                   </View>
                 </View>
-                <Text style={styles.guideDesc}>
-                  Hệ thống tự động điều chỉnh dạng câu hỏi dựa trên số lần bạn đã ôn tập thẻ đó:
-                </Text>
                 <View style={styles.gestureGuideList}>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: "#FFFFFF" }}>Lần đầu (Từ mới):</Text>{" "}
-                      Chọn nghĩa Tiếng Việt — Ưu tiên ghi nhớ ý nghĩa từ vựng trước.
+                      <Text style={{ fontWeight: "800", color: "#FFFFFF" }}>Chọn Nghĩa Tiếng Việt:</Text> Nhớ ý nghĩa cơ bản của từ vựng mới.
                     </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>
-                        Lần 2 - 3:
-                      </Text>{" "}
-                      Chọn Pinyin & Thanh điệu — Luyện chuẩn hóa phiên âm.
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.blue }}>Chọn Pinyin:</Text> Chuẩn hóa phiên âm &amp; dấu thanh điệu.
                     </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>
-                        Lần 4 - 5:
-                      </Text>{" "}
-                      Nghe phát âm chọn Chữ Hán — Rèn luyện phản xạ nghe.
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>Nghe âm thanh chọn Hán tự:</Text> Rèn phản xạ thính giác.
                     </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>
-                        Từ thuộc sâu:
-                      </Text>{" "}
-                      Điền từ vào câu ngữ cảnh (Cloze) — Ứng dụng từ trong câu thực tế.
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>Điền câu Cloze ngữ cảnh:</Text> Ứng dụng từ vựng trong câu hoàn chỉnh.
                     </Text>
                   </View>
                 </View>
               </DuolingoCard>
 
-              {/* Step 4: Practice Hub & Games */}
+              {/* Step 4: Arcade Practice Hub */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View style={[styles.guideIconTile, { backgroundColor: "rgba(255, 200, 0, 0.15)" }]}>
                     <Ionicons name="game-controller" size={22} color={Colors.duolingo.yellow} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>4. Trung tâm Luyện tập & Mini-Games</Text>
-                    <Text style={styles.guideSub}>
-                      Luyện phản xạ tự do không ảnh hưởng lịch SRS
-                    </Text>
+                    <Text style={styles.guideTitle}>4. Trung tâm Luyện tập Arcade</Text>
+                    <Text style={styles.guideSub}>Luyện phản xạ với 3 Mini-Games tự do</Text>
                   </View>
                 </View>
                 <View style={styles.gestureGuideList}>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>
-                        Game Ghép Từ Nhanh 60s:
-                      </Text>{" "}
-                      Thử thách 60 giây ghép cặp Chữ Hán ↔ Nghĩa/Pinyin rèn phản xạ.
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>Ghép Từ Nhanh 60s:</Text> Thử thách ghép cặp Hán tự ↔ Nghĩa siêu tốc.
                     </Text>
                   </View>
                   <View style={styles.gestureRowItem}>
                     <Text style={styles.gestureText}>
-                      <Text style={{ fontWeight: "800", color: Colors.duolingo.blue }}>
-                        Xếp Từ Thành Câu:
-                      </Text>{" "}
-                      Kéo/bấm từ xáo trộn để sắp xếp lại thành câu ví dụ chuẩn ngữ pháp.
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.green }}>Xếp Từ Thành Câu:</Text> Ghép câu ví dụ có kèm từ gây nhiễu rèn ngữ pháp.
+                    </Text>
+                  </View>
+                  <View style={styles.gestureRowItem}>
+                    <Text style={styles.gestureText}>
+                      <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>Phòng Luyện Phát Âm AI:</Text> Thu âm đọc Hán tự, AI chấm điểm Pinyin &amp; 4 thanh điệu.
                     </Text>
                   </View>
                 </View>
               </DuolingoCard>
 
-              {/* Step 5: XP & Badges System */}
-              <DuolingoCard style={styles.guideCard}>
-                <View style={styles.guideHeaderRow}>
-                  <View style={[styles.guideIconTile, { backgroundColor: "rgba(255, 150, 0, 0.15)" }]}>
-                    <Ionicons name="ribbon" size={22} color="#FF9600" />
-                  </View>
-                  <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>5. Điểm XP & Cấp độ Hán Ngữ</Text>
-                    <Text style={styles.guideSub}>Tích lũy kinh nghiệm & mở khóa huy hiệu</Text>
-                  </View>
-                </View>
-                <Text style={styles.guideDesc}>
-                  Mỗi lần học bài (+50 XP), trả lời đúng Quiz (+5 XP) hoặc chơi Game 60s (+15 XP)
-                  đều tích lũy điểm kinh nghiệm để thăng cấp danh hiệu (từ{" "}
-                  <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>初学者</Text>{" "}
-                  tới{" "}
-                  <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>汉字宗师</Text>
-                  ) và mở khóa Bộ Huy Hiệu cá nhân.
-                </Text>
-              </DuolingoCard>
-
-              {/* Step 6: AI Card Generator */}
+              {/* Step 5: AI Automatic Creation */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View style={[styles.guideIconTile, { backgroundColor: "rgba(28, 176, 246, 0.15)" }]}>
                     <Ionicons name="sparkles" size={22} color={Colors.duolingo.blue} />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>6. Nạp từ vựng tự động bằng AI</Text>
-                    <Text style={styles.guideSub}>Tạo thẻ từ vựng siêu tốc với AI</Text>
+                    <Text style={styles.guideTitle}>5. Nạp Từ Vựng Tự Động Bằng AI</Text>
+                    <Text style={styles.guideSub}>Trích xuất dữ liệu từ vựng thông minh</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Bấm vào nút{" "}
-                  <Text style={{ fontWeight: "800", color: Colors.duolingo.blue }}>AI (+)</Text> ➔
-                  Nhập chữ Hán/câu Tiếng Trung ➔ AI tự động tạo Pinyin, nghĩa Tiếng Việt, phân tích
-                  Bộ thủ & câu ví dụ. Tự động loại bỏ từ trùng lặp và lưu tất cả bằng 1 chạm.
+                  Nhập từ Hán hoặc câu văn Tiếng Trung ➔ AI tự động trích xuất Pinyin, Nghĩa Tiếng Việt, Phân tích Bộ thủ siêu ngắn gọn và tạo Câu ví dụ chuẩn ngữ cảnh trong 1 giây.
                 </Text>
               </DuolingoCard>
 
-              {/* Step 7: Daily Learning Streak */}
+              {/* Step 6: Rank Titles & Badges */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
-                  <View style={[styles.guideIconTile, { backgroundColor: "rgba(255, 200, 0, 0.15)" }]}>
-                    <Ionicons name="flame" size={22} color={Colors.duolingo.yellow} />
+                  <View style={[styles.guideIconTile, { backgroundColor: "rgba(255, 150, 0, 0.15)" }]}>
+                    <Ionicons name="trophy" size={22} color="#FF9600" />
                   </View>
                   <View style={styles.guideHeaderText}>
-                    <Text style={styles.guideTitle}>7. Duy trì Chuỗi Học (Streak)</Text>
-                    <Text style={styles.guideSub}>Bí quyết ghi nhớ bền vững</Text>
+                    <Text style={styles.guideTitle}>6. Cấp Độ Hán Ngữ &amp; Bộ Huy Hiệu</Text>
+                    <Text style={styles.guideSub}>Thăng hạng danh hiệu thực chất &amp; mở khóa huy hiệu</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Mỗi ngày chỉ cần ôn tập ít nhất 1 bài để giữ vững ngọn lửa{" "}
-                  <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>
-                    Streak
-                  </Text>
-                  . Việc học đều đặn 5-10 phút mỗi ngày hiệu quả hơn gấp nhiều lần so với học dồn dập vào cuối tuần!
+                  Tích lũy XP qua bài học để thăng hạng qua 6 cấp danh hiệu Hán ngữ chuẩn (từ <Text style={{ fontWeight: "800", color: Colors.duolingo.yellow }}>初学者</Text> tới <Text style={{ fontWeight: "800", color: Colors.duolingo.purple }}>汉字宗师</Text>) và chinh phục Bộ 14 Huy hiệu thành tích cá nhân.
                 </Text>
               </DuolingoCard>
             </View>
@@ -456,8 +421,42 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.duolingo.bg },
   scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md },
 
+  levelBanner: { padding: Spacing.md, marginBottom: Spacing.md },
+  levelRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  levelBadgeCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: Colors.duolingo.yellowDim,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Colors.duolingo.yellow,
+  },
+  levelBadgeText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: Colors.duolingo.yellow,
+  },
+  levelTextContainer: { flex: 1 },
+  levelTitleRow: { flexDirection: "row", alignItems: "baseline", gap: 6 },
+  levelTitleCn: { fontSize: 18, fontWeight: "800", color: Colors.text.white },
+  levelTitleVi: { fontSize: 13, fontWeight: "600", color: Colors.duolingo.textMuted },
+  xpText: { fontSize: 12, fontWeight: "800", color: Colors.duolingo.yellow, marginTop: 2 },
+
   trophyBanner: { padding: Spacing.md, marginBottom: Spacing.md },
   trophyRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  retentionBadge: {
+    backgroundColor: Colors.duolingo.greenDim,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radii.full,
+  },
+  retentionBadgeText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: Colors.duolingo.green,
+  },
   trophyIconBox: {
     width: 44,
     height: 44,

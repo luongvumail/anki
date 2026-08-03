@@ -34,6 +34,29 @@ async function generateWithFallback(prompt: string): Promise<string> {
   throw lastError;
 }
 
+/** Plain-text variant — does NOT force JSON mime type. Used for radical/creative analysis. */
+async function generateWithFallbackText(prompt: string): Promise<string> {
+  let lastError: unknown = null;
+  for (const modelName of CANDIDATE_MODELS) {
+    try {
+      console.log(`[Gemini/text] Attempting with model: ${modelName}`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: { temperature: 0.3 },
+      });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      console.log(`[Gemini/text] Success using model: ${modelName}`);
+      return text;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[Gemini/text] Model ${modelName} failed (${msg}), trying fallback...`);
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
 function sanitizeInput(input: string): string {
   return input
     .trim()
@@ -92,12 +115,10 @@ export async function generateCardData(input: string): Promise<CardData> {
   const cleanInput = sanitizeInput(input);
   const prompt = `Bạn là chuyên gia Hán-Việt. Phân tích chi tiết từ tiếng Trung: "${cleanInput}"
 
-BẮT BUỘC VỀ TRƯỜNG "radical":
-Trường "radical" BẮT BUỘC phải phân tích rõ ràng chữ Hán đó được ghép từ các bộ thủ chính nào, tên Hán-Việt và ý nghĩa của từng bộ thủ. KHÔNG ĐƯỢC bỏ trống hoặc trả về chung chung.
-Ví dụ:
-- "休": "Gồm bộ Nhân (亻 - người) + bộ Mộc (木 - cây). Người tựa vào gốc cây nghỉ ngơi."
-- "语": "Gồm bộ Ngôn (讠 - lời nói) + bộ Ngũ (五) + bộ Khẩu (口 - miệng). Lời nói phát ra từ miệng."
-- "好": "Gồm bộ Nữ (女 - phụ nữ) + bộ Tử (子 - con). Mẹ ôm con tượng trưng cho sự tốt đẹp."
+TRƯỜNG "radical" — BẮT BUỘC, NGẮN GỌN TỐI ĐA 2 CÂU:
+Câu 1: bộ thủ cấu thành (tên Hán-Việt + ký tự + nghĩa). Câu 2: mẹo nhớ hình ảnh.
+Ví dụ: "好: bộ Nữ (女) + bộ Tử (子). Mẹ ôm con → tốt đẹp."
+Ví dụ: "休: bộ Nhân (亻) + bộ Mộc (木). Người tựa cây nghỉ ngơi."
 
 Trả về JSON (CHỈ JSON, không markdown):
 {
@@ -112,7 +133,7 @@ Trả về JSON (CHỈ JSON, không markdown):
       "vietnamese": "dịch nghĩa"
     }
   ],
-  "radical": "tên bộ thủ và cấu tạo chiết tự đầy đủ",
+  "radical": "tối đa 2 câu: bộ thủ + mẹo nhớ",
   "strokeCount": 0,
   "hskLevel": 1,
   "tags": ["loại từ"]
@@ -205,4 +226,46 @@ Trả về JSON:
   const text = await generateWithFallback(prompt);
   const jsonText = extractCleanJson(text);
   return JSON.parse(jsonText);
+}
+
+/**
+ * Generates radical/component breakdown analysis for a single Chinese character or word.
+ * Used to retroactively fill in the `radical` field for older cards that were created without it.
+ * Returns clean plain-text Vietnamese — no markdown, no JSON.
+ */
+export async function generateRadical(character: string): Promise<string> {
+  const clean = sanitizeInput(character);
+  const prompt = `Phân tích chiết tự từ "${clean}" bằng tiếng Việt, ngắn gọn tối đa 2 câu.
+Câu 1: liệt kê bộ thủ (tên Hán-Việt + ký tự + nghĩa). Câu 2: mẹo nhớ hình ảnh.
+Không dùng markdown, không giải thích thêm, không chào hỏi.
+Ví dụ tốt: "好: bộ Nữ (女) + bộ Tử (子). Mẹ ôm con → tốt đẹp."
+Ví dụ tốt: "学: bộ Học (學) gồm 爫+冖+子, trẻ con ngồi dưới mái học bài → học tập."
+Phân tích từ: "${clean}"`;
+
+  const raw = await generateWithFallbackText(prompt);
+  return cleanRadicalText(raw);
+}
+
+/**
+ * Strips all markdown and formatting artifacts from AI plain-text output.
+ */
+function cleanRadicalText(raw: string): string {
+  return raw
+    // Remove fenced code blocks
+    .replace(/```[\s\S]*?```/g, "")
+    // Remove markdown bold/italic markers
+    .replace(/[*_]{1,3}(.*?)[*_]{1,3}/g, "$1")
+    // Remove markdown headings (#, ##, ###)
+    .replace(/^#{1,6}\s+/gm, "")
+    // Remove bullet list markers (- , * , • )
+    .replace(/^[\-\*•]\s+/gm, "")
+    // Remove numbered list (1. 2. etc)
+    .replace(/^\d+\.\s+/gm, "")
+    // Remove HTML tags
+    .replace(/<[^>]+>/g, "")
+    // Remove lines that are just punctuation/whitespace
+    .replace(/^[\s\-=_]{3,}$/gm, "")
+    // Collapse 3+ newlines into 2
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

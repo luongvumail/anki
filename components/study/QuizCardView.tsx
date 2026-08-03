@@ -13,6 +13,7 @@ import * as Speech from "expo-speech";
 import { QuizQuestion } from "../../lib/quizGenerator";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
+import { AudioButton } from "../ui/AudioButton";
 
 export type WeakTagType = "pinyin" | "character" | "meaning";
 
@@ -209,30 +210,42 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
               <Text style={styles.characterBig}>
                 {question.targetText || question.card.character}
               </Text>
-              <TouchableOpacity
-                style={styles.speakBtn}
+              {question.subText ? (
+                <Text
+                  style={[
+                    styles.subTextHint,
+                    {
+                      color:
+                        question.type === "meaning_choice"
+                          ? Colors.duolingo.blue
+                          : Colors.duolingo.green,
+                    },
+                  ]}
+                >
+                  {question.subText}
+                </Text>
+              ) : null}
+              <AudioButton
                 onPress={() => playTTS(question.card.character)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.speakBtnText}>Nghe phát âm</Text>
-              </TouchableOpacity>
+                isPlaying={speaking}
+                size="md"
+                style={{ marginTop: 6 }}
+              />
             </View>
           )}
 
           {question.type === "listening" && (
             <View style={styles.audioTargetBox}>
-              <TouchableOpacity
-                style={styles.bigAudioBtn}
+              <AudioButton
                 onPress={() => playTTS(question.audioText || question.card.character)}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name={speaking ? "volume-high" : "volume-medium"}
-                  size={46}
-                  color="#FFFFFF"
-                />
-              </TouchableOpacity>
-              <Text style={styles.audioHintText}>Chạm để nghe phát âm</Text>
+                isPlaying={speaking}
+                size="lg"
+              />
+              {question.subText ? (
+                <Text style={[styles.subTextHint, { color: Colors.duolingo.green, marginTop: 10 }]}>
+                  {question.subText}
+                </Text>
+              ) : null}
             </View>
           )}
 
@@ -357,28 +370,20 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                   { color: isCorrect ? Colors.duolingo.green : Colors.duolingo.red },
                 ]}
               >
-                {isCorrect ? "Chính xác!" : "Chưa chính xác"}
+                {isCorrect ? "Chính xác!" : "Đáp án đúng:"}
               </Text>
             </View>
 
-            {isCorrect ? (
-              <View style={styles.answerExplainBox}>
-                <Text style={styles.explainValue}>
-                  {question.card.character}
-                  {question.card.pinyin ? ` · ${question.card.pinyin}` : ""}
-                </Text>
-                {question.card.translation ? (
-                  <Text style={styles.correctSubText}>{question.card.translation}</Text>
-                ) : null}
-              </View>
-            ) : (
-              <View style={styles.answerExplainBox}>
-                <Text style={styles.explainValue}>{question.correctAnswer}</Text>
-                {question.card.translation && question.correctAnswer !== question.card.translation ? (
-                  <Text style={styles.correctSubText}>{question.card.translation}</Text>
-                ) : null}
-              </View>
-            )}
+            {/* Unified Answer Explanation: Character + Pinyin + Translation */}
+            <View style={styles.answerExplainBox}>
+              <Text style={styles.explainChar}>
+                {question.card.character}
+                {question.card.pinyin ? ` · ${question.card.pinyin}` : ""}
+              </Text>
+              {question.card.translation ? (
+                <Text style={styles.explainTrans}>{question.card.translation}</Text>
+              ) : null}
+            </View>
           </View>
 
           <DuolingoButton
@@ -454,8 +459,15 @@ const styles = StyleSheet.create({
   characterBig: {
     fontSize: 48,
     fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 8,
+    color: Colors.text.white,
+    marginBottom: 4,
+  },
+  subTextHint: {
+    fontSize: 16,
+    fontWeight: "800",
+    marginTop: 2,
+    marginBottom: 6,
+    textAlign: "center",
   },
   speakBtn: {
     flexDirection: "row",
@@ -623,16 +635,18 @@ const styles = StyleSheet.create({
     paddingBottom: Math.max(Spacing.lg, 24),
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
-    borderTopWidth: 0,
+    borderTopWidth: 2,
   },
   resultDrawerCorrect: {
     backgroundColor: "#193318",
+    borderTopColor: Colors.duolingo.greenDark,
   },
   resultDrawerWrong: {
     backgroundColor: "#381616",
+    borderTopColor: Colors.duolingo.redDark,
   },
   resultHeader: {
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   resultTitleRow: {
     flexDirection: "row",
@@ -644,19 +658,18 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
   },
-  correctSubText: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.85)",
-    fontWeight: "600",
-    marginTop: 2,
-  },
   answerExplainBox: {
     marginTop: 4,
   },
-  explainValue: {
+  explainChar: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: Colors.text.white,
+  },
+  explainTrans: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.duolingo.green,
     marginTop: 2,
   },
 });

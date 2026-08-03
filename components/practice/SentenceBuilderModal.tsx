@@ -40,6 +40,17 @@ function splitChineseSentence(sentence: string): string[] {
   return chars;
 }
 
+const COMMON_DISTRACTOR_TOKENS = [
+  "的", "了", "在", "是", "不", "也", "都", "和", "就", "过", "会", "很", "有", "要", "去", "这", "那"
+];
+
+function getDistractorTokens(sentenceTokens: string[], count = 2): string[] {
+  const existingSet = new Set(sentenceTokens);
+  const candidates = COMMON_DISTRACTOR_TOKENS.filter((t) => !existingSet.has(t));
+  const shuffled = [...candidates].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
 export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilderModalProps) {
   const insets = useSafeAreaInsets();
   const addXP = useStore((s) => s.addXP);
@@ -50,6 +61,7 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
   const [allChips, setAllChips] = useState<{ id: number; text: string }[]>([]);
   const [isChecked, setIsChecked] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
   const [isDone, setIsDone] = useState(false);
 
   const selectedChipIds = useMemo(() => new Set(selectedChips.map((c) => c.id)), [selectedChips]);
@@ -79,6 +91,7 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
 
       setExercises(generated);
       setCurrentIndex(0);
+      setCorrectCount(0);
       setIsDone(false);
       if (generated.length > 0) {
         setupExercise(generated[0]);
@@ -92,8 +105,15 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
     setSelectedChips([]);
     drawerAnim.setValue(300);
 
-    const chips = ex.wordChips.map((text, idx) => ({ id: idx, text }));
-    const shuffled = [...chips].sort(() => 0.5 - Math.random());
+    const mainChips = ex.wordChips.map((text, idx) => ({ id: idx, text }));
+    // Add 2 distractor tokens (từ gây nhiễu) to increase challenge
+    const distractors = getDistractorTokens(ex.wordChips, 2).map((text, idx) => ({
+      id: 100 + idx,
+      text,
+    }));
+
+    const allCombined = [...mainChips, ...distractors];
+    const shuffled = [...allCombined].sort(() => 0.5 - Math.random());
     setAllChips(shuffled);
   };
 
@@ -123,6 +143,7 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
 
     if (correct) {
       triggerHaptic("success");
+      setCorrectCount((prev) => prev + 1);
       addXP(15);
     } else {
       triggerHaptic("error");
@@ -256,15 +277,47 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
             </View>
           </ScrollView>
         ) : (
-          /* Completion Screen */
+          /* Completion Screen with Adaptive Evaluation Message */
           <View style={styles.doneContainer}>
-            <Text style={styles.doneTitle}>HOÀN THÀNH BÀI TẬP!</Text>
-            <Text style={styles.doneSub}>
-              Bạn đã luyện tập thành công {exercises.length} câu ví dụ!
+            <View style={styles.doneIconCircle}>
+              <Ionicons
+                name={
+                  correctCount === exercises.length
+                    ? "trophy"
+                    : correctCount >= exercises.length / 2
+                      ? "checkmark-circle"
+                      : "alert-circle"
+                }
+                size={48}
+                color={
+                  correctCount === exercises.length
+                    ? Colors.duolingo.yellow
+                    : correctCount >= exercises.length / 2
+                      ? Colors.duolingo.green
+                      : Colors.duolingo.red
+                }
+              />
+            </View>
+
+            <Text style={styles.doneTitle}>
+              {correctCount === exercises.length
+                ? "XUẤT SẮC! 太棒了!"
+                : correctCount >= exercises.length / 2
+                  ? "RẤT TỐT!"
+                  : "CẦN CỐ GẮNG HƠN!"}
             </Text>
+
+            <Text style={styles.doneSub}>
+              {correctCount === exercises.length
+                ? `Bạn đã xếp đúng tuyệt đối ${correctCount}/${exercises.length} câu ví dụ!`
+                : correctCount >= exercises.length / 2
+                  ? `Bạn đã xếp đúng ${correctCount}/${exercises.length} câu ví dụ. Tiếp tục phát huy nhé!`
+                  : `Bạn chỉ xếp đúng ${correctCount}/${exercises.length} câu. Hãy luyện tập thêm để làm quen cấu trúc câu!`}
+            </Text>
+
             <DuolingoButton
               title="HOÀN TẤT"
-              variant="primary"
+              variant={correctCount >= exercises.length / 2 ? "primary" : "ghost"}
               size="lg"
               onPress={onClose}
               style={{ marginTop: Spacing.lg }}
@@ -387,10 +440,12 @@ const styles = StyleSheet.create({
     borderRadius: Radii.md,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: "transparent",
     borderBottomWidth: 3,
     borderBottomColor: Colors.duolingo.cardBottom,
   },
-  chipTextAvailable: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
+  chipTextAvailable: { fontSize: 18, fontWeight: "800", color: Colors.text.white },
   chipSlotEmpty: {
     backgroundColor: "#18242B",
     borderRadius: Radii.md,
@@ -405,6 +460,8 @@ const styles = StyleSheet.create({
     borderRadius: Radii.md,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: "transparent",
     borderBottomWidth: 3,
     borderBottomColor: Colors.duolingo.blueDark,
   },
@@ -449,6 +506,15 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF" },
   emptySub: { fontSize: 14, color: Colors.duolingo.textMuted, textAlign: "center", marginTop: 6 },
   doneContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: Spacing.xl },
-  doneTitle: { fontSize: 24, fontWeight: "800", color: "#FFFFFF" },
-  doneSub: { fontSize: 14, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center" },
+  doneIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.duolingo.cardBg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+  },
+  doneTitle: { fontSize: 24, fontWeight: "800", color: Colors.text.white },
+  doneSub: { fontSize: 14, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center", lineHeight: 20 },
 });

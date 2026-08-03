@@ -25,6 +25,7 @@ import { useStore } from "../../store/useStore";
 import { recordReviewToday } from "../../lib/reviewTracker";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
+import { AudioButton } from "../ui/AudioButton";
 import { ProgressBar } from "../ui/ProgressBar";
 
 export interface PronunciationTrainerModalProps {
@@ -173,7 +174,7 @@ export function PronunciationTrainerModal({
       if (!cleanSpoken) {
         // Case 1: Silent / Unrecognized
         calcScore = 0;
-        msg = "⚠️ Không nghe thấy âm thanh. Vui lòng bấm loa nghe âm mẫu và đọc to vào Micro.";
+        msg = "Không nghe thấy âm thanh. Vui lòng bấm loa nghe âm mẫu và đọc to vào Micro.";
         triggerHaptic("error");
       } else {
         const spokenLower = cleanSpoken.toLowerCase();
@@ -186,7 +187,7 @@ export function PronunciationTrainerModal({
         if (hasExactChar || isReverseMatch) {
           // Case 2: Exact Match -> 90-100% dựa trên độ dài trùng khớp
           calcScore = 95;
-          msg = "🌟 Hoàn hảo! Bạn phát âm Pinyin & Thanh điệu chính xác.";
+          msg = "Hoàn hảo! Bạn phát âm Pinyin & Thanh điệu chính xác.";
           triggerHaptic("success");
           addXP(20);
         } else {
@@ -204,13 +205,13 @@ export function PronunciationTrainerModal({
           if (overlapRatio > 0 || (targetPinyin && spokenLower.includes(targetPinyin))) {
             // Case 3: Partial Match
             calcScore = Math.max(60, Math.min(85, Math.floor(overlapRatio * 100)));
-            msg = `👍 Gần chính xác! Âm nhận diện là "${cleanSpoken}". Chú ý giữ chuẩn thanh điệu.`;
+            msg = `Gần chính xác! Âm nhận diện là "${cleanSpoken}". Chú ý giữ chuẩn thanh điệu.`;
             triggerHaptic("warning");
             addXP(10);
           } else {
             // Case 4: Wrong Word / Mispronounced Completely
             calcScore = 30;
-            msg = `❌ Chưa đúng! Âm bạn đọc là "${cleanSpoken}". Từ chuẩn là "${targetChar}" (${currentCard.pinyin}). Hãy thử lại nhé!`;
+            msg = `Chưa đúng! Âm bạn đọc là "${cleanSpoken}". Từ chuẩn là "${targetChar}" (${currentCard.pinyin}). Hãy thử lại nhé!`;
             triggerHaptic("error");
           }
         }
@@ -312,7 +313,7 @@ export function PronunciationTrainerModal({
       const status = await AudioModule.requestRecordingPermissionsAsync();
       if (!status.granted) {
         setFeedback(
-          "⚠️ Cần cấp quyền microphone để thu âm. Vào Cài đặt → Quyền riêng tư → Microphone.",
+          "Cần cấp quyền microphone để thu âm. Vào Cài đặt → Quyền riêng tư → Microphone.",
         );
         return;
       }
@@ -334,7 +335,7 @@ export function PronunciationTrainerModal({
     } catch (err: any) {
       console.error("startListening error:", err);
       setIsRecording(false);
-      setFeedback("❌ Không thể khởi động microphone. Kiểm tra quyền và thử lại.");
+      setFeedback("Không thể khởi động microphone. Kiểm tra quyền và thử lại.");
     }
   };
 
@@ -368,10 +369,10 @@ export function PronunciationTrainerModal({
       setAnalyzing(false);
       if (err?.message === "QUOTA_EXCEEDED") {
         setFeedback(
-          "⚠️ Gemini API tạm thời hết lượt yêu cầu miễn phí (Limit 429). Bạn vui lòng thử lại sau ít phút.",
+          "Gemini API tạm thời hết lượt yêu cầu miễn phí (Limit 429). Bạn vui lòng thử lại sau ít phút.",
         );
       } else {
-        setFeedback(`❌ Lỗi xử lý âm thanh. Hãy thử đọc lại.`);
+        setFeedback(`Lỗi xử lý âm thanh. Hãy thử đọc lại.`);
       }
     }
   };
@@ -437,13 +438,12 @@ export function PronunciationTrainerModal({
               <Text style={styles.translationText}>{currentCard.translation}</Text>
 
               {/* TTS Listen Button */}
-              <TouchableOpacity
-                style={styles.listenBtn}
+              <AudioButton
                 onPress={() => playTTS(currentCard.character)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.listenBtnText}>Nghe phát âm mẫu</Text>
-              </TouchableOpacity>
+                isPlaying={speaking}
+                size="md"
+                style={{ marginTop: Spacing.xs }}
+              />
             </View>
 
             {/* Microphone Recording Button */}
@@ -475,14 +475,13 @@ export function PronunciationTrainerModal({
               ) : null}
 
               {!isRecording && !analyzing && userAudioUri ? (
-                <TouchableOpacity
+                <AudioButton
                   onPress={playUserRecording}
-                  style={styles.userAudioBtn}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="volume-high" size={18} color={Colors.duolingo.purple} />
-                  <Text style={styles.userAudioBtnText}>Nghe lại giọng mình</Text>
-                </TouchableOpacity>
+                  size="md"
+                  color={Colors.duolingo.purple}
+                  backgroundColor={Colors.duolingo.purpleDim}
+                  style={{ marginTop: Spacing.sm }}
+                />
               ) : null}
             </View>
           </ScrollView>

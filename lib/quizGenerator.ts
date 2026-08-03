@@ -219,9 +219,9 @@ export function generateQuizQuestion(
     return {
       card,
       type: "meaning_choice",
-      prompt: "Từ Hán tự này có nghĩa Tiếng Việt là gì?",
+      prompt: "Chọn nghĩa Tiếng Việt của từ Hán tự này:",
       targetText: card.character,
-      subText: card.pinyin ? `Pinyin: ${card.pinyin}` : undefined,
+      subText: card.pinyin || undefined,
       options,
       correctAnswer: card.translation,
     };
@@ -270,7 +270,7 @@ export function generateQuizQuestion(
       type: "listening",
       prompt: "Nghe phát âm và chọn Chữ Hán đúng:",
       audioText: card.character,
-      subText: card.translation ? `Nghĩa: ${card.translation}` : undefined,
+      subText: card.translation || undefined,
       options,
       correctAnswer: card.character,
     };

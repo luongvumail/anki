@@ -28,11 +28,16 @@ export default function StudyScreen() {
   const insets = useSafeAreaInsets();
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
   const cards = useStore((s) => s.cards);
+  const decks = useStore((s) => s.decks);
   const updateCard = useStore((s) => s.updateCard);
   const fetchCards = useStore((s) => s.fetchCards);
   const isLoading = useStore((s) => s.isLoading);
 
   const deckCards = useMemo(() => cards[deckId] || [], [cards, deckId]);
+  const deck = useMemo(
+    () => (Array.isArray(decks) ? decks.find((d) => d.id === deckId) : undefined),
+    [decks, deckId],
+  );
 
   const [stage, setStage] = useState<SessionStage>("preview");
   const [session, setSession] = useState<StudySession | null>(null);
@@ -52,8 +57,11 @@ export default function StudyScreen() {
   // Guard: prevent session from being re-initialized when Zustand re-renders
   const sessionInitialized = useRef(false);
 
+  const fetchDecks = useStore((s) => s.fetchDecks);
+
   useEffect(() => {
     if (deckId) fetchCards(deckId);
+    if (!decks || decks.length === 0) fetchDecks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId]);
 
@@ -280,7 +288,10 @@ export default function StudyScreen() {
     progress = Math.min(1, (repairIndex + 1) / Math.max(1, repairQuestions.length));
   }
 
-  const currentPreviewCard = targetCards[previewIndex];
+  // Resolve current preview card LIVE from deckCards (not the snapshot in targetCards)
+  // This ensures fields updated after session init (e.g. radical) are always shown.
+  const currentPreviewCardId = targetCards[previewIndex]?.id;
+  const currentPreviewCard = deckCards.find((c) => c.id === currentPreviewCardId) ?? targetCards[previewIndex];
   const currentValidationQuestion = questions[session.currentIndex];
   const currentRepairQuestion = repairQuestions[repairIndex];
 
@@ -297,9 +308,12 @@ export default function StudyScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
+          <Text style={styles.deckHeaderTitle} numberOfLines={1}>
+            {deck?.name || "HỌC TỪ VỰNG"}
+          </Text>
           <ProgressBar
             progress={progress}
-            height={16}
+            height={14}
             fillColor={
               stage === "preview"
                 ? Colors.duolingo.blue
@@ -310,7 +324,7 @@ export default function StudyScreen() {
           />
         </View>
 
-        {/* Phase Indicator Badge */}
+        {/* Phase Indicator Badge with Vector Icon */}
         <View
           style={[
             styles.stageBadge,
@@ -321,11 +335,40 @@ export default function StudyScreen() {
               : styles.stageBadgeValidation,
           ]}
         >
-          <Text style={styles.stageBadgeText}>
+          <Ionicons
+            name={
+              stage === "preview"
+                ? "card-outline"
+                : stage === "repair"
+                ? "flash"
+                : "checkmark-circle-outline"
+            }
+            size={13}
+            color={
+              stage === "preview"
+                ? Colors.duolingo.blue
+                : stage === "repair"
+                ? Colors.duolingo.yellow
+                : Colors.duolingo.green
+            }
+          />
+          <Text
+            style={[
+              styles.stageBadgeText,
+              {
+                color:
+                  stage === "preview"
+                    ? Colors.duolingo.blue
+                    : stage === "repair"
+                    ? Colors.duolingo.yellow
+                    : Colors.duolingo.green,
+              },
+            ]}
+          >
             {stage === "preview"
               ? "NẠP TỪ"
               : stage === "repair"
-              ? "⚡ CẮM CỜ"
+              ? "CẮM CỜ"
               : "KIỂM TRA"}
           </Text>
         </View>
@@ -335,7 +378,7 @@ export default function StudyScreen() {
       <View style={styles.stageContentContainer}>
         {stage === "preview" ? (
           currentPreviewCard ? (
-            <FlashcardView
+          <FlashcardView
               key={`fc-${currentPreviewCard.id}-${previewIndex}`}
               card={currentPreviewCard}
               currentIndex={previewIndex}
@@ -392,25 +435,36 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
+    paddingHorizontal: 4,
+  },
+  deckHeaderTitle: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: Colors.duolingo.textMuted,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+    textAlign: "center",
   },
   stageBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: Radii.full,
   },
   stageBadgePreview: {
     backgroundColor: Colors.duolingo.blueDim,
   },
   stageBadgeValidation: {
-    backgroundColor: "rgba(88, 204, 2, 0.15)",
+    backgroundColor: Colors.duolingo.greenDim,
   },
   stageBadgeRepair: {
-    backgroundColor: Colors.duolingo.yellow,
+    backgroundColor: Colors.duolingo.yellowDim,
   },
   stageBadgeText: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#FFFFFF",
     letterSpacing: 0.5,
   },
   stageContentContainer: {

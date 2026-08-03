@@ -10,6 +10,7 @@ export const Colors = {
     greenDark: '#58A700',                // --color-primary-green-dark
     greenShadow: '#58A700',
     greenLight: 'rgba(88, 204, 2, 0.15)',
+    greenDim: 'rgba(88, 204, 2, 0.15)',
     blue: '#1CB0F6',                     // --color-blue
     blueDark: '#1899D6',                 // --color-blue-dark
     blueDim: 'rgba(28, 176, 246, 0.15)',
@@ -17,8 +18,10 @@ export const Colors = {
     redDark: '#EA2B2B',                  // --color-red-dark
     redShadow: '#EA2B2B',
     redLight: 'rgba(255, 75, 75, 0.15)',
+    redDim: 'rgba(255, 75, 75, 0.15)',
     yellow: '#FFC800',                   // --color-yellow
     yellowDark: '#E6B400',               // --color-yellow-dark
+    yellowDim: 'rgba(255, 200, 0, 0.15)',
     orange: '#FFC800',
     purple: '#CE82FF',                   // --color-purple
     purpleDark: '#A568CC',               // --color-purple-dark

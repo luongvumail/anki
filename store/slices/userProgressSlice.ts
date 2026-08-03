@@ -10,21 +10,24 @@ const ASYNC_KEY_BADGES = "@anki_user_badges";
 
 export function getLevelInfo(xp: number) {
   let level = Math.floor(xp / 100) + 1;
-  let title = "初学者"; // Tân thủ
+  let title = "初学者"; // Người mới bắt đầu
   let titleVi = "Người mới bắt đầu";
 
-  if (level >= 51) {
+  if (level >= 81) {
     title = "汉字宗师";
-    titleVi = "Tông sư Chữ Hán";
-  } else if (level >= 31) {
-    title = "汉语大师";
-    titleVi = "Đại sư Hán ngữ";
-  } else if (level >= 16) {
+    titleVi = "Tông sư Hán tự";
+  } else if (level >= 51) {
     title = "汉语达人";
     titleVi = "Cao thủ Hán ngữ";
+  } else if (level >= 31) {
+    title = "通语者";
+    titleVi = "Thông thạo Ngữ cảnh";
+  } else if (level >= 16) {
+    title = "积词人";
+    titleVi = "Tích lũy Từ vựng";
   } else if (level >= 6) {
-    title = "汉语学徒";
-    titleVi = "Học đồ Hán ngữ";
+    title = "识字生";
+    titleVi = "Học viên Nhận chữ";
   }
 
   const currentLevelXP = (level - 1) * 100;
@@ -42,10 +45,11 @@ export function getLevelInfo(xp: number) {
 }
 
 export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
+  // Streak Category
   {
     id: "streak_3",
     title: "Tia Lửa Đầu Tiên",
-    description: "Đạt chuỗi 3 ngày học liên tục",
+    description: "Duy trì chuỗi 3 ngày học liên tục",
     icon: "flame",
     category: "streak",
     target: 3,
@@ -53,19 +57,29 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
   {
     id: "streak_7",
     title: "Rực Rỡ 7 Ngày",
-    description: "Đạt chuỗi 7 ngày học liên tục",
+    description: "Duy trì chuỗi 7 ngày học liên tục",
     icon: "flash",
     category: "streak",
     target: 7,
   },
   {
     id: "streak_30",
-    title: "Ngọn Lửa Kiên Trì",
-    description: "Đạt chuỗi 30 ngày học liên tục",
+    title: "Chiến Binh Kiên Trì",
+    description: "Duy trì chuỗi 30 ngày học liên tục",
     icon: "bonfire",
     category: "streak",
     target: 30,
   },
+  {
+    id: "streak_100",
+    title: "Huyền Thoại Bất Tận",
+    description: "Duy trì chuỗi 100 ngày học liên tục",
+    icon: "ribbon",
+    category: "streak",
+    target: 100,
+  },
+
+  // Vocab Category
   {
     id: "vocab_20",
     title: "Hạt Mầm Hán Tự",
@@ -76,43 +90,79 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
   },
   {
     id: "vocab_100",
-    title: "Khu Vườn Từ Vựng",
+    title: "Vốn Từ Nền Tảng",
     description: "Ghi nhớ thuộc 100 từ vựng",
     icon: "flower",
     category: "vocab",
     target: 100,
   },
   {
-    id: "vocab_500",
-    title: "Cây Cổ Thụ HSK",
-    description: "Ghi nhớ thuộc 500 từ vựng",
-    icon: "planet",
+    id: "vocab_300",
+    title: "Bàn Đạp HSK 3",
+    description: "Ghi nhớ thuộc 300 từ vựng",
+    icon: "book",
     category: "vocab",
-    target: 500,
+    target: 300,
   },
   {
+    id: "vocab_1000",
+    title: "Kho Từ Vạn Chữ",
+    description: "Ghi nhớ thuộc 1,000 từ vựng",
+    icon: "planet",
+    category: "vocab",
+    target: 1000,
+  },
+
+  // Speed Category
+  {
     id: "speed_15",
-    title: "Tay Nhanh Hơn Mắt",
-    description: "Ghép được 15 cặp từ trong Game 60s",
+    title: "Phản Xạ Nhanh",
+    description: "Ghép đúng 15 cặp từ trong Game 60s",
     icon: "stopwatch",
     category: "speed",
     target: 15,
   },
   {
     id: "speed_25",
-    title: "Bậc Thầy Tốc Độ",
-    description: "Ghép được 25 cặp từ trong Game 60s",
-    icon: "trophy",
+    title: "Tốc Độ Cao",
+    description: "Ghép đúng 25 cặp từ trong Game 60s",
+    icon: "speedometer",
     category: "speed",
     target: 25,
   },
   {
-    id: "ai_50",
-    title: "Khai Thác AI",
-    description: "Nạp 50 từ vựng bằng AI",
+    id: "speed_40",
+    title: "Bậc Thầy Tốc Độ",
+    description: "Ghép đúng 40 cặp từ trong Game 60s",
+    icon: "trophy",
+    category: "speed",
+    target: 40,
+  },
+
+  // AI Creation Category
+  {
+    id: "ai_10",
+    title: "Khám Phá AI",
+    description: "Tạo 10 từ vựng bằng AI",
     icon: "sparkles",
     category: "ai",
+    target: 10,
+  },
+  {
+    id: "ai_50",
+    title: "Khai Thác AI",
+    description: "Tạo 50 từ vựng bằng AI",
+    icon: "hardware-chip",
+    category: "ai",
     target: 50,
+  },
+  {
+    id: "ai_200",
+    title: "Chuyên Gia Nạp AI",
+    description: "Tạo 200 từ vựng bằng AI",
+    icon: "planet-outline",
+    category: "ai",
+    target: 200,
   },
 ];
 

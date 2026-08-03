@@ -20,6 +20,7 @@ import { DeckIcon } from "../../components/ui/DeckIcon";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
+import { AudioButton } from "../../components/ui/AudioButton";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
@@ -135,7 +136,7 @@ export default function DeckDetailScreen() {
             <View style={styles.cardMainInfo}>
               <View style={styles.charRow}>
                 <Text style={styles.cardCharacter}>{item.character}</Text>
-                <Text style={[styles.cardPinyin, { color: pinyinColor }]}>{item.pinyin}</Text>
+                <Text style={styles.cardPinyin}>{item.pinyin}</Text>
               </View>
               <Text style={styles.cardMeaning} numberOfLines={1}>
                 {item.translation}
@@ -152,13 +153,10 @@ export default function DeckDetailScreen() {
             </View>
 
             {/* Speaker Audio Btn */}
-            <TouchableOpacity
-              style={styles.speakSmallBtn}
+            <AudioButton
               onPress={() => speak(item.character)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="volume-medium" size={20} color={Colors.duolingo.blue} />
-            </TouchableOpacity>
+              size="sm"
+            />
           </View>
         </DuolingoCard>
       );
@@ -184,7 +182,7 @@ export default function DeckDetailScreen() {
             router.back();
           }}
         >
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={Colors.text.white} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -239,12 +237,15 @@ export default function DeckDetailScreen() {
                 <Text style={styles.deckDescText}>{deck.description}</Text>
               ) : null}
 
-              <ProgressBar
-                progress={masteryPct / 100}
-                height={12}
-                fillColor={Colors.duolingo.green}
-                style={{ marginTop: Spacing.sm }}
-              />
+              <View style={styles.masteryBarRow}>
+                <ProgressBar
+                  progress={masteryPct / 100}
+                  height={12}
+                  fillColor={Colors.duolingo.green}
+                  style={{ flex: 1 }}
+                />
+                <Text style={styles.masteryPctText}>{masteryPct}% Thuộc</Text>
+              </View>
 
               {/* Action Buttons */}
               <DuolingoButton
@@ -259,7 +260,7 @@ export default function DeckDetailScreen() {
               <DuolingoButton
                 title="ĐẶT LẠI TIẾN ĐỘ BỘ HỌC"
                 variant="secondary"
-                size="md"
+                size="lg"
                 disabled={deckCards.length === 0}
                 onPress={handleResetProgress}
                 style={{ marginTop: 8 }}
@@ -373,9 +374,9 @@ const styles = StyleSheet.create({
   backBtn: { padding: 4 },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: Colors.text.white,
     textAlign: "center",
     marginHorizontal: Spacing.sm,
   },
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   summaryTextMain: { flex: 1 },
-  summaryTitle: { fontSize: 22, fontWeight: "800", color: "#FFFFFF" },
+  summaryTitle: { fontSize: 22, fontWeight: "800", color: Colors.text.white },
   summarySub: { fontSize: 13, color: Colors.duolingo.textMuted, fontWeight: "600" },
   deckDescText: { fontSize: 14, color: Colors.duolingo.textMuted, marginTop: 4 },
 
@@ -403,14 +404,14 @@ const styles = StyleSheet.create({
   cardItemRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cardMainInfo: { flex: 1, paddingRight: 8 },
   charRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  cardCharacter: { fontSize: 24, fontWeight: "800", color: "#FFFFFF" },
-  cardPinyin: { fontSize: 16, fontWeight: "700" },
-  cardMeaning: { fontSize: 15, color: "rgba(255, 255, 255, 0.85)", marginTop: 2, fontWeight: "600" },
+  cardCharacter: { fontSize: 24, fontWeight: "800", color: Colors.text.white },
+  cardPinyin: { fontSize: 16, fontWeight: "700", color: Colors.duolingo.blue },
+  cardMeaning: { fontSize: 15, color: Colors.duolingo.green, marginTop: 2, fontWeight: "600" },
   cardRadicalTag: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(206, 130, 255, 0.1)",
+    backgroundColor: Colors.duolingo.purpleDim,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: Radii.sm,
@@ -438,11 +439,22 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
     marginTop: Spacing.md,
   },
-  emptyTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF" },
+  masteryBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: Spacing.sm,
+  },
+  masteryPctText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: Colors.duolingo.green,
+  },
+  emptyTitle: { fontSize: 20, fontWeight: "800", color: Colors.text.white },
   emptySub: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 4, textAlign: "center" },
 
   weakWarningCard: {
-    backgroundColor: "rgba(255, 200, 0, 0.12)",
+    backgroundColor: Colors.duolingo.yellowDim,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     borderColor: "rgba(255, 200, 0, 0.3)",
@@ -478,7 +490,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: "#FFFFFF",
+    color: Colors.text.white,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -493,7 +505,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.duolingo.border,
   },
   resetSearchText: {
-    color: "#FFFFFF",
+    color: Colors.text.white,
     fontSize: 12,
     fontWeight: "800",
   },

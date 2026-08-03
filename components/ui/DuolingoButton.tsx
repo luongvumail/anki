@@ -63,7 +63,8 @@ export function DuolingoButton({
   const getVariantStyles = () => {
     if (disabled) {
       return {
-        bg: Colors.duolingo.disabled,
+        bg: Colors.duolingo.cardBg,
+        border: Colors.duolingo.cardBorder,
         bottom: Colors.duolingo.cardBottom,
         text: Colors.duolingo.disabledText,
       };
@@ -74,44 +75,51 @@ export function DuolingoButton({
       case "success":
         return {
           bg: Colors.duolingo.green,
+          border: Colors.duolingo.green,
           bottom: Colors.duolingo.greenDark,
-          text: "#FFFFFF",
+          text: Colors.text.white,
         };
       case "blue":
         return {
           bg: Colors.duolingo.blue,
+          border: Colors.duolingo.blue,
           bottom: Colors.duolingo.blueDark,
-          text: "#FFFFFF",
+          text: Colors.text.white,
         };
       case "error":
         return {
           bg: Colors.duolingo.red,
+          border: Colors.duolingo.red,
           bottom: Colors.duolingo.redDark,
-          text: "#FFFFFF",
+          text: Colors.text.white,
         };
       case "purple":
         return {
           bg: Colors.duolingo.purple,
+          border: Colors.duolingo.purple,
           bottom: Colors.duolingo.purpleDark,
-          text: "#FFFFFF",
+          text: Colors.text.white,
         };
       case "yellow":
         return {
           bg: Colors.duolingo.yellow,
+          border: Colors.duolingo.yellow,
           bottom: Colors.duolingo.yellowDark,
           text: Colors.duolingo.text,
         };
       case "secondary":
         return {
-          bg: Colors.duolingo.bgSoftDark,
+          bg: Colors.duolingo.cardBg,
+          border: Colors.duolingo.cardBorder,
           bottom: Colors.duolingo.cardBottom,
-          text: "#FFFFFF",
+          text: Colors.text.white,
         };
       case "ghost":
         return {
           bg: "transparent",
+          border: "transparent",
           bottom: "transparent",
-          text: Colors.duolingo.blue,
+          text: Colors.duolingo.textMuted,
         };
     }
   };
@@ -141,9 +149,11 @@ export function DuolingoButton({
           height: sizeStyle.height,
           paddingHorizontal: sizeStyle.paddingHorizontal,
           backgroundColor: vColors.bg,
+          borderColor: vColors.border,
+          borderWidth: variant === "ghost" ? 0 : 1,
           borderBottomColor: vColors.bottom,
-          borderBottomWidth: pressed ? 0 : 3,
-          transform: [{ translateY: pressed ? 3 : 0 }],
+          borderBottomWidth: variant === "ghost" ? 0 : pressed ? 1 : 3,
+          transform: [{ translateY: pressed ? 2 : 0 }],
         },
         style,
       ]}

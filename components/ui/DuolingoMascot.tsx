@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors, Radii } from "../../constants/theme";
 
 export type MascotExpression = "waving" | "celebrate" | "happy" | "thinking" | "sad";
@@ -36,23 +37,23 @@ export function DuolingoMascot({
     return () => anim.stop();
   }, [bounceAnim]);
 
-  const getEmojiAndBadge = () => {
+  const getIconAndBadge = () => {
     switch (expression) {
       case "celebrate":
-        return { face: "🐼🎉", bg: Colors.duolingo.yellow };
+        return { icon: "trophy" as const, bg: Colors.duolingo.yellow };
       case "happy":
-        return { face: "🐼✨", bg: Colors.duolingo.green };
+        return { icon: "sparkles" as const, bg: Colors.duolingo.green };
       case "sad":
-        return { face: "🐼💧", bg: Colors.duolingo.red };
+        return { icon: "heart-dislike" as const, bg: Colors.duolingo.red };
       case "thinking":
-        return { face: "🐼💭", bg: Colors.duolingo.purple };
+        return { icon: "bulb" as const, bg: Colors.duolingo.purple };
       case "waving":
       default:
-        return { face: "🐼👋", bg: Colors.duolingo.blue };
+        return { icon: "hand-left" as const, bg: Colors.duolingo.blue };
     }
   };
 
-  const { face, bg } = getEmojiAndBadge();
+  const { icon, bg } = getIconAndBadge();
 
   return (
     <View style={styles.mascotContainer}>
@@ -75,7 +76,7 @@ export function DuolingoMascot({
           },
         ]}
       >
-        <Text style={{ fontSize: size * 0.55 }}>{face}</Text>
+        <Ionicons name={icon} size={size * 0.5} color="#FFFFFF" />
       </Animated.View>
     </View>
   );

@@ -15,6 +15,7 @@ import * as Speech from "expo-speech";
 import { Card } from "../../store/slices/types";
 import { Colors, Radii, Spacing, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
+import { AudioButton } from "../ui/AudioButton";
 
 interface FlashcardViewProps {
   card: Card;
@@ -230,20 +231,11 @@ export function FlashcardView({
 
               {/* Speaker Audio Button (Only on Unrevealed state to avoid duplicate icons) */}
               {!showAnswer && (
-                <TouchableOpacity
-                  style={styles.headerAudioBtn}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    playTTS();
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name={speaking ? "volume-high" : "volume-medium"}
-                    size={20}
-                    color={Colors.duolingo.blue}
-                  />
-                </TouchableOpacity>
+                <AudioButton
+                  onPress={playTTS}
+                  isPlaying={speaking}
+                  size="sm"
+                />
               )}
             </View>
 
@@ -280,32 +272,20 @@ export function FlashcardView({
                     <View style={styles.revealedMainInfo}>
                       <View style={styles.pinyinRow}>
                         <Text style={styles.pinyinText}>{card.pinyin}</Text>
-                        <TouchableOpacity
-                          style={styles.audioIconBtn3D}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            playTTS();
-                          }}
-                          activeOpacity={0.8}
-                        >
-                          <Ionicons
-                            name={speaking ? "volume-high" : "volume-medium"}
-                            size={18}
-                            color={Colors.duolingo.blue}
-                          />
-                        </TouchableOpacity>
+                        <AudioButton
+                          onPress={playTTS}
+                          isPlaying={speaking}
+                          size="sm"
+                        />
                       </View>
                       <Text style={styles.translationText}>{card.translation}</Text>
                     </View>
                   </View>
 
-                  {/* RADICAL BREAKDOWN BOX - ONLY FROM AI RESULT IN DB */}
+                  {/* RADICAL BREAKDOWN BOX */}
                   {card.radical ? (
                     <View style={styles.radicalBreakdownBox}>
-                      <View style={styles.radicalHeaderRow}>
-                        <Ionicons name="layers-outline" size={14} color={Colors.duolingo.purple} />
-                        <Text style={styles.radicalHeaderTitle}>CẤU TẠO BỘ THỦ & MẸO NHỚ</Text>
-                      </View>
+                      <Ionicons name="layers-outline" size={16} color={Colors.duolingo.purple} style={{ marginTop: 2 }} />
                       <Text style={styles.radicalContentText}>{card.radical}</Text>
                     </View>
                   ) : null}
@@ -407,7 +387,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(28, 176, 246, 0.12)",
+    backgroundColor: Colors.duolingo.blueDim,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radii.full,
@@ -415,14 +395,14 @@ const styles = StyleSheet.create({
   counterBadgeText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: Colors.text.white,
     letterSpacing: 0.5,
   },
   headerAudioBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(28, 176, 246, 0.12)",
+    backgroundColor: Colors.duolingo.blueDim,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -439,7 +419,7 @@ const styles = StyleSheet.create({
   },
   characterHero: {
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: Colors.text.white,
     textAlign: "center",
     letterSpacing: 1,
   },
@@ -447,7 +427,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(28, 176, 246, 0.12)",
+    backgroundColor: Colors.duolingo.blueDim,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: Radii.full,
@@ -490,7 +470,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(28, 176, 246, 0.12)",
+    backgroundColor: Colors.duolingo.blueDim,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -502,27 +482,19 @@ const styles = StyleSheet.create({
   },
   radicalBreakdownBox: {
     width: "100%",
-    backgroundColor: "rgba(206, 130, 255, 0.08)",
+    backgroundColor: Colors.duolingo.purpleDim,
     borderRadius: Radii.lg,
     padding: Spacing.md,
     marginTop: 10,
-  },
-  radicalHeaderRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 6,
-  },
-  radicalHeaderTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: Colors.duolingo.purple,
-    letterSpacing: 0.8,
+    alignItems: "flex-start",
+    gap: 10,
   },
   radicalContentText: {
+    flex: 1,
     fontSize: 13,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: Colors.text.white,
     lineHeight: 18,
   },
   answerScrollContent: {
@@ -534,7 +506,7 @@ const styles = StyleSheet.create({
   },
   examplesBox: {
     width: "100%",
-    backgroundColor: "#131F24",
+    backgroundColor: Colors.duolingo.bg,
     borderRadius: Radii.lg,
     padding: Spacing.md,
     marginTop: 12,
@@ -564,7 +536,7 @@ const styles = StyleSheet.create({
   exampleCn: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: Colors.text.white,
   },
   examplePy: {
     fontSize: 13,

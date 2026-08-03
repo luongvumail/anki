@@ -55,10 +55,13 @@ export default function RootLayout() {
       if (user) {
         setUserId(user.uid);
         try {
-          // Pre-fetch decks inside RootLayout so we make sure the content is ready BEFORE fading out
-          await useStore.getState().fetchDecks();
+          // Pre-fetch decks and user progress (XP, badges) inside RootLayout
+          await Promise.all([
+            useStore.getState().fetchDecks(),
+            useStore.getState().fetchUserProgress(),
+          ]);
         } catch (e) {
-          console.warn("[RootLayout] Fetch decks failed:", e);
+          console.warn("[RootLayout] Initial data fetch failed:", e);
         }
         router.replace('/(tabs)');
       } else {
