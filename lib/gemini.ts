@@ -8,7 +8,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 const CANDIDATE_MODELS = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
 async function generateWithFallback(prompt: string): Promise<string> {
-  let lastError: any = null;
+  let lastError: unknown = null;
   for (const modelName of CANDIDATE_MODELS) {
     try {
       console.log(`[Gemini] Attempting generation with model: ${modelName}`);
@@ -23,9 +23,10 @@ async function generateWithFallback(prompt: string): Promise<string> {
       const text = result.response.text();
       console.log(`[Gemini] Success using model: ${modelName}`);
       return text;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       console.warn(
-        `[Gemini] Model ${modelName} failed (${err.message || err}), trying fallback...`,
+        `[Gemini] Model ${modelName} failed (${msg}), trying fallback...`,
       );
       lastError = err;
     }
@@ -37,7 +38,8 @@ function sanitizeInput(input: string): string {
   return input
     .trim()
     .slice(0, 50)
-    .replace(/["'\\n\r]/g, " ");
+    .replace(/[`"'{}\\[\]\n\r]/g, " ")
+    .replace(/\s+/g, " ");
 }
 
 /**

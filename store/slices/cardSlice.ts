@@ -20,6 +20,7 @@ import { DeckSlice } from "./deckSlice";
 import { computeDueCount, computeNewCount } from "../../lib/deckUtils";
 
 import { recordReviewToday } from "../../lib/reviewTracker";
+import { getFirestoreErrorMessage } from "../../lib/errorHandler";
 
 export const PAGE_SIZE = 20;
 
@@ -82,8 +83,9 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       }));
 
       return fetchedCards;
-    } catch (e: any) {
-      set({ error: e.message, isLoading: false });
+    } catch (e: unknown) {
+      const msg = getFirestoreErrorMessage(e);
+      set({ error: msg, isLoading: false });
       return [];
     }
   },
@@ -125,7 +127,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
         hasMoreCards: { ...s.hasMoreCards, [deckId]: nextHasMore },
         isFetchingMoreCards: { ...s.isFetchingMoreCards, [deckId]: false },
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("[fetchMoreCards] Failed to fetch more cards:", err);
       set((s) => ({
         isFetchingMoreCards: { ...s.isFetchingMoreCards, [deckId]: false },
@@ -307,7 +309,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
         dueCount: 0,
         newCount: 0,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.warn("[clearDeckCards] Firestore bulk delete warning:", e);
     }
   },

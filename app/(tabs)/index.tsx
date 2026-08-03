@@ -11,23 +11,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  updatePassword,
-  reauthenticateWithCredential,
-  EmailAuthProvider,
-  sendPasswordResetEmail,
-} from "firebase/auth";
 import { auth } from "../../lib/firebase";
-import { getAuthErrorMessage } from "../../lib/errorHandler";
-import {
-  getReminderSettings,
-  scheduleDailyStudyReminder,
-  cancelDailyStudyReminder,
-} from "../../lib/notificationService";
 import { getStreakCount } from "../../lib/reviewTracker";
 import { useStore } from "../../store/useStore";
 import { Colors, Spacing } from "../../constants/theme";
-import { AccountModal } from "../../components/home/AccountModal";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
@@ -46,17 +33,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [streakCount, setStreakCount] = useState(0);
 
-  // Account Settings Modal States
-  const [showAccountModal, setShowAccountModal] = useState(false);
   const [showAIAddModal, setShowAIAddModal] = useState(false);
-
-  // Daily Study Reminder States
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderHour, setReminderHour] = useState(20);
-  const [reminderMinute, setReminderMinute] = useState(0);
-
-  const user = auth.currentUser;
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "Học viên";
 
   // Calculate due cards map for all decks
   const dueCardsMap = useMemo(() => {
@@ -68,14 +45,6 @@ export default function DashboardScreen() {
     return map;
   }, [decks, cardsState]);
 
-  useEffect(() => {
-    getReminderSettings().then((res) => {
-      setReminderEnabled(res.enabled);
-      setReminderHour(res.hour);
-      setReminderMinute(res.minute);
-    });
-  }, []);
-
   useFocusEffect(
     useCallback(() => {
       getStreakCount().then(setStreakCount);
@@ -86,64 +55,6 @@ export default function DashboardScreen() {
     setRefreshing(true);
     await fetchDecks();
     setRefreshing(false);
-  };
-
-  const handleReminderToggle = async (value: boolean) => {
-    setReminderEnabled(value);
-
-    if (value) {
-      const success = await scheduleDailyStudyReminder(reminderHour, reminderMinute);
-      if (!success) {
-        setReminderEnabled(false);
-      }
-    } else {
-      await cancelDailyStudyReminder();
-    }
-  };
-
-  const handleSignOut = () => {
-    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất tài khoản?", [
-      { text: "Hủy", style: "cancel" },
-      {
-        text: "Đăng xuất",
-        style: "destructive",
-        onPress: async () => {
-          setShowAccountModal(false);
-          await auth.signOut();
-          useStore.setState({ decks: [], cards: {}, session: null, userId: null });
-        },
-      },
-    ]);
-  };
-
-  const handleChangePassword = async (currentPassword: string, newPassword: string) => {
-    if (!user || !user.email) return;
-    if (!newPassword || newPassword.length < 6) {
-      Alert.alert("Thông báo", "Mật khẩu mới cần ít nhất 6 ký tự");
-      return;
-    }
-
-    try {
-      if (currentPassword) {
-        const credential = EmailAuthProvider.credential(user.email, currentPassword);
-        await reauthenticateWithCredential(user, credential);
-      }
-      await updatePassword(user, newPassword);
-      Alert.alert("Thành công", "Mật khẩu của bạn đã được cập nhật thành công!");
-    } catch (e: any) {
-      Alert.alert("Đổi mật khẩu thất bại", getAuthErrorMessage(e));
-      throw e;
-    }
-  };
-
-  const handleSendResetEmail = async () => {
-    if (!user || !user.email) return;
-    try {
-      await sendPasswordResetEmail(auth, user.email);
-      Alert.alert("Thành công", `Đã gửi hướng dẫn khôi phục tới ${user.email}`);
-    } catch (e: any) {
-      Alert.alert("Gửi mail thất bại", getAuthErrorMessage(e));
-    }
   };
 
   return (

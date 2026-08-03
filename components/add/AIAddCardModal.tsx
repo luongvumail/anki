@@ -41,16 +41,13 @@ interface WordItem {
   errorMsg?: string;
 }
 
-function parseAllWords(raw: string): string[] {
+function parseWords(raw: string, limit = MAX_WORDS): string[] {
   const words = raw
     .split(/[,，\n]/)
     .map((w) => w.trim())
     .filter((w) => w.length > 0);
-  return Array.from(new Set(words));
-}
-
-function parseWords(raw: string): string[] {
-  return parseAllWords(raw).slice(0, MAX_WORDS);
+  const unique = Array.from(new Set(words));
+  return limit ? unique.slice(0, limit) : unique;
 }
 
 export interface AIAddCardModalProps {
@@ -117,7 +114,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
   }, [decks, selectedDeckId]);
 
   const parsedCount = useMemo(() => parseWords(input).length, [input]);
-  const totalInputCount = useMemo(() => parseAllWords(input).length, [input]);
+  const totalInputCount = useMemo(() => parseWords(input, 0).length, [input]);
 
   const handleGenerateBatch = async () => {
     const parsed = parseWords(input);

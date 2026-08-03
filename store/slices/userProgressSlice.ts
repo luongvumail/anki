@@ -1,5 +1,8 @@
 import { StateCreator } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getDoc, setDoc } from "firebase/firestore";
+import { auth } from "../../lib/firebase";
+import { userProgressRef } from "./firestoreHelpers";
 import { UserProgressState, Badge } from "./types";
 
 const ASYNC_KEY_XP = "@anki_user_xp";
@@ -113,19 +116,57 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
   },
 ];
 
+async function syncProgressToFirestore(xp: number, unlockedBadgeIds: string[]) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  try {
+    await setDoc(
+      userProgressRef(uid),
+      {
+        xp,
+        unlockedBadgeIds,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  } catch (e) {
+    console.warn("[userProgressSlice] Sync to Firestore failed:", e);
+  }
+}
+
 export const createUserProgressSlice: StateCreator<UserProgressState> = (set, get) => ({
   xp: 0,
   unlockedBadgeIds: [],
 
   fetchUserProgress: async () => {
     try {
-      const xpStr = await AsyncStorage.getItem(ASYNC_KEY_XP);
-      const badgesJson = await AsyncStorage.getItem(ASYNC_KEY_BADGES);
+      let xp = 0;
+      let unlockedBadgeIds: string[] = [];
 
-      const xp = xpStr ? parseInt(xpStr, 10) : 0;
-      const unlockedBadgeIds: string[] = badgesJson ? JSON.parse(badgesJson) : [];
+      const uid = auth.currentUser?.uid;
+      if (uid) {
+        try {
+          const snap = await getDoc(userProgressRef(uid));
+          if (snap.exists()) {
+            const data = snap.data();
+            xp = data.xp || 0;
+            unlockedBadgeIds = data.unlockedBadgeIds || [];
+          }
+        } catch (fsErr) {
+          console.warn("[userProgressSlice] Firestore read failed, using local storage:", fsErr);
+        }
+      }
+
+      if (xp === 0 && unlockedBadgeIds.length === 0) {
+        const xpStr = await AsyncStorage.getItem(ASYNC_KEY_XP);
+        const badgesJson = await AsyncStorage.getItem(ASYNC_KEY_BADGES);
+        xp = xpStr ? parseInt(xpStr, 10) : 0;
+        unlockedBadgeIds = badgesJson ? JSON.parse(badgesJson) : [];
+      }
 
       set({ xp, unlockedBadgeIds });
+      await AsyncStorage.setItem(ASYNC_KEY_XP, xp.toString());
+      await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(unlockedBadgeIds));
     } catch {
       // ignore
     }
@@ -133,16 +174,20 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
 
   addXP: async (amount: number) => {
     const newXP = get().xp + amount;
+    const badges = get().unlockedBadgeIds;
     set({ xp: newXP });
     await AsyncStorage.setItem(ASYNC_KEY_XP, newXP.toString());
+    syncProgressToFirestore(newXP, badges);
   },
 
   unlockBadge: async (badgeId: string) => {
     const current = get().unlockedBadgeIds || [];
     if (!current.includes(badgeId)) {
       const updated = [...current, badgeId];
+      const xp = get().xp;
       set({ unlockedBadgeIds: updated });
       await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(updated));
+      syncProgressToFirestore(xp, updated);
     }
   },
 
@@ -164,8 +209,10 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
     });
 
     if (changed) {
+      const xp = get().xp;
       set({ unlockedBadgeIds: newUnlocked });
       await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(newUnlocked));
+      syncProgressToFirestore(xp, newUnlocked);
     }
   },
 });

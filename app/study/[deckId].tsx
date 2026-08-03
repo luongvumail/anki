@@ -19,6 +19,7 @@ import { FlashcardView } from "../../components/study/FlashcardView";
 import { QuizCardView, WeakTagType } from "../../components/study/QuizCardView";
 import { SessionDoneScreen } from "../../components/study/SessionDoneScreen";
 import { ProgressBar } from "../../components/ui/ProgressBar";
+import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { StudySession, Card } from "../../store/slices/types";
 
 type SessionStage = "preview" | "validation" | "repair" | "done";
@@ -164,14 +165,18 @@ export default function StudyScreen() {
       reviewedCount: newReviewed,
     });
 
-    if (nextIndex >= updatedQuestions.length) {
-      // Check if Fast Repair Loop is needed
-      const weakCards = targetCards.filter(
-        (c) => !isCorrect || responseTimeMs > 4000 || missedOrSlowCardIds.includes(c.id)
-      );
+      if (nextIndex >= updatedQuestions.length) {
+      // Check if Fast Repair Loop is needed using accumulated missedOrSlowCardIds
+      const updatedMissed = (!isCorrect || responseTimeMs > 4000)
+        ? (missedOrSlowCardIds.includes(card.id) ? missedOrSlowCardIds : [...missedOrSlowCardIds, card.id])
+        : missedOrSlowCardIds;
+
+      const weakCards = targetCards.filter((c) => updatedMissed.includes(c.id));
 
       if (weakCards.length > 0) {
-        const repairQs = weakCards.map((c) => generateQuizQuestion(c, deckCards));
+        const repairQs = weakCards
+          .map((c) => generateQuizQuestion(c, deckCards))
+          .filter((q): q is QuizQuestion => q !== null);
         setRepairQuestions(repairQs);
         setRepairIndex(0);
         setStage("repair");
@@ -181,8 +186,17 @@ export default function StudyScreen() {
     }
   };
 
-  // Stage 3: Fast Repair Callback
-  const handleRepairAnswer = (isCorrect: boolean) => {
+  // Stage 3: Fast Repair Callback with SRS Update
+  const handleRepairAnswer = async (isCorrect: boolean, responseTimeMs: number = 2000) => {
+    const currentQuestion = repairQuestions[repairIndex];
+    if (currentQuestion) {
+      const card = currentQuestion.card;
+      const currentSRS = card.srs || createDefaultSRSState();
+      const { newSRS } = calculateQuizSRS(isCorrect, true, responseTimeMs, currentSRS);
+      await updateCard(card.id, deckId, { srs: newSRS });
+      await recordReviewToday();
+    }
+
     const nextIdx = repairIndex + 1;
     setRepairIndex(nextIdx);
     if (nextIdx >= repairQuestions.length) {
@@ -208,6 +222,27 @@ export default function StudyScreen() {
       router.back();
     }
   }, [session]);
+
+  if (!isLoading && deckCards.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Ionicons name="book-outline" size={48} color={Colors.duolingo.textMuted} style={{ marginBottom: 12 }} />
+        <Text style={{ fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginBottom: 6 }}>
+          Bộ thẻ này chưa có từ vựng!
+        </Text>
+        <Text style={{ fontSize: 13, color: Colors.duolingo.textMuted, textAlign: "center", marginBottom: 20, paddingHorizontal: 32 }}>
+          Vui lòng quay lại danh sách bộ thẻ và thêm thẻ từ vựng trước khi bắt đầu học.
+        </Text>
+        <DuolingoButton
+          title="QUAY LẠI"
+          variant="primary"
+          size="md"
+          onPress={() => router.back()}
+          style={{ width: 160 }}
+        />
+      </View>
+    );
+  }
 
   if (isLoading || (!session && stage !== "done")) {
     return (

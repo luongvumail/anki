@@ -5,6 +5,7 @@ import { Deck } from "./types";
 import { getUserId, decksRef, cardsRef } from "./firestoreHelpers";
 import { UISlice } from "./uiSlice";
 import { CardSlice } from "./cardSlice";
+import { getFirestoreErrorMessage } from "../../lib/errorHandler";
 
 export interface DeckSlice {
   decks: Deck[];
@@ -44,9 +45,10 @@ export const createDeckSlice: StateCreator<DeckSlice & UISlice & CardSlice, [], 
       Promise.all(decks.map((d) => get().fetchCards(d.id))).catch((err) =>
         console.warn("[fetchDecks] Card pre-fetch error:", err),
       );
-    } catch (e: any) {
-      console.error("[fetchDecks] ERROR:", e.message || e);
-      set({ error: e.message, isLoading: false });
+    } catch (e: unknown) {
+      const msg = getFirestoreErrorMessage(e);
+      console.error("[fetchDecks] ERROR:", msg);
+      set({ error: msg, isLoading: false });
     }
   },
 

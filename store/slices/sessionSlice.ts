@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { isDue, SRS_GRADES } from '../../lib/srs';
+import { isDue, SRS_GRADES, SRSGrade } from '../../lib/srs';
 import { Card, StudySession } from './types';
 import { CardSlice } from './cardSlice';
 
@@ -7,7 +7,7 @@ export interface SessionSlice {
   session: StudySession | null;
   startSession: (deckId: string) => Promise<void>;
   endSession: () => void;
-  advanceSession: (card: Card, grade: number) => void;
+  advanceSession: (card: Card, grade: SRSGrade) => void;
 }
 
 export const createSessionSlice: StateCreator<SessionSlice & CardSlice, [], [], SessionSlice> = (set, get) => ({

@@ -18,3 +18,7 @@ export function cardsRef(uid: string, deckId: string) {
 export function cardRef(uid: string, deckId: string, cardId: string) {
   return doc(db, 'users', uid, 'decks', deckId, 'cards', cardId);
 }
+
+export function userProgressRef(uid: string) {
+  return doc(db, 'users', uid, 'data', 'progress');
+}
