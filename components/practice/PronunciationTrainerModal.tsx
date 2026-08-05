@@ -7,7 +7,6 @@ import {
   Modal,
   ScrollView,
   Animated,
-  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -49,6 +48,8 @@ export function PronunciationTrainerModal({
   const [speaking, setSpeaking] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
+  const [pronunciationTip, setPronunciationTip] = useState<string | null>(null);
   const [recognizedText, setRecognizedText] = useState<string>("");
   const [isDone, setIsDone] = useState(false);
   const [userAudioUri, setUserAudioUri] = useState<string | null>(null);
@@ -58,15 +59,30 @@ export function PronunciationTrainerModal({
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const userAudioPlayer = useAudioPlayer(userAudioUri);
 
+  const resetState = useCallback(() => {
+    setScore(null);
+    setFeedback(null);
+    setErrorDetail(null);
+    setPronunciationTip(null);
+    setRecognizedText("");
+    setIsRecording(false);
+    setAnalyzing(false);
+    setUserAudioUri(null);
+    drawerAnim.setValue(300);
+  }, [drawerAnim]);
+
+  const prevVisibleRef = useRef(false);
+
   useEffect(() => {
-    if (visible && cards.length > 0) {
+    if (visible && !prevVisibleRef.current && cards.length > 0) {
       const list = [...cards].sort(() => 0.5 - Math.random()).slice(0, 5);
       setShuffledCards(list);
       setCurrentIndex(0);
       setIsDone(false);
       resetState();
     }
-  }, [visible, cards]);
+    prevVisibleRef.current = visible;
+  }, [visible, cards, resetState]);
 
   // Cleanup recorder when modal closes
   useEffect(() => {
@@ -77,17 +93,7 @@ export function PronunciationTrainerModal({
         // ignore if not recording
       }
     }
-  }, [visible]);
-
-  const resetState = () => {
-    setScore(null);
-    setFeedback(null);
-    setRecognizedText("");
-    setIsRecording(false);
-    setAnalyzing(false);
-    setUserAudioUri(null);
-    drawerAnim.setValue(300);
-  };
+  }, [visible, audioRecorder]);
 
   const handleRetryWord = () => {
     resetState();
@@ -150,9 +156,36 @@ export function PronunciationTrainerModal({
     };
   }, [isRecording, pulseAnim]);
 
-  // Strict Evaluation Logic
+  // Helper to remove diacritics / tones from Pinyin string
+  const stripDiacritics = (str: string) =>
+    str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+  // Generate tone & pronunciation tips based on Mandarin target pinyin
+  const getToneTip = (pinyin?: string): string => {
+    if (!pinyin) return "Đọc rõ ràng từng âm tiết và giữ khẩu hình mở chuẩn.";
+    const lower = pinyin.toLowerCase();
+    if (/[āēīōūǖ]/.test(lower)) {
+      return "Thanh 1 (ngang): Giữ cao độ giọng kéo dài và ổn định, không hạ giọng.";
+    }
+    if (/[áéíóúǘ]/.test(lower)) {
+      return "Thanh 2 (dấu sắc): Đọc vút giọng từ trung bình lên cao (giống khi thắc mắc 'Hả?').";
+    }
+    if (/[ǎěǐǒǔǚ]/.test(lower)) {
+      return "Thanh 3 (dấu hỏi): Hạ giọng xuống thấp nhất rồi hơi vút nhẹ lên.";
+    }
+    if (/[àèìòùǜ]/.test(lower)) {
+      return "Thanh 4 (dấu huyền nghiêng): Dứt khoát hạ giọng từ cao xuống thấp (như ra lệnh).";
+    }
+    return "Chú ý giữ chuẩn thanh điệu và bật hơi rõ ràng.";
+  };
+
+  // Evaluation Logic with Error Diagnosis & Tips
   const evaluateSpeech = useCallback(
-    (spokenText: string) => {
+    (spokenText: string, aiErrorDetail?: string, aiPronunciationTip?: string) => {
       setAnalyzing(false);
       setIsRecording(false);
       const currentCard = shuffledCards[currentIndex];
@@ -160,34 +193,51 @@ export function PronunciationTrainerModal({
 
       const targetChar = currentCard.character.trim();
       const normalizedTarget = targetChar.replace(/\s+/g, "");
-      const targetPinyin = (currentCard.pinyin || "").toLowerCase().replace(/[^a-z]/g, "");
+      const targetPinyinClean = stripDiacritics(currentCard.pinyin || "");
 
-      const cleanSpoken = spokenText.trim();
+      // Clean spoken text: strip punctuation
+      const cleanSpoken = spokenText
+        .trim()
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()!?！。，？"']/g, "");
       const normalizedSpoken = cleanSpoken.replace(/\s+/g, "");
+      const spokenPinyinClean = stripDiacritics(cleanSpoken);
+
       setRecognizedText(cleanSpoken);
 
       recordReviewToday().catch(() => {});
 
       let calcScore = 0;
       let msg = "";
+      let finalErrorDetail: string | null = null;
+      let finalTip: string | null = null;
+
+      const fallbackToneTip = getToneTip(currentCard.pinyin);
 
       if (!cleanSpoken) {
         // Case 1: Silent / Unrecognized
         calcScore = 0;
-        msg = "Không nghe thấy âm thanh. Vui lòng bấm loa nghe âm mẫu và đọc to vào Micro.";
+        msg = "Không nhận diện được giọng nói. Vui lòng bấm loa nghe âm mẫu và đọc rõ vào Micro.";
+        finalErrorDetail = "AI không nghe thấy giọng đọc hoặc âm thanh quá nhỏ/bị nhiễu.";
+        finalTip = "Ghé sát Micro hơn, bấm nghe âm mẫu và phát âm to rõ ràng.";
         triggerHaptic("error");
       } else {
-        const spokenLower = cleanSpoken.toLowerCase();
         const hasExactChar =
-          normalizedSpoken.includes(normalizedTarget) || cleanSpoken.includes(targetChar);
-        const isReverseMatch =
-          normalizedSpoken.length >= normalizedTarget.length &&
-          normalizedTarget.includes(normalizedSpoken);
+          normalizedSpoken.includes(normalizedTarget) ||
+          normalizedTarget.includes(normalizedSpoken) ||
+          cleanSpoken.includes(targetChar);
 
-        if (hasExactChar || isReverseMatch) {
-          // Case 2: Exact Match -> 90-100% dựa trên độ dài trùng khớp
+        const hasExactPinyin =
+          targetPinyinClean.length > 0 &&
+          (spokenPinyinClean === targetPinyinClean ||
+            spokenPinyinClean.includes(targetPinyinClean) ||
+            targetPinyinClean.includes(spokenPinyinClean));
+
+        if (hasExactChar || hasExactPinyin) {
+          // Case 2: Exact Match (Characters or Pinyin)
           calcScore = 95;
           msg = "Hoàn hảo! Bạn phát âm Pinyin & Thanh điệu chính xác.";
+          finalErrorDetail = null;
+          finalTip = aiPronunciationTip || fallbackToneTip;
           triggerHaptic("success");
           addXP(20);
         } else {
@@ -202,16 +252,24 @@ export function PronunciationTrainerModal({
           const overlapRatio =
             normalizedTarget.length > 0 ? matchedCharsCount / normalizedTarget.length : 0;
 
-          if (overlapRatio > 0 || (targetPinyin && spokenLower.includes(targetPinyin))) {
+          if (overlapRatio > 0) {
             // Case 3: Partial Match
             calcScore = Math.max(60, Math.min(85, Math.floor(overlapRatio * 100)));
-            msg = `Gần chính xác! Âm nhận diện là "${cleanSpoken}". Chú ý giữ chuẩn thanh điệu.`;
+            msg = `Gần chính xác! Âm nhận diện là "${cleanSpoken}".`;
+            finalErrorDetail =
+              aiErrorDetail ||
+              `Chú ý cao độ thanh điệu hoặc phụ âm đầu. Từ chuẩn là "${targetChar}" (${currentCard.pinyin}).`;
+            finalTip = aiPronunciationTip || fallbackToneTip;
             triggerHaptic("warning");
             addXP(10);
           } else {
             // Case 4: Wrong Word / Mispronounced Completely
             calcScore = 30;
-            msg = `Chưa đúng! Âm bạn đọc là "${cleanSpoken}". Từ chuẩn là "${targetChar}" (${currentCard.pinyin}). Hãy thử lại nhé!`;
+            msg = `Chưa đúng! Âm nhận diện là "${cleanSpoken}".`;
+            finalErrorDetail =
+              aiErrorDetail ||
+              `Âm đọc chưa khớp với từ "${targetChar}" (${currentCard.pinyin}). Hãy nghe âm chuẩn và thử lại!`;
+            finalTip = aiPronunciationTip || fallbackToneTip;
             triggerHaptic("error");
           }
         }
@@ -219,6 +277,8 @@ export function PronunciationTrainerModal({
 
       setScore(calcScore);
       setFeedback(msg);
+      setErrorDetail(finalErrorDetail);
+      setPronunciationTip(finalTip);
 
       Animated.spring(drawerAnim, {
         toValue: 0,
@@ -230,8 +290,19 @@ export function PronunciationTrainerModal({
     [shuffledCards, currentIndex, addXP, drawerAnim],
   );
 
-  // Transcribe audio via Gemini API (supports audio/m4a, audio/mp4 from expo-audio)
-  const transcribeWithGemini = async (uri: string): Promise<string> => {
+  // Interface for Gemini JSON speech analysis
+  interface GeminiSpeechResponse {
+    transcript: string;
+    errorDetail?: string;
+    pronunciationTip?: string;
+  }
+
+  // Transcribe audio via Gemini API & get AI diagnosis
+  const transcribeWithGemini = async (
+    uri: string,
+    targetChar: string,
+    targetPinyin: string,
+  ): Promise<GeminiSpeechResponse> => {
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) throw new Error("Missing Gemini API key");
 
@@ -239,15 +310,41 @@ export function PronunciationTrainerModal({
       encoding: FileSystem.EncodingType.Base64,
     });
 
+    // Determine correct MIME type for Gemini inlineData
     let mimeType = "audio/m4a";
     if (uri.endsWith(".mp4")) mimeType = "audio/mp4";
     else if (uri.endsWith(".wav")) mimeType = "audio/wav";
-    else if (uri.endsWith(".caf")) mimeType = "audio/caf";
     else if (uri.endsWith(".aac")) mimeType = "audio/aac";
+    else if (uri.endsWith(".caf")) mimeType = "audio/m4a"; // iOS CAF -> audio/m4a
 
-    const candidateModels = ["gemini-3.6-flash", "gemini-3.5-flash"];
+    // Valid Gemini models with fallbacks
+    const candidateModels = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-3.5-flash",
+    ];
 
     let lastErrText = "";
+
+    const promptText = `You are an expert Chinese (Mandarin) pronunciation evaluator for Vietnamese learners.
+Target Chinese word: "${targetChar}" (Pinyin: "${targetPinyin}").
+Audio contains the user's spoken attempt.
+
+Task:
+1. Listen carefully to the audio.
+2. Transcribe what the user said in Chinese characters or Pinyin into "transcript".
+3. Evaluate if they pronounced "${targetChar}" (${targetPinyin}) accurately.
+4. If there is a mistake (wrong tone, wrong consonant, missing aspiration, or wrong word), explain specifically in Vietnamese in "errorDetail" what they pronounced vs the target word.
+5. Provide a short actionable tip in Vietnamese in "pronunciationTip" on how to pronounce "${targetChar}" (${targetPinyin}) correctly.
+6. If the audio is silent or completely inaudible, set "transcript" to "".
+
+Return ONLY a JSON object with this format (no markdown codeblock, no extra text):
+{
+  "transcript": "recognized text or empty string",
+  "errorDetail": "explanation in Vietnamese if incorrect or empty if correct",
+  "pronunciationTip": "short tip in Vietnamese on how to pronounce correctly"
+}`;
 
     for (const modelName of candidateModels) {
       try {
@@ -267,14 +364,14 @@ export function PronunciationTrainerModal({
                       },
                     },
                     {
-                      text: "Transcribe only the spoken Chinese (Mandarin) words from this audio. Return ONLY the Chinese characters with no explanation, no punctuation, no extra text. If nothing is spoken or it's inaudible, return empty string.",
+                      text: promptText,
                     },
                   ],
                 },
               ],
               generationConfig: {
                 temperature: 0,
-                maxOutputTokens: 64,
+                maxOutputTokens: 256,
               },
             }),
           },
@@ -282,13 +379,32 @@ export function PronunciationTrainerModal({
 
         if (response.ok) {
           const data = await response.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-          return text.trim();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+          try {
+            const cleaned = rawText
+              .trim()
+              .replace(/^```(?:json)?\s*/i, "")
+              .replace(/```\s*$/, "")
+              .trim();
+            const firstBrace = cleaned.indexOf("{");
+            const lastBrace = cleaned.lastIndexOf("}");
+            if (firstBrace !== -1 && lastBrace !== -1) {
+              const parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+              return {
+                transcript: parsed.transcript ? String(parsed.transcript).trim() : "",
+                errorDetail: parsed.errorDetail ? String(parsed.errorDetail).trim() : undefined,
+                pronunciationTip: parsed.pronunciationTip ? String(parsed.pronunciationTip).trim() : undefined,
+              };
+            }
+          } catch {
+            // Fallback if JSON parse fails
+          }
+          return { transcript: rawText.trim() };
         }
 
         const errText = await response.text();
         lastErrText = errText;
-        console.warn(`[Gemini Audio] Model ${modelName} failed status ${response.status}`);
+        console.warn(`[Gemini Audio] Model ${modelName} failed status ${response.status}: ${errText.slice(0, 100)}`);
       } catch (e: any) {
         lastErrText = e?.message || String(e);
       }
@@ -346,6 +462,9 @@ export function PronunciationTrainerModal({
 
     try {
       await audioRecorder.stop();
+      // Brief delay to allow audio file buffer to flush to disk completely
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const uri = audioRecorder.uri;
 
       // Reset audio session for playback
@@ -359,11 +478,23 @@ export function PronunciationTrainerModal({
         return;
       }
 
+      // Check recorded file existence and size
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists || (fileInfo.size !== undefined && fileInfo.size < 200)) {
+        console.warn("[stopListening] Recorded file is missing or too small:", fileInfo);
+        evaluateSpeech("");
+        return;
+      }
+
       setUserAudioUri(uri);
 
-      // Transcribe with AI
-      const transcript = await transcribeWithGemini(uri);
-      evaluateSpeech(transcript);
+      const currentCard = shuffledCards[currentIndex];
+      const targetChar = currentCard?.character || "";
+      const targetPinyin = currentCard?.pinyin || "";
+
+      // Transcribe with AI giving context of target word
+      const aiResult = await transcribeWithGemini(uri, targetChar, targetPinyin);
+      evaluateSpeech(aiResult.transcript, aiResult.errorDetail, aiResult.pronunciationTip);
     } catch (err: any) {
       console.error("stopListening error:", err);
       setAnalyzing(false);
@@ -518,41 +649,83 @@ export function PronunciationTrainerModal({
               {score >= 60 && <Text style={styles.xpBonusBadge}>+{score >= 90 ? 20 : 10} XP</Text>}
             </View>
 
-            {score >= 60 && (
-              <View style={{ marginTop: 2, marginBottom: 4 }}>
-                <Text style={{ fontSize: 20, fontWeight: "800", color: "#FFFFFF" }}>
-                  {currentCard.character} {currentCard.pinyin ? `· ${currentCard.pinyin}` : ""}
+            {/* Target vs Recognized Speech Comparison Card */}
+            <View style={styles.comparisonBox}>
+              <View style={styles.compareItem}>
+                <Text style={styles.compareLabel}>🎯 TỪ MẪU CHUẨN:</Text>
+                <Text style={styles.compareTargetText}>
+                  {currentCard.character}{" "}
+                  {currentCard.pinyin ? (
+                    <Text style={styles.comparePinyinText}>· {currentCard.pinyin}</Text>
+                  ) : null}
                 </Text>
                 {currentCard.translation ? (
-                  <Text style={{ fontSize: 16, color: "rgba(255, 255, 255, 0.85)", fontWeight: "600", marginTop: 2 }}>
-                    {currentCard.translation}
-                  </Text>
+                  <Text style={styles.compareTranslationText}>Nghĩa: {currentCard.translation}</Text>
+                ) : null}
+              </View>
+
+              <View style={[styles.compareItem, { marginTop: 6 }]}>
+                <Text style={styles.compareLabel}>🎙️ BẠN ĐỌC:</Text>
+                {recognizedText ? (
+                  <Text style={styles.compareSpokenText}>"{recognizedText}"</Text>
+                ) : (
+                  <Text style={styles.compareSpokenMuted}>(Không nhận diện rõ âm thanh)</Text>
+                )}
+              </View>
+            </View>
+
+            {/* Main Evaluation Feedback */}
+            <Text style={styles.feedbackMsg}>{feedback}</Text>
+
+            {/* AI Error Diagnosis & Pronunciation Tip Card */}
+            {(errorDetail || pronunciationTip) && (
+              <View style={styles.diagnosisBox}>
+                {errorDetail ? (
+                  <View style={styles.diagRow}>
+                    <Ionicons name="alert-circle-outline" size={18} color="#FFD166" style={{ marginTop: 2 }} />
+                    <Text style={styles.diagText}>
+                      <Text style={{ fontWeight: "800", color: "#FFD166" }}>Chẩn đoán: </Text>
+                      {errorDetail}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {pronunciationTip ? (
+                  <View style={[styles.diagRow, errorDetail ? { marginTop: 6 } : null]}>
+                    <Ionicons name="bulb-outline" size={18} color="#06D6A0" style={{ marginTop: 2 }} />
+                    <Text style={styles.diagText}>
+                      <Text style={{ fontWeight: "800", color: "#06D6A0" }}>Mẹo đọc: </Text>
+                      {pronunciationTip}
+                    </Text>
+                  </View>
                 ) : null}
               </View>
             )}
 
-            {recognizedText ? (
-              <Text style={styles.recognizedText}>
-                Âm nhận diện:{" "}
-                <Text style={{ fontWeight: "800", color: "#FFFFFF" }}>"{recognizedText}"</Text>
-              </Text>
-            ) : (
-              <Text style={styles.recognizedText}>Âm nhận diện: (Không rõ âm thanh)</Text>
-            )}
-
-            <Text style={styles.feedbackMsg}>{feedback}</Text>
-
-            {userAudioUri && (
+            {/* Side-by-side Dual Audio Playback Compare Row */}
+            <View style={styles.audioCompareRow}>
               <TouchableOpacity
-                onPress={playUserRecording}
-                style={styles.drawerUserAudioBtn}
+                onPress={() => playTTS(currentCard.character)}
+                style={styles.audioBtnTTS}
                 activeOpacity={0.8}
               >
-                <Ionicons name="volume-high" size={20} color="#FFFFFF" />
-                <Text style={styles.drawerUserAudioBtnText}>NGHE LẠI GIỌNG BẠN VỪA ĐỌC</Text>
+                <Ionicons name="volume-high" size={18} color="#FFFFFF" />
+                <Text style={styles.audioBtnText}>NGHE ÂM CHUẨN</Text>
               </TouchableOpacity>
-            )}
 
+              {userAudioUri && (
+                <TouchableOpacity
+                  onPress={playUserRecording}
+                  style={styles.audioBtnUser}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="mic" size={18} color="#FFFFFF" />
+                  <Text style={styles.audioBtnText}>GIỌNG BẠN ĐỌC</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Action Buttons */}
             <View style={{ flexDirection: "row", gap: 10, marginTop: Spacing.md }}>
               <DuolingoButton
                 title="ĐỌC LẠI"
@@ -764,7 +937,72 @@ const styles = StyleSheet.create({
     borderRadius: Radii.full,
   },
   recognizedText: { fontSize: 13, color: Colors.duolingo.textMuted, marginBottom: 4 },
-  feedbackMsg: { fontSize: 14, color: "#FFFFFF", fontWeight: "600", lineHeight: 20 },
+  feedbackMsg: { fontSize: 14, color: "#FFFFFF", fontWeight: "700", lineHeight: 20, marginTop: 4 },
+
+  comparisonBox: {
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
+    borderRadius: Radii.md,
+    padding: 10,
+    marginVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
+  compareItem: { flexDirection: "column" },
+  compareLabel: { fontSize: 11, fontWeight: "800", color: "rgba(255, 255, 255, 0.7)", letterSpacing: 0.5 },
+  compareTargetText: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginTop: 1 },
+  comparePinyinText: { fontSize: 16, fontWeight: "700", color: Colors.duolingo.blue },
+  compareTranslationText: { fontSize: 13, color: "rgba(255, 255, 255, 0.8)", fontWeight: "600" },
+  compareSpokenText: { fontSize: 16, fontWeight: "800", color: "#FFD166", marginTop: 1 },
+  compareSpokenMuted: { fontSize: 13, fontStyle: "italic", color: "rgba(255, 255, 255, 0.6)", marginTop: 1 },
+
+  diagnosisBox: {
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    borderRadius: Radii.md,
+    padding: 10,
+    marginTop: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.duolingo.yellow,
+  },
+  diagRow: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  diagText: { flex: 1, fontSize: 13, color: "#FFFFFF", fontWeight: "600", lineHeight: 18 },
+
+  audioCompareRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
+  audioBtnTTS: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.duolingo.blue,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: Radii.md,
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.duolingo.blueDark,
+  },
+  audioBtnUser: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: Colors.duolingo.purple,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: Radii.md,
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.duolingo.purpleDark,
+  },
+  audioBtnText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
 
   doneContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: Spacing.xl },
   doneTitle: { fontSize: 24, fontWeight: "800", color: "#FFFFFF" },
