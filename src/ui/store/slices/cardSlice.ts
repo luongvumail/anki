@@ -1,10 +1,14 @@
 import { StateCreator } from "zustand";
+import { AddCardUseCase } from "../../../application/usecases/AddCard";
+import { DeleteCardUseCase } from "../../../application/usecases/DeleteCard";
 import {
   GenerateAICardsInput,
   GenerateAICardsUseCase,
 } from "../../../application/usecases/GenerateAICards";
 import { ProcessCardReviewUseCase } from "../../../application/usecases/ProcessCardReview";
+import { ResetDeckProgressUseCase } from "../../../application/usecases/ResetDeckProgress";
 import { SyncOfflineQueueUseCase } from "../../../application/usecases/SyncOfflineQueue";
+import { UpdateCardUseCase } from "../../../application/usecases/UpdateCard";
 import { CardEntity, ensureFSRSState } from "../../../domain/card/cardEntity";
 import { FSRSEngine } from "../../../domain/fsrs/fsrsEngine";
 import { Rating, ReviewLog } from "../../../domain/fsrs/fsrsTypes";
@@ -25,9 +29,14 @@ const fsrsEngine = new FSRSEngine();
 const reviewUseCase = new ProcessCardReviewUseCase(fsrsEngine);
 const syncUseCase = new SyncOfflineQueueUseCase(localRepo, remoteRepo);
 const aiUseCase = new GenerateAICardsUseCase(geminiService, remoteRepo, fsrsEngine);
+const addCardUseCase = new AddCardUseCase(remoteRepo, fsrsEngine);
+const updateCardUseCase = new UpdateCardUseCase(remoteRepo);
+const deleteCardUseCase = new DeleteCardUseCase(remoteRepo);
+const resetDeckUseCase = new ResetDeckProgressUseCase(remoteRepo, fsrsEngine);
 
 export interface CardSlice {
   cards: Record<string, CardEntity[]>;
+  hasFetchedCards: Record<string, boolean>;
   isCardLoading: boolean;
   cardError: string | null;
 
@@ -56,56 +65,100 @@ function generateId(prefix: string): string {
 
 export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (set, get) => ({
   cards: {},
+  hasFetchedCards: {},
   isCardLoading: false,
   cardError: null,
 
   fetchCards: async (deckId: string) => {
     set({ isCardLoading: true, cardError: null });
+
+    let initialCards = get().cards[deckId] || [];
+    if (initialCards.length === 0) {
+      try {
+        const cached = await localRepo.getCachedCardsForDeck(deckId);
+        if (cached && cached.length > 0) {
+          initialCards = cached;
+          set((s) => ({
+            cards: { ...s.cards, [deckId]: cached },
+            hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
+          }));
+        }
+      } catch (err) {
+        console.warn("[cardSlice] Local cache read error:", err);
+      }
+    }
+
     try {
       const fetched = await remoteRepo.getCards(deckId);
+
+      let finalCards = fetched;
+      if (fetched.length === 0 && initialCards.length > 0) {
+        finalCards = initialCards;
+      } else if (fetched.length > 0 && initialCards.length > 0) {
+        const map = new Map<string, CardEntity>();
+        initialCards.forEach((c) => map.set(c.id, c));
+        fetched.forEach((c) => map.set(c.id, c));
+        finalCards = Array.from(map.values());
+      }
+
       set((s) => ({
-        cards: { ...s.cards, [deckId]: fetched },
+        cards: { ...s.cards, [deckId]: finalCards },
+        hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
         isCardLoading: false,
       }));
-      return fetched;
+
+      if (finalCards.length > 0) {
+        localRepo.saveCachedCardsForDeck(deckId, finalCards).catch(() => {});
+      }
+
+      return finalCards;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch cards";
-      set({ cardError: errorMessage, isCardLoading: false });
-      return get().cards[deckId] || [];
+      set((s) => ({
+        cards: { ...s.cards, [deckId]: initialCards },
+        hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
+        cardError: errorMessage,
+        isCardLoading: false,
+      }));
+      return initialCards;
     }
   },
 
   setCardsForDeck: (deckId: string, cards: CardEntity[]) => {
+    const formatted = cards.map((c) => ({ ...c, fsrs: ensureFSRSState(c) }));
     set((s) => ({
       cards: {
         ...s.cards,
-        [deckId]: cards.map((c) => ({ ...c, fsrs: ensureFSRSState(c) })),
+        [deckId]: formatted,
       },
+      hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
     }));
+    localRepo.saveCachedCardsForDeck(deckId, formatted).catch(() => {});
   },
 
   addCard: async (cardData: Omit<CardEntity, "id" | "createdAt" | "updatedAt">) => {
-    const now = new Date();
-    const nowStr = now.toISOString();
-    const initialFSRS = cardData.fsrs ?? fsrsEngine.createEmptyCard(now);
+    let newCard: CardEntity;
+    try {
+      newCard = await addCardUseCase.execute(cardData);
+    } catch (err) {
+      console.warn("[cardSlice] AddCardUseCase remote save warning:", err);
+      const nowStr = new Date().toISOString();
+      newCard = {
+        ...cardData,
+        id: `card-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        createdAt: nowStr,
+        updatedAt: nowStr,
+      };
+    }
 
-    const newCard: CardEntity = {
-      ...cardData,
-      id: generateId("card"),
-      fsrs: initialFSRS,
-      createdAt: nowStr,
-      updatedAt: nowStr,
-    };
     const deckId = cardData.deckId;
     const existing = get().cards[deckId] || [];
+    const updatedList = [...existing, newCard];
     set((s) => ({
-      cards: { ...s.cards, [deckId]: [...existing, newCard] },
+      cards: { ...s.cards, [deckId]: updatedList },
+      hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
     }));
-    try {
-      await remoteRepo.saveCard(newCard);
-    } catch (err) {
-      console.warn("[cardSlice] Failed to save card remotely:", err);
-    }
+    localRepo.saveCachedCardsForDeck(deckId, updatedList).catch(() => {});
     return newCard;
   },
 
@@ -114,18 +167,20 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
     const targetCard = existingCards.find((c) => c.id === cardId);
     if (!targetCard) return;
 
-    const updatedCard = { ...targetCard, ...updates, updatedAt: new Date().toISOString() };
-    const updatedList = existingCards.map((c) => (c.id === cardId ? updatedCard : c));
+    let updatedCard: CardEntity;
+    try {
+      updatedCard = await updateCardUseCase.execute({ targetCard, updates });
+    } catch (err) {
+      console.warn("[cardSlice] UpdateCardUseCase remote save warning:", err);
+      updatedCard = { ...targetCard, ...updates, updatedAt: new Date().toISOString() };
+    }
 
+    const updatedList = existingCards.map((c) => (c.id === cardId ? updatedCard : c));
     set((s) => ({
       cards: { ...s.cards, [deckId]: updatedList },
+      hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
     }));
-
-    try {
-      await remoteRepo.saveCard(updatedCard);
-    } catch (err) {
-      console.warn("[cardSlice] Failed to update card remotely:", err);
-    }
+    localRepo.saveCachedCardsForDeck(deckId, updatedList).catch(() => {});
   },
 
   deleteCard: async (cardId: string, deckId: string) => {
@@ -134,12 +189,14 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
 
     set((s) => ({
       cards: { ...s.cards, [deckId]: updatedList },
+      hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
     }));
+    localRepo.saveCachedCardsForDeck(deckId, updatedList).catch(() => {});
 
     try {
-      await remoteRepo.deleteCard(cardId);
+      await deleteCardUseCase.execute(cardId);
     } catch (err) {
-      console.warn("[cardSlice] Failed to delete card remotely:", err);
+      console.warn("[cardSlice] DeleteCardUseCase remote delete warning:", err);
     }
   },
 
@@ -162,9 +219,11 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
 
     set((s) => ({
       cards: { ...s.cards, [deckId]: updatedCards },
+      hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
       xp: (s.xp || 0) + earnedXP,
       streakState: newStreak || s.streakState,
     }));
+    localRepo.saveCachedCardsForDeck(deckId, updatedCards).catch(() => {});
 
     await reviewTrackerRepo.recordReviewToday();
 
@@ -199,11 +258,14 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
       const createdCards = await aiUseCase.execute(input);
       const deckId = input.deckId;
       const existing = get().cards[deckId] || [];
+      const updatedList = [...existing, ...createdCards];
 
       set((s) => ({
-        cards: { ...s.cards, [deckId]: [...existing, ...createdCards] },
+        cards: { ...s.cards, [deckId]: updatedList },
+        hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
         isCardLoading: false,
       }));
+      localRepo.saveCachedCardsForDeck(deckId, updatedList).catch(() => {});
 
       return createdCards;
     } catch (err: unknown) {
@@ -215,24 +277,25 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
 
   resetDeckProgress: async (deckId: string) => {
     const existingCards = get().cards[deckId] || [];
-    const now = new Date();
-    const nowStr = now.toISOString();
-
-    const resetCards = existingCards.map((c) => ({
-      ...c,
-      fsrs: fsrsEngine.createEmptyCard(now),
-      srs: undefined,
-      updatedAt: nowStr,
-    }));
+    let resetCards: CardEntity[];
+    try {
+      resetCards = await resetDeckUseCase.execute(existingCards);
+    } catch (err) {
+      console.warn("[cardSlice] ResetDeckProgressUseCase remote save warning:", err);
+      const now = new Date();
+      const nowStr = now.toISOString();
+      resetCards = existingCards.map((c) => ({
+        ...c,
+        fsrs: fsrsEngine.createEmptyCard(now),
+        srs: undefined,
+        updatedAt: nowStr,
+      }));
+    }
 
     set((s) => ({
       cards: { ...s.cards, [deckId]: resetCards },
+      hasFetchedCards: { ...s.hasFetchedCards, [deckId]: true },
     }));
-
-    try {
-      await remoteRepo.saveCards(resetCards);
-    } catch (err) {
-      console.warn("[cardSlice] Failed to reset deck progress remotely:", err);
-    }
+    localRepo.saveCachedCardsForDeck(deckId, resetCards).catch(() => {});
   },
 });

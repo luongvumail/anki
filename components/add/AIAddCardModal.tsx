@@ -17,7 +17,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { GeminiService, CardData } from "../../src/infrastructure/ai/geminiService";
+import { CardData } from "../../src/infrastructure/ai/geminiService";
+import { GenerateCardBatchUseCase } from "../../src/application/usecases/GenerateCardBatch";
 import { useAppStore } from "../../src/ui/store/useAppStore";
 import { getFirestoreErrorMessage, getGeminiErrorMessage } from "../../src/ui/utils/errorHandler";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
@@ -27,7 +28,7 @@ import { CardPreview } from "./CardPreview";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { DuolingoButton } from "../ui/DuolingoButton";
 
-const geminiService = new GeminiService();
+const generateCardBatchUseCase = new GenerateCardBatchUseCase();
 
 const MAX_WORDS = 10;
 
@@ -163,7 +164,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     saveToHistory(parsed);
 
     try {
-      const results = await geminiService.generateCardDataBatch(newWords);
+      const results = await generateCardBatchUseCase.execute(newWords);
 
       const seenChars = new Set<string>();
       const finalItems: WordItem[] = [];

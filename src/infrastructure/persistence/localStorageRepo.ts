@@ -72,4 +72,30 @@ export class LocalStorageRepo {
       return [];
     }
   }
+
+  /**
+   * Caches cards for a specific deck locally.
+   */
+  public async saveCachedCardsForDeck(deckId: string, cards: CardEntity[]): Promise<void> {
+    try {
+      const key = `@anki_deck_cards_cache_${deckId}`;
+      await AsyncStorage.setItem(key, JSON.stringify(cards));
+    } catch (err) {
+      console.warn("[LocalStorageRepo] Failed to cache cards for deck:", err);
+    }
+  }
+
+  /**
+   * Retrieves locally cached cards for a specific deck.
+   */
+  public async getCachedCardsForDeck(deckId: string): Promise<CardEntity[]> {
+    try {
+      const key = `@anki_deck_cards_cache_${deckId}`;
+      const data = await AsyncStorage.getItem(key);
+      if (!data) return [];
+      return JSON.parse(data) as CardEntity[];
+    } catch {
+      return [];
+    }
+  }
 }

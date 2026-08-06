@@ -24,7 +24,7 @@ import { ProgressBar } from "../../components/ui/ProgressBar";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
 import { computeLearnedCount } from "../../src/domain/card/cardUtils";
-import { Colors } from "@/constants/theme";
+import { Colors, Spacing, Radii, triggerHaptic } from "@/constants/theme";
 
 export default function DeckDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -35,6 +35,8 @@ export default function DeckDetailScreen() {
   const deleteDeck = useAppStore((s) => s.deleteDeck);
   const resetDeckProgress = useAppStore((s) => s.resetDeckProgress);
   const isCardLoading = useAppStore((s) => s.isCardLoading);
+  const hasFetchedCards = useAppStore((s) => s.hasFetchedCards);
+  const isFetched = Boolean(id && hasFetchedCards[id]);
 
   const [showAIAddModal, setShowAIAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -198,10 +200,12 @@ export default function DeckDetailScreen() {
           { paddingBottom: Math.max(insets.bottom + 40, 60) },
         ]}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
+        initialNumToRender={12}
+        maxToRenderPerBatch={12}
         windowSize={5}
         removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
+        getItemLayout={(_, index) => ({ length: 92, offset: 92 * index, index })}
         ListHeaderComponent={
           <View style={styles.listHeader}>
             {/* Deck Summary Hero Card */}
@@ -290,7 +294,7 @@ export default function DeckDetailScreen() {
           </View>
         }
         ListEmptyComponent={
-          isCardLoading ? (
+          isCardLoading || !isFetched ? (
             <ActivityIndicator
               size="small"
               color={Colors.duolingo.blue}

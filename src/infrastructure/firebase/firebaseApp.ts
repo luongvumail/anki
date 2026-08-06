@@ -1,9 +1,8 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { initializeAuth, getAuth } from "firebase/auth";
 // @ts-expect-error: getReactNativePersistence exists in the RN build at runtime
 // but TypeScript resolves firebase/auth to the browser typings only (known Firebase SDK issue)
-import { getReactNativePersistence } from "firebase/auth";
+import { initializeAuth, getAuth, getReactNativePersistence } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 

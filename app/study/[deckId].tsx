@@ -21,6 +21,7 @@ export default function StudyScreen() {
     deck,
     deckCards,
     isCardLoading,
+    hasFetched,
     targetCards,
     previewIndex,
     repairIndex,
@@ -36,7 +37,18 @@ export default function StudyScreen() {
     handleExitSession,
   } = useStudySession(deckId || "");
 
-  if (!isCardLoading && deckCards.length === 0) {
+  if (isCardLoading || (!hasFetched && deckCards.length === 0)) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.duolingo.blue} />
+        <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF", marginTop: 16 }}>
+          Đang tải thẻ từ vựng...
+        </Text>
+      </View>
+    );
+  }
+
+  if (hasFetched && deckCards.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <Ionicons

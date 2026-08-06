@@ -19,9 +19,9 @@ import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { AudioButton } from "../../components/ui/AudioButton";
-import { GeminiService } from "../../src/infrastructure/ai/geminiService";
+import { GenerateRadicalUseCase } from "../../src/application/usecases/GenerateRadical";
 
-const geminiService = new GeminiService();
+const generateRadicalUseCase = new GenerateRadicalUseCase();
 
 export default function CardDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -75,7 +75,7 @@ export default function CardDetailScreen() {
     try {
       setGeneratingRadical(true);
       triggerHaptic("light");
-      const radical = await geminiService.generateRadical(card.character);
+      const radical = await generateRadicalUseCase.execute(card.character);
       if (radical && radical.trim().length > 0) {
         await updateCard(card.id, deckId, { radical });
         triggerHaptic("success");

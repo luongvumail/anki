@@ -604,20 +604,20 @@ const styles = StyleSheet.create({
     color: Colors.duolingo.textMuted,
   },
   letterTextSelected: {
-    color: "#FFFFFF",
+    color: Colors.text.white,
   },
   letterTextCorrect: {
-    color: "#FFFFFF",
+    color: Colors.text.white,
   },
   letterTextWrong: {
-    color: "#FFFFFF",
+    color: Colors.text.white,
   },
 
   optionText: {
     flex: 1,
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.white,
   },
 
   bottomBar: {

@@ -3,21 +3,41 @@ import { createCardSlice } from "../cardSlice";
 import { CardEntity } from "../../../../domain/card/cardEntity";
 import { Rating } from "../../../../domain/fsrs/fsrsTypes";
 
+let mockGetCardsImpl: (deckId?: string) => Promise<any[]> = async () => [
+  {
+    id: "card-1",
+    deckId: "deck-1",
+    character: "你好",
+    pinyin: "nǐ hǎo",
+    translation: "Hello",
+    examples: [],
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+  },
+];
+
+vi.mock("@react-native-async-storage/async-storage", () => {
+  let store: Record<string, string> = {};
+  return {
+    default: {
+      getItem: vi.fn(async (key: string) => store[key] || null),
+      setItem: vi.fn(async (key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn(async (key: string) => {
+        delete store[key];
+      }),
+      clear: vi.fn(async () => {
+        store = {};
+      }),
+    },
+  };
+});
+
 vi.mock("../../../../infrastructure/persistence/firestoreRepo", () => {
   return {
     FirestoreCardRepository: class {
-      getCards = vi.fn().mockResolvedValue([
-        {
-          id: "card-1",
-          deckId: "deck-1",
-          character: "你好",
-          pinyin: "nǐ hǎo",
-          translation: "Hello",
-          examples: [],
-          createdAt: "2026-01-01T00:00:00Z",
-          updatedAt: "2026-01-01T00:00:00Z",
-        },
-      ]);
+      getCards = vi.fn().mockImplementation((deckId?: string) => mockGetCardsImpl(deckId));
       saveCard = vi.fn().mockResolvedValue(undefined);
       saveCards = vi.fn().mockResolvedValue(undefined);
       deleteCard = vi.fn().mockResolvedValue(undefined);
@@ -115,5 +135,57 @@ describe("cardSlice", () => {
 
     expect(storeState.cards["deck-1"][0].fsrs?.reps).toBe(0);
     expect(storeState.cards["deck-1"][0].fsrs?.stability).toBe(0);
+  });
+
+  it("preserves local cards when remote fetch returns empty array", async () => {
+    const slice = createCardSlice(set, get, {} as any);
+    storeState.cards["deck-1"] = [
+      {
+        id: "local-card-1",
+        deckId: "deck-1",
+        character: "再见",
+        pinyin: "zài jiàn",
+        translation: "Goodbye",
+        examples: [],
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      },
+    ];
+
+    mockGetCardsImpl = async () => [];
+
+    const result = await slice.fetchCards("deck-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].character).toBe("再见");
+    expect(storeState.cards["deck-1"]).toHaveLength(1);
+    expect(storeState.hasFetchedCards["deck-1"]).toBe(true);
+  });
+
+  it("preserves local cards when remote fetch throws an error", async () => {
+    const slice = createCardSlice(set, get, {} as any);
+    storeState.cards["deck-1"] = [
+      {
+        id: "local-card-1",
+        deckId: "deck-1",
+        character: "再见",
+        pinyin: "zài jiàn",
+        translation: "Goodbye",
+        examples: [],
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      },
+    ];
+
+    mockGetCardsImpl = async () => {
+      throw new Error("Network error");
+    };
+
+    const result = await slice.fetchCards("deck-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].character).toBe("再见");
+    expect(storeState.cards["deck-1"]).toHaveLength(1);
+    expect(storeState.hasFetchedCards["deck-1"]).toBe(true);
   });
 });

@@ -1,178 +1,150 @@
-# 汉字 Anki — Ứng dụng học từ vựng tiếng Trung
+# 汉字 Anki — Ứng dụng Học Từ Vựng Tiếng Trung Thông Minh
 
-Ứng dụng học từ vựng tiếng Trung thông minh, kết hợp thuật toán lặp lại ngắt quãng **FSRS** (Free Spaced Repetition Scheduler), **AI Gemini** để tự động nạp thẻ, và hệ thống gamification theo phong cách **Duolingo**. Xây dựng trên Expo SDK 57 với kiến trúc **Clean Architecture**.
-
----
-
-## ✨ Tính Năng Chính
-
-| Tính năng             | Mô tả                                                                                                |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| 📚 **Quản lý bộ thẻ** | Tạo, xóa, xem chi tiết bộ thẻ; tìm kiếm từ vựng theo chữ Hán / Pinyin / nghĩa                        |
-| 🤖 **Nạp thẻ AI**     | Nhập chữ Hán → Gemini tự động điền Pinyin, nghĩa TV, HSK, bộ thủ, câu ví dụ. Lọc trùng tự động       |
-| 🧠 **Ôn tập FSRS**    | Luồng học 3 giai đoạn: Preview → Quiz → Repair. Thuật toán FSRS tính interval, stability, difficulty |
-| 🎮 **Mini-games**     | Speed Match (60s ghép cặp Hán↔nghĩa), Sentence Builder (xếp từ thành câu), Pronunciation Trainer     |
-| 🔊 **TTS & Audio**    | Phát âm chuẩn Phổ thông (expo-audio + expo-speech), tô màu thanh điệu Pinyin                         |
-| 🔥 **Streak & XP**    | Chuỗi ngày học liên tục, điểm XP, cấp bậc từ 初学者 đến 汉字宗师, bộ huy hiệu thành tích             |
-| 📊 **Thống kê**       | Biểu đồ 7 ngày, tổng từ đã học, tỷ lệ thành thạo, lịch sử ôn tập                                     |
-| ☁️ **Sync Firebase**  | Dữ liệu đồng bộ Firestore realtime. Offline queue tự động sync khi có mạng                           |
+Ứng dụng học từ vựng tiếng Trung chuẩn kiến trúc **Clean Architecture** (4 Lớp), kết hợp thuật toán lặp lại ngắt quãng thế hệ mới **FSRS v5** (Free Spaced Repetition Scheduler), **AI Gemini 2.5** tự động trích xuất từ vựng, và hệ thống Gamification phong cách **Duolingo 3D**.
 
 ---
 
-## 🏗️ Kiến Trúc — Clean Architecture
+## ✨ Tính Năng Nổi Bật
 
-```
+| Tính năng | Mô tả |
+| :--- | :--- |
+| 📚 **Quản lý Bộ thẻ Thông minh** | Tạo, chỉnh sửa, xóa, đặt lại tiến độ bộ thẻ; tìm kiếm từ vựng siêu tốc theo Hán tự / Pinyin / Nghĩa Tiếng Việt. |
+| 🤖 **Nạp thẻ Tự động bằng AI** | Nhập danh sách chữ Hán / câu văn ➔ Gemini AI tự động trích xuất Pinyin, Nghĩa Tiếng Việt, Phân tích Bộ thủ ngắn gọn, HSK & Câu ví dụ chuẩn ngữ cảnh. |
+| 🧠 **Ôn tập FSRS v5** | Luồng học 3 giai đoạn: **Preview** (Nạp từ) ➔ **Quiz** (Trắc nghiệm thích ứng) ➔ **Repair** (Sửa lỗi cắm cờ). Thuật toán FSRS v5 tự động tính toán thời gian phản xạ (ms) để tối ưu độ bền trí nhớ ($S$) và độ khó ($D$). |
+| 🔊 **Audio TTS Pre-caching** | Tiện ích làm nóng giọng đọc tiếng Trung (`audioCache`) triệt tiêu hoàn toàn độ trễ âm thanh khi chuyển thẻ hoặc làm bài trắc nghiệm nghe. |
+| 🎮 **Trung tâm Luyện tập Arcade** | 3 Mini-games rèn phản xạ: **Ghép Từ Nhanh 60s**, **Xếp Từ Thành Câu**, và **Phòng Luyện Phát Âm AI**. |
+| 🔥 **Streak & XP Gamification** | Chuỗi ngày học liên tục, điểm XP tích lũy, thăng cấp từ 初学者 đến 汉字宗师 và Bộ 14 Huy hiệu thành tích cá nhân. |
+| 📊 **Thống kê & Hướng dẫn Chi tiết** | Biểu đồ hoạt động 7 ngày, tỷ lệ thuộc từ vựng (%) và Bảng hướng dẫn chi tiết quy trình học ngay tại màn hình Thống kê. |
+| ⚡ **Hiệu năng 60fps & Offline-First** | Ảo hóa danh sách `FlatList` $O(1)$ constant-time layout calculation; tự động lưu bộ nhớ đệm `AsyncStorage` & đồng bộ Firestore Realtime khi có kết nối mạng. |
+
+---
+
+## 🏗️ Kiến Trúc — Clean Architecture 4 Lớp
+
+```text
 src/
-├── domain/                      # Business logic thuần (không phụ thuộc framework)
-│   ├── card/                    # CardEntity, cardUtils, cardRepository.i.ts (interface)
+├── domain/                      # 🧠 Business Logic Thuần (Zero external framework dependencies)
+│   ├── card/                    # CardEntity, cardUtils, cardRepository.i.ts (Interface)
 │   ├── deck/                    # DeckEntity, deckRepository.i.ts
-│   ├── fsrs/                    # FSRS engine: fsrsEngine.ts, fsrsTypes.ts, fsrsConstants.ts
+│   ├── fsrs/                    # FSRS v5 Engine: fsrsEngine.ts, fsrsTypes.ts, fsrsConstants.ts
+│   ├── study/                   # StudySessionEngine: Quản lý hàng đợi bài học & quy tắc rating
 │   ├── streak/                  # streakCalculator.ts
-│   └── user/                    # userProgress.ts (XP, level, badges)
+│   └── user/                    # userProgress.ts (XP, Level, Badges)
 │
-├── application/                 # Use cases — orchestrate domain + infrastructure
+├── application/                 # ⚙️ Application Use Cases (Orchestrate domain + infrastructure)
 │   └── usecases/
-│       ├── GenerateAICards.ts   # Gọi Gemini → validate → lọc trùng → persist
-│       ├── GenerateQuiz.ts      # Sinh quiz từ danh sách thẻ
-│       ├── ProcessCardReview.ts # FSRS review → cập nhật card state
-│       └── SyncOfflineQueue.ts  # Drain offline queue khi có mạng
+│       ├── AddCard.ts           # AddCardUseCase: Thêm thẻ mới & khởi tạo trạng thái FSRS
+│       ├── UpdateCard.ts        # UpdateCardUseCase: Cập nhật thông tin thẻ & timestamp
+│       ├── DeleteCard.ts        # DeleteCardUseCase: Xóa thẻ an toàn
+│       ├── ResetDeckProgress.ts # ResetDeckProgressUseCase: Đặt lại tiến độ FSRS toàn bộ thẻ
+│       ├── GenerateRadical.ts   # GenerateRadicalUseCase: AI phân tích bộ thủ cho Hán tự
+│       ├── GenerateCardBatch.ts # GenerateCardBatchUseCase: AI trích xuất mảng từ vựng hàng loạt
+│       ├── GenerateAICards.ts   # GenerateAICardsUseCase: Sinh thẻ AI & lưu kho dữ liệu
+│       ├── GenerateQuiz.ts      # GenerateQuizUseCase: Sinh trắc nghiệm 4 dạng bài tập
+│       ├── ProcessCardReview.ts # ProcessCardReviewUseCase: Xử lý chấm điểm FSRS & điểm XP
+│       └── SyncOfflineQueue.ts  # SyncOfflineQueueUseCase: Đồng bộ offline queue khi có mạng
 │
-├── infrastructure/              # Adapters: Firebase, AI, Notifications, AsyncStorage
-│   ├── ai/geminiService.ts      # Google Generative AI SDK wrapper
-│   ├── firebase/firebaseApp.ts  # Firebase init (App + Firestore + Auth)
-│   ├── notifications/           # Expo Notifications service
+├── infrastructure/              # 🔌 Infrastructure Adapters (Firebase, AI, AsyncStorage)
+│   ├── ai/geminiService.ts      # Google Generative AI SDK (Gemini 2.5 Flash)
+│   ├── firebase/firebaseApp.ts  # Firebase Init (App, Firestore v12, Auth v12)
 │   └── persistence/
-│       ├── firestoreRepo.ts     # Firestore CRUD (cards, decks)
-│       ├── localStorageRepo.ts  # AsyncStorage offline queue
-│       └── reviewTrackerRepo.ts # Lưu lịch sử ôn tập hàng ngày
+│       ├── firestoreRepo.ts     # Firestore Card & Deck Repositories (4-level collection fallback)
+│       ├── localStorageRepo.ts  # AsyncStorage offline cache & queue persistence
+│       └── reviewTrackerRepo.ts # Ghi nhận lịch sử ôn tập hàng ngày
 │
-└── ui/                          # React Native UI layer
-    ├── hooks/useStudySession.ts  # Hook quản lý toàn bộ luồng ôn tập
+└── ui/                          # 📱 Presentation State Management
+    ├── hooks/useStudySession.ts # Hook quản lý giao diện phiên học
     ├── store/
-    │   ├── useAppStore.ts        # Zustand store root
-    │   ├── slices/
-    │   │   ├── cardSlice.ts
-    │   │   ├── deckSlice.ts
-    │   │   ├── progressSlice.ts
-    │   │   └── uiSlice.ts
-    │   └── types.ts
+    │   ├── useAppStore.ts       # Root Zustand store
+    │   └── slices/              # cardSlice, deckSlice, progressSlice, uiSlice
     └── utils/
-        ├── pinyinColor.ts        # Tô màu thanh điệu
+        ├── audioCache.ts        # TTS Speech Pre-warming Cache Engine
+        ├── pinyinColor.ts       # Tô màu thanh điệu Pinyin
         └── errorHandler.ts
 ```
 
 ---
 
-## 📱 Cấu Trúc Màn Hình
+## 📱 Cấu Trúc Màn Hình & Components
 
-```
+```text
 app/
 ├── (tabs)/
 │   ├── index.tsx        # 🏠 Dashboard — ZigZag skill path, Active Deck Hero Card
-│   ├── practice.tsx     # 🎮 Practice Hub — Speed Match, Sentence Builder, Pronunciation
-│   └── stats.tsx        # 📊 Stats — streak, XP chart, badges gallery
+│   ├── decks.tsx        # 📂 Danh sách bộ thẻ & Tìm kiếm từ vựng
+│   ├── practice.tsx     # 🎮 Arcade Practice Hub — Speed Match, Sentence Builder, Pronunciation
+│   ├── stats.tsx        # 📊 Stats — Level banner, Biểu đồ 7 ngày, Badges, Hướng dẫn FSRS v5
+│   └── profile.tsx      # 👤 Trang cá nhân & Tài khoản
 ├── auth.tsx             # 🔐 Đăng nhập / Đăng ký
-├── deck/[id].tsx        # 📂 Chi tiết bộ thẻ, danh sách từ, tìm kiếm
-├── study/[deckId].tsx   # 🧠 Luồng ôn tập FSRS (Preview → Quiz → Repair → Done)
-├── card/[id].tsx        # 🃏 Chi tiết thẻ từ vựng
-└── _layout.tsx          # Root layout, auth guard, splash screen
+├── deck/[id].tsx        # 📂 Chi tiết bộ thẻ & Danh sách 60fps
+├── study/[deckId].tsx   # 🧠 Luồng ôn tập FSRS (Preview ➔ Quiz ➔ Repair ➔ Done)
+├── card/[id].tsx        # 🃏 Chi tiết thẻ từ vựng & AI sinh bộ thủ
+└── _layout.tsx          # Root layout, Auth Guard, Splash screen
 
 components/
 ├── add/      # AIAddCardModal, CardPreview, DeckPicker
-├── home/     # ActiveDeckHeroCard, AccountModal, ZigZagSkillPath, WheelTimePicker
+├── home/     # ZigZagSkillPath, ActiveDeckHeroCard, AccountModal
 ├── practice/ # SpeedMatchModal, SentenceBuilderModal, PronunciationTrainerModal
 ├── stats/    # BadgesGallery
 ├── study/    # FlashcardView, QuizCardView, SessionDoneScreen
 └── ui/       # DuolingoButton, DuolingoCard, DuolingoHeader, FloatingAddButton,
-              # SectionTitle, ProgressBar, AudioButton, DeckIcon, DuolingoMascot
+              # SectionTitle, ProgressBar, AudioButton, FormField, DeckIcon
 ```
-
----
-
-## 🧠 Thuật Toán FSRS
-
-**FSRS (Free Spaced Repetition Scheduler)** thay thế SuperMemo-2, chính xác hơn ~20%.
-
-- **3 tham số bộ nhớ:** `stability` (độ bền nhớ), `difficulty` (độ khó thẻ), `retrievability` (xác suất nhớ được tại thời điểm ôn).
-- **4 rating:** Again / Hard / Good / Easy → tính interval độc lập cho từng thẻ.
-- **Luồng 3 giai đoạn:**
-  1. **Preview** — xem thẻ mới, lật để thấy đáp án
-  2. **Quiz** — trắc nghiệm 4 dạng (Meaning / Pinyin / Listening / Cloze)
-  3. **Repair** — ôn lại những thẻ trả lời sai
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer      | Công nghệ                                              |
-| ---------- | ------------------------------------------------------ |
-| Framework  | React Native 0.86 + Expo SDK 57 (New Architecture)     |
-| Routing    | Expo Router v4 (file-based)                            |
-| State      | Zustand v5 (sliced store)                              |
-| Database   | Firebase Firestore v12                                 |
-| Auth       | Firebase Auth v12 (AsyncStorage persistence on mobile) |
-| AI         | Google Generative AI SDK — Gemini 2.5 Flash            |
-| Validation | Zod v4                                                 |
-| Audio      | expo-audio + expo-speech                               |
-| Animation  | react-native-reanimated v4                             |
-| Styling    | StyleSheet API + Design Tokens (`constants/theme.ts`)  |
-| Testing    | Vitest (unit tests cho domain + use cases)             |
-| Linting    | ESLint 9 + Prettier                                    |
+| Layer | Công nghệ |
+| :--- | :--- |
+| **Framework** | React Native 0.86 + Expo SDK 57 (New Architecture) |
+| **Routing** | Expo Router v4 (File-based routing) |
+| **State Management** | Zustand v5 (Sliced store pattern) |
+| **Database** | Firebase Firestore v12 (Realtime sync + 4-level fallback) |
+| **Auth** | Firebase Auth v12 (AsyncStorage persistence) |
+| **AI Integration** | Google Generative AI SDK — Gemini 2.5 Flash |
+| **Audio & Speech** | expo-speech + `audioCache` TTS pre-caching |
+| **Animation** | react-native-reanimated v4 |
+| **Styling** | StyleSheet API + Design Tokens (`constants/theme.ts`) |
+| **Testing** | Vitest (`npx test` — 47 unit tests) |
+| **Type System** | TypeScript 5.9 (`npx tsc --noEmit` — 0 errors) |
 
 ---
 
-## 🚀 Khởi Chạy
+## 🚀 Khởi Chạy Dự Án
 
-### Yêu cầu
-
+### Yêu cầu môi trường
 - Node.js ≥ 20
 - Expo Go app (iOS/Android) hoặc iOS/Android Simulator
 
-### Cài đặt
-
+### Cài đặt dependencies
 ```bash
 git clone <repo-url>
 cd Anki
 npm install
 ```
 
-### Biến môi trường
-
-Tạo file `.env.local` ở root:
-
+### Cấu hình biến môi trường
+Tạo file `.env` hoặc `.env.local` tại thư mục root:
 ```env
-EXPO_PUBLIC_FIREBASE_API_KEY=...
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=...
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-EXPO_PUBLIC_FIREBASE_APP_ID=...
-EXPO_PUBLIC_GEMINI_API_KEY=...
+EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 ```
 
-### Chạy
-
+### Chạy ứng dụng
 ```bash
-npm start          # Expo dev server — scan QR bằng Expo Go
+npm start          # Expo dev server
 npm run ios        # iOS Simulator
 npm run android    # Android Emulator
 ```
 
-### Test & Lint
-
+### Kiểm tra Mã nguồn & Tests
 ```bash
-npm test      # Vitest unit tests (domain + use cases)
-npm run lint  # ESLint check toàn dự án
+npx tsc --noEmit   # Kiểm tra kiểu TypeScript (0 errors)
+npm test           # Chạy toàn bộ 47 Unit Tests (Vitest)
 ```
-
----
-
-## 📋 Scripts
-
-| Script            | Mô tả                         |
-| ----------------- | ----------------------------- |
-| `npm start`       | Expo dev server               |
-| `npm run ios`     | Build & chạy iOS simulator    |
-| `npm run android` | Build & chạy Android emulator |
-| `npm test`        | Chạy Vitest unit tests        |
-| `npm run lint`    | ESLint check                  |

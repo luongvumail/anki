@@ -272,7 +272,7 @@ export default function StatsScreen() {
             <SectionTitle>HƯỚNG DẪN SỬ DỤNG & QUY TRÌNH HỌC</SectionTitle>
 
             <View style={styles.guideListContainer}>
-              {/* Step 1: SRS SM-2 Algorithm */}
+              {/* Step 1: FSRS v5 Algorithm */}
               <DuolingoCard style={styles.guideCard}>
                 <View style={styles.guideHeaderRow}>
                   <View
@@ -282,15 +282,13 @@ export default function StatsScreen() {
                   </View>
                   <View style={styles.guideHeaderText}>
                     <Text style={styles.guideTitle}>
-                      1. Thuật toán Trí nhớ Ngắt quãng (SRS SM-2)
+                      1. Thuật toán Lặp lại Ngắt quãng FSRS v5
                     </Text>
-                    <Text style={styles.guideSub}>Tự động tính thời điểm tối ưu nhắc ôn bài</Text>
+                    <Text style={styles.guideSub}>Tự động tính thời điểm tối ưu nhắc ôn bài dài hạn</Text>
                   </View>
                 </View>
                 <Text style={styles.guideDesc}>
-                  Bộ não con người sẽ quên tới 70% từ mới sau 24h. Thuật toán SRS SM-2 tự động tính
-                  toán thời gian phản xạ (ms) và số lần ôn tập để xếp lịch nhắc bài trước khi từ
-                  vựng bị quên, đưa từ vựng vào trí nhớ dài hạn vĩnh viễn.
+                  Hệ thống lặp lại ngắt quãng FSRS v5 (Free Spaced Repetition Scheduler) đo lường chính xác 2 chỉ số: Độ bền trí nhớ (Stability S) và Độ khó từ (Difficulty D). Tự động phân tích thời gian phản xạ (ms) và tỷ lệ nhớ để tính toán khoảng thời gian nhắc bài tối ưu, tối đa hóa khả năng ghi nhớ dài hạn mà giảm 30% số lần ôn tập lãng phí.
                 </Text>
               </DuolingoCard>
 

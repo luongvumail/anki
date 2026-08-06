@@ -8,6 +8,7 @@ import { CardEntity, ensureFSRSState } from "../../domain/card/cardEntity";
 import { isDue } from "../../domain/card/cardUtils";
 import { Rating } from "../../domain/fsrs/fsrsTypes";
 import { useAppStore } from "../store/useAppStore";
+import { audioCache } from "../utils/audioCache";
 
 export type SessionStage = "preview" | "validation" | "repair" | "done";
 
@@ -20,7 +21,10 @@ export interface StudySessionState {
   startTime: Date;
 }
 
+import { StudySessionEngine } from "../../domain/study/studySessionEngine";
+
 const MAX_SESSION_CARDS = 10;
+const sessionEngine = new StudySessionEngine(MAX_SESSION_CARDS);
 
 export function useStudySession(deckId: string) {
   const cardsMap = useAppStore((s) => s.cards);
@@ -29,6 +33,9 @@ export function useStudySession(deckId: string) {
   const fetchDecks = useAppStore((s) => s.fetchDecks);
   const processReview = useAppStore((s) => s.processReview);
   const isCardLoading = useAppStore((s) => s.isCardLoading);
+
+  const hasFetchedCards = useAppStore((s) => s.hasFetchedCards);
+  const hasFetched = Boolean(deckId && hasFetchedCards[deckId]);
 
   const deckCards = useMemo(() => (deckId ? cardsMap[deckId] || [] : []), [cardsMap, deckId]);
   const deck = useMemo(
@@ -51,6 +58,7 @@ export function useStudySession(deckId: string) {
   const sessionInitialized = useRef(false);
 
   useEffect(() => {
+    sessionInitialized.current = false;
     if (deckId) fetchCards(deckId);
     if (!decks || decks.length === 0) fetchDecks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -60,25 +68,13 @@ export function useStudySession(deckId: string) {
     if (deckCards.length > 0 && !sessionInitialized.current && stage !== "done" && deckId) {
       sessionInitialized.current = true;
       ratedCardIdsInSession.current = new Set();
-      const dueCards = deckCards.filter((c) => {
-        const fsrs = ensureFSRSState(c);
-        return isDue({ due: fsrs.due });
-      });
-      const isExtra = dueCards.length === 0;
+
+      const { targetCards: chosenCards, questions: generatedQuestions, isExtraPractice: isExtra } =
+        sessionEngine.prepareSession(deckCards);
+
       setIsExtraPractice(isExtra);
-      const pool = isExtra ? deckCards : dueCards;
-
-      const sorted = [...pool].sort((a, b) => {
-        const aReps = ensureFSRSState(a).reps;
-        const bReps = ensureFSRSState(b).reps;
-        return aReps - bReps;
-      });
-      const chosenCards = sorted.slice(0, MAX_SESSION_CARDS);
-      const generatedQuestions: QuizQuestion[] = chosenCards
-        .map((c) => generateQuizQuestion(c, deckCards))
-        .filter((q): q is QuizQuestion => q !== null);
-
       setTargetCards(chosenCards);
+      audioCache.prewarmWords(chosenCards.map((c) => c.character));
       setQuestions(generatedQuestions);
       setPreviewIndex(0);
       setStage("preview");
@@ -121,15 +117,7 @@ export function useStudySession(deckId: string) {
 
       if (!isRetry || !isCorrect) {
         ratedCardIdsInSession.current.add(card.id);
-        let fsrsRating: Rating = Rating.Good;
-        if (!isCorrect) {
-          fsrsRating = Rating.Again;
-        } else if (isRetry) {
-          fsrsRating = Rating.Hard;
-        } else if (responseTimeMs <= 3500) {
-          fsrsRating = Rating.Easy;
-        }
-
+        const fsrsRating = sessionEngine.determineFSRSRating(isCorrect, responseTimeMs, isRetry);
         await processReview(card, fsrsRating);
       }
 
@@ -258,6 +246,7 @@ export function useStudySession(deckId: string) {
     deck,
     deckCards,
     isCardLoading,
+    hasFetched,
     targetCards,
     questions,
     previewIndex,
