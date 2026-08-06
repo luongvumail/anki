@@ -11,6 +11,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore } from "../../store/useStore";
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { Rating } from "../../src/domain/fsrs/fsrsTypes";
 import { generateQuizQuestion, QuizQuestion } from "../../lib/quizGenerator";
 import { isDue, calculateQuizSRS, createDefaultSRSState } from "../../lib/srs";
 import { recordReviewToday } from "../../lib/reviewTracker";
@@ -133,11 +135,20 @@ export default function StudyScreen() {
     const isRetry = ratedCardIdsInSession.current.has(card.id);
     const currentSRS = card.srs || createDefaultSRSState();
 
-    // Update SRS state only on 1st attempt or if incorrect
+    // Update FSRS state only on 1st attempt or if incorrect
     if (!isRetry || !isCorrect) {
       ratedCardIdsInSession.current.add(card.id);
-      const { newSRS } = calculateQuizSRS(isCorrect, isRetry, responseTimeMs, currentSRS);
-      await updateCard(card.id, deckId, { srs: newSRS });
+      let fsrsRating: Rating = Rating.Good;
+      if (!isCorrect) {
+        fsrsRating = Rating.Again;
+      } else if (isRetry) {
+        fsrsRating = Rating.Hard;
+      } else if (responseTimeMs <= 3500) {
+        fsrsRating = Rating.Easy;
+      }
+      
+      const processReview = useAppStore.getState().processReview;
+      await processReview(card as any, fsrsRating);
     }
 
     await recordReviewToday();
@@ -385,6 +396,9 @@ export default function StudyScreen() {
               totalCards={targetCards.length}
               onNext={handleNextPreview}
               onPrev={handlePrevPreview}
+              onRating={(rating) => {
+                useAppStore.getState().processReview(currentPreviewCard as any, rating);
+              }}
             />
           ) : null
         ) : stage === "validation" ? (

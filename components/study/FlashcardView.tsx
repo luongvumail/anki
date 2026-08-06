@@ -17,12 +17,18 @@ import { Colors, Radii, Spacing, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";
 
+import { RetrievabilityBadge } from "@/src/ui/components/fsrs/RetrievabilityBadge";
+import { FSRSRatingButtons } from "@/src/ui/components/fsrs/FSRSRatingButtons";
+import { Rating, State } from "@/src/domain/fsrs/fsrsTypes";
+import { ensureFSRSState, CardEntity } from "@/src/domain/card/cardEntity";
+
 interface FlashcardViewProps {
   card: Card;
   currentIndex: number;
   totalCards: number;
   onNext: () => void;
   onPrev?: () => void;
+  onRating?: (rating: Rating) => void;
 }
 
 const SWIPE_THRESHOLD = 50;
@@ -44,7 +50,9 @@ export function FlashcardView({
   totalCards,
   onNext,
   onPrev,
+  onRating,
 }: FlashcardViewProps) {
+  const cardEntity = card as unknown as CardEntity;
   const { height } = useWindowDimensions();
   const [showAnswer, setShowAnswer] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -229,6 +237,14 @@ export function FlashcardView({
                 </Text>
               </View>
 
+              {showAnswer && cardEntity.fsrs && (
+                <RetrievabilityBadge
+                  stability={cardEntity.fsrs.stability}
+                  lastReview={cardEntity.fsrs.last_review}
+                  state={cardEntity.fsrs.state}
+                />
+              )}
+
               {/* Speaker Audio Button (Only on Unrevealed state to avoid duplicate icons) */}
               {!showAnswer && (
                 <AudioButton
@@ -320,6 +336,17 @@ export function FlashcardView({
                   )}
                 </ScrollView>
               </Animated.View>
+            )}
+
+            {/* FSRS 3D Rating Buttons when Answer is Revealed */}
+            {showAnswer && onRating && (
+              <FSRSRatingButtons
+                card={card as any}
+                onRating={(rating: Rating) => {
+                  onRating(rating);
+                  onNext();
+                }}
+              />
             )}
 
             {/* Bottom Swipe Guide Pill */}
