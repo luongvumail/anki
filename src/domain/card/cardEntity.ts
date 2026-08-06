@@ -1,4 +1,4 @@
-import { FSRSCardState, State } from '../fsrs/fsrsTypes';
+import { FSRSCardState, State } from "../fsrs/fsrsTypes";
 
 export interface ExampleSentence {
   chinese: string;
@@ -49,10 +49,7 @@ export function ensureFSRSState(card: CardEntity, now: Date = new Date()): FSRSC
     // Map initial SM-2 ease factor & interval to FSRS S & D estimation
     const initialStability = Math.max(0.1, card.srs.interval > 0 ? card.srs.interval : 1.0);
     // SM-2 EaseFactor 2.5 corresponds to approx difficulty 5.0 in FSRS (range 1-10)
-    const initialDifficulty = Math.min(
-      10.0,
-      Math.max(1.0, 11 - (card.srs.easeFactor / 2.5) * 6)
-    );
+    const initialDifficulty = Math.min(10.0, Math.max(1.0, 11 - (card.srs.easeFactor / 2.5) * 6));
 
     return {
       stability: Number(initialStability.toFixed(4)),

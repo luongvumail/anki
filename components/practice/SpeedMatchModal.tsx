@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Modal,
-  Animated,
-  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,7 +31,6 @@ export interface SpeedMatchModalProps {
 
 export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProps) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const checkAndUnlockBadges = useAppStore((s) => s.checkAndUnlockBadges);
 
   const [timeLeft, setTimeLeft] = useState(60);
@@ -43,39 +40,37 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
   const [matchedPairs, setMatchedPairs] = useState(0);
   const [roundNumber, setRoundNumber] = useState(1);
   const [tiles, setTiles] = useState<MatchTile[]>([]);
+
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [mismatchedTileId, setMismatchedTileId] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Generate round of tiles with dynamic pair count scaling
-  const generateRoundTiles = useCallback((availableCards: CardEntity[], currentRound: number) => {
-    if (availableCards.length < 2) return [];
+  const generateRoundTiles = useCallback((sourceCards: CardEntity[], round: number): MatchTile[] => {
+    if (sourceCards.length === 0) return [];
+    const shuffledPool = [...sourceCards].sort(() => 0.5 - Math.random());
+    const roundCards = shuffledPool.slice(0, 4);
 
-    const pairsCount = Math.min(availableCards.length, Math.min(3 + currentRound, 6));
-    const shuffledCards = [...availableCards].sort(() => 0.5 - Math.random());
-    const selected = shuffledCards.slice(0, pairsCount);
-
-    const roundTiles: MatchTile[] = [];
-    selected.forEach((c) => {
-      roundTiles.push({
-        id: `char-${c.id}`,
+    const generatedTiles: MatchTile[] = [];
+    roundCards.forEach((c, idx) => {
+      generatedTiles.push({
+        id: `char-${round}-${idx}-${c.id}`,
         cardId: c.id,
         text: c.character,
+        subText: c.pinyin,
         type: "character",
         matched: false,
       });
-      roundTiles.push({
-        id: `trans-${c.id}`,
+      generatedTiles.push({
+        id: `trans-${round}-${idx}-${c.id}`,
         cardId: c.id,
         text: c.translation,
-        subText: c.pinyin ? `(${c.pinyin})` : undefined,
         type: "translation",
         matched: false,
       });
     });
 
-    return roundTiles.sort(() => 0.5 - Math.random());
+    return generatedTiles.sort(() => 0.5 - Math.random());
   }, []);
 
   const startGame = useCallback(() => {
@@ -90,29 +85,37 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
     setIsPlaying(true);
   }, [cards, generateRoundTiles]);
 
-  useEffect(() => {
-    if (visible && cards.length >= 2) {
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (visible && !prevVisible) {
+    setPrevVisible(true);
+    if (cards.length >= 2) {
       startGame();
     }
-  }, [visible, cards, startGame]);
+  } else if (!visible && prevVisible) {
+    setPrevVisible(false);
+  }
 
   // Timer Countdown
   useEffect(() => {
     if (isPlaying && timeLeft > 0) {
       timerRef.current = setTimeout(() => {
-        setTimeLeft((prev) => prev - 1);
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setIsPlaying(false);
+            setIsGameOver(true);
+            checkAndUnlockBadges();
+            triggerHaptic("success");
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (isPlaying && timeLeft === 0) {
-      setIsPlaying(false);
-      setIsGameOver(true);
-      checkAndUnlockBadges();
-      triggerHaptic("success");
     }
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isPlaying, timeLeft, matchedPairs, checkAndUnlockBadges]);
+  }, [isPlaying, timeLeft, checkAndUnlockBadges]);
 
   const handleTilePress = (tile: MatchTile) => {
     if (!isPlaying || tile.matched || tile.id === selectedTileId) return;
@@ -134,7 +137,7 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
       setScore((prev) => prev + 20);
 
       const updatedTiles = tiles.map((t) =>
-        t.cardId === tile.cardId ? { ...t, matched: true } : t
+        t.cardId === tile.cardId ? { ...t, matched: true } : t,
       );
       setTiles(updatedTiles);
       setSelectedTileId(null);
@@ -162,7 +165,12 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
   const timerProgress = timeLeft / 60;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
       <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
         {/* Header Bar */}
         <View style={styles.header}>
@@ -171,8 +179,17 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
           </TouchableOpacity>
 
           <View style={styles.timerBox}>
-            <Ionicons name="stopwatch" size={18} color={timeLeft < 10 ? Colors.duolingo.red : Colors.duolingo.yellow} />
-            <ProgressBar progress={timerProgress} height={12} fillColor={timeLeft < 10 ? Colors.duolingo.red : Colors.duolingo.yellow} style={{ flex: 1 }} />
+            <Ionicons
+              name="stopwatch"
+              size={18}
+              color={timeLeft < 10 ? Colors.duolingo.red : Colors.duolingo.yellow}
+            />
+            <ProgressBar
+              progress={timerProgress}
+              height={12}
+              fillColor={timeLeft < 10 ? Colors.duolingo.red : Colors.duolingo.yellow}
+              style={{ flex: 1 }}
+            />
             <Text style={styles.timerText}>{timeLeft}s</Text>
           </View>
 
@@ -187,7 +204,8 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
           <View style={styles.gridContainer}>
             {tiles.map((tile) => {
               const isSelected = selectedTileId === tile.id;
-              const isMismatched = mismatchedTileId === tile.id || (mismatchedTileId !== null && isSelected);
+              const isMismatched =
+                mismatchedTileId === tile.id || (mismatchedTileId !== null && isSelected);
 
               if (tile.matched) {
                 return <View key={tile.id} style={styles.tilePlaceholder} />;
@@ -214,9 +232,7 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
                   >
                     {tile.text}
                   </Text>
-                  {tile.subText && (
-                    <Text style={styles.tileSubText}>{tile.subText}</Text>
-                  )}
+                  {tile.subText && <Text style={styles.tileSubText}>{tile.subText}</Text>}
                 </TouchableOpacity>
               );
             })}
@@ -226,9 +242,17 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
           <View style={styles.gameOverCard}>
             <View style={styles.gameOverIconCircle}>
               <Ionicons
-                name={matchedPairs >= 15 ? "trophy" : matchedPairs >= 5 ? "stopwatch" : "alert-circle"}
+                name={
+                  matchedPairs >= 15 ? "trophy" : matchedPairs >= 5 ? "stopwatch" : "alert-circle"
+                }
                 size={44}
-                color={matchedPairs >= 15 ? Colors.duolingo.yellow : matchedPairs >= 5 ? Colors.duolingo.blue : Colors.duolingo.red}
+                color={
+                  matchedPairs >= 15
+                    ? Colors.duolingo.yellow
+                    : matchedPairs >= 5
+                      ? Colors.duolingo.blue
+                      : Colors.duolingo.red
+                }
               />
             </View>
 
@@ -253,8 +277,20 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
               <Text style={styles.xpRewardText}>+{matchedPairs * 2 + 15} XP Thưởng</Text>
             </View>
 
-            <DuolingoButton title="CHƠI LẠI" variant="primary" size="lg" onPress={startGame} style={{ marginTop: Spacing.md }} />
-            <DuolingoButton title="THOÁT" variant="ghost" size="md" onPress={onClose} style={{ marginTop: Spacing.xs }} />
+            <DuolingoButton
+              title="CHƠI LẠI"
+              variant="primary"
+              size="lg"
+              onPress={startGame}
+              style={{ marginTop: Spacing.md }}
+            />
+            <DuolingoButton
+              title="THOÁT"
+              variant="ghost"
+              size="md"
+              onPress={onClose}
+              style={{ marginTop: Spacing.xs }}
+            />
           </View>
         )}
       </View>
@@ -263,17 +299,49 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg, paddingHorizontal: Spacing.pageMargin },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: Spacing.md },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.duolingo.bg,
+    paddingHorizontal: Spacing.pageMargin,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: Spacing.md,
+  },
   closeBtn: { padding: 4 },
   timerBox: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
-  timerText: { fontSize: 13, fontWeight: "800", color: Colors.duolingo.yellow, width: 34, textAlign: "right" },
-  scoreBox: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Colors.duolingo.cardBg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radii.full, borderWidth: 1, borderColor: Colors.duolingo.cardBorder },
+  timerText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: Colors.duolingo.yellow,
+    width: 34,
+    textAlign: "right",
+  },
+  scoreBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.duolingo.cardBg,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Colors.duolingo.cardBorder,
+  },
   scoreText: { fontSize: 14, fontWeight: "800", color: Colors.duolingo.yellow },
 
   titleSection: { marginBottom: Spacing.md, alignItems: "center" },
   titleText: { fontSize: 20, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.5 },
-  subTitleText: { fontSize: 13, fontWeight: "600", color: Colors.duolingo.textMuted, marginTop: 2, textAlign: "center" },
+  subTitleText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.duolingo.textMuted,
+    marginTop: 2,
+    textAlign: "center",
+  },
 
   typeBadge: {
     flexDirection: "row",
@@ -292,7 +360,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  gridContainer: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", alignContent: "center" },
+  gridContainer: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "center",
+    alignContent: "center",
+  },
   tileBase: {
     width: "47%",
     height: 90,
@@ -305,14 +380,25 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.duolingo.cardBottom,
   },
   tilePlaceholder: { width: "47%", height: 90, opacity: 0 },
-  tileSelected: { backgroundColor: Colors.duolingo.blue, borderBottomColor: Colors.duolingo.blueDark },
-  tileMismatched: { backgroundColor: Colors.duolingo.red, borderBottomColor: Colors.duolingo.redDark },
+  tileSelected: {
+    backgroundColor: Colors.duolingo.blue,
+    borderBottomColor: Colors.duolingo.blueDark,
+  },
+  tileMismatched: {
+    backgroundColor: Colors.duolingo.red,
+    borderBottomColor: Colors.duolingo.redDark,
+  },
   tileText: { textAlign: "center", fontWeight: "800" },
   tileTextChar: { fontSize: 24, color: "#FFFFFF" },
   tileTextTrans: { fontSize: 14, color: Colors.duolingo.textMuted },
   tileSubText: { fontSize: 11, color: Colors.duolingo.blue, marginTop: 2, fontWeight: "700" },
 
-  gameOverCard: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: Spacing.lg },
+  gameOverCard: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.lg,
+  },
   gameOverIconCircle: {
     width: 80,
     height: 80,
@@ -323,7 +409,22 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   gameOverTitle: { fontSize: 28, fontWeight: "800", color: Colors.text.white },
-  gameOverSub: { fontSize: 15, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center", lineHeight: 22 },
-  xpRewardBox: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: Colors.duolingo.yellowDim, paddingHorizontal: 16, paddingVertical: 10, borderRadius: Radii.full, marginVertical: Spacing.lg },
+  gameOverSub: {
+    fontSize: 15,
+    color: Colors.duolingo.textMuted,
+    marginTop: 6,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  xpRewardBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.duolingo.yellowDim,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: Radii.full,
+    marginVertical: Spacing.lg,
+  },
   xpRewardText: { fontSize: 18, fontWeight: "800", color: Colors.duolingo.yellow },
 });

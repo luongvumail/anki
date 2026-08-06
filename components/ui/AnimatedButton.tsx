@@ -1,12 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
   Animated,
   TouchableWithoutFeedback,
   ViewStyle,
   StyleProp,
   GestureResponderEvent,
-} from 'react-native';
-
+} from "react-native";
 
 interface AnimatedButtonProps {
   children: React.ReactNode;
@@ -14,7 +13,7 @@ interface AnimatedButtonProps {
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
   activeScale?: number;
-  hapticType?: 'light' | 'medium' | 'heavy' | 'selection' | 'success' | 'warning' | 'error';
+  hapticType?: "light" | "medium" | "heavy" | "selection" | "success" | "warning" | "error";
 }
 
 export function AnimatedButton({
@@ -53,9 +52,7 @@ export function AnimatedButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
     >
-      <Animated.View style={[style, { transform: [{ scale }] }]}>
-        {children}
-      </Animated.View>
+      <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
     </TouchableWithoutFeedback>
   );
 }

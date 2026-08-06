@@ -8,12 +8,12 @@ import {
   setDoc,
   where,
   writeBatch,
-} from 'firebase/firestore';
-import { CardEntity, ensureFSRSState } from '../../domain/card/cardEntity';
-import { ICardRepository } from '../../domain/card/cardRepository.i';
-import { DeckEntity } from '../../domain/deck/deckEntity';
-import { IDeckRepository } from '../../domain/deck/deckRepository.i';
-import { auth, db } from '../firebase/firebaseApp';
+} from "firebase/firestore";
+import { CardEntity, ensureFSRSState } from "../../domain/card/cardEntity";
+import { ICardRepository } from "../../domain/card/cardRepository.i";
+import { DeckEntity } from "../../domain/deck/deckEntity";
+import { IDeckRepository } from "../../domain/deck/deckRepository.i";
+import { auth, db } from "../firebase/firebaseApp";
 
 export class FirestoreCardRepository implements ICardRepository {
   private getUserId(): string | null {
@@ -23,9 +23,9 @@ export class FirestoreCardRepository implements ICardRepository {
   private getCollectionRef() {
     const uid = this.getUserId();
     if (!uid) {
-      throw new Error('User is not authenticated');
+      throw new Error("User is not authenticated");
     }
-    return collection(db, 'users', uid, 'cards');
+    return collection(db, "users", uid, "cards");
   }
 
   public async getCards(deckId?: string): Promise<CardEntity[]> {
@@ -34,7 +34,7 @@ export class FirestoreCardRepository implements ICardRepository {
     const colRef = this.getCollectionRef();
     let q = query(colRef);
     if (deckId) {
-      q = query(colRef, where('deckId', '==', deckId));
+      q = query(colRef, where("deckId", "==", deckId));
     }
 
     const snapshot = await getDocs(q);
@@ -57,7 +57,7 @@ export class FirestoreCardRepository implements ICardRepository {
   public async getCardById(cardId: string): Promise<CardEntity | null> {
     const uid = this.getUserId();
     if (!uid) return null;
-    const docRef = doc(db, 'users', uid, 'cards', cardId);
+    const docRef = doc(db, "users", uid, "cards", cardId);
     const snap = await getDoc(docRef);
     if (!snap.exists()) return null;
 
@@ -71,8 +71,8 @@ export class FirestoreCardRepository implements ICardRepository {
 
   public async saveCard(card: CardEntity): Promise<void> {
     const uid = this.getUserId();
-    if (!uid) throw new Error('User is not authenticated');
-    const docRef = doc(db, 'users', uid, 'cards', card.id);
+    if (!uid) throw new Error("User is not authenticated");
+    const docRef = doc(db, "users", uid, "cards", card.id);
     const fsrs = ensureFSRSState(card);
 
     const payload: CardEntity = {
@@ -96,7 +96,7 @@ export class FirestoreCardRepository implements ICardRepository {
       const nowStr = new Date().toISOString();
 
       for (const card of chunk) {
-        const docRef = doc(db, 'users', uid, 'cards', card.id);
+        const docRef = doc(db, "users", uid, "cards", card.id);
         const fsrs = ensureFSRSState(card);
         const payload: CardEntity = {
           ...card,
@@ -112,8 +112,8 @@ export class FirestoreCardRepository implements ICardRepository {
 
   public async deleteCard(cardId: string): Promise<void> {
     const uid = this.getUserId();
-    if (!uid) throw new Error('User is not authenticated');
-    const docRef = doc(db, 'users', uid, 'cards', cardId);
+    if (!uid) throw new Error("User is not authenticated");
+    const docRef = doc(db, "users", uid, "cards", cardId);
     await deleteDoc(docRef);
   }
 }
@@ -126,25 +126,25 @@ export class FirestoreDeckRepository implements IDeckRepository {
   public async getDecks(): Promise<DeckEntity[]> {
     const uid = this.getUserId();
     if (!uid) return [];
-    const colRef = collection(db, 'users', uid, 'decks');
+    const colRef = collection(db, "users", uid, "decks");
     const snapshot = await getDocs(colRef);
     return snapshot.docs.map((docSnap) => ({
       id: docSnap.id,
-      ...(docSnap.data() as Omit<DeckEntity, 'id'>),
+      ...(docSnap.data() as Omit<DeckEntity, "id">),
     }));
   }
 
   public async saveDeck(deck: DeckEntity): Promise<void> {
     const uid = this.getUserId();
-    if (!uid) throw new Error('User is not authenticated');
-    const docRef = doc(db, 'users', uid, 'decks', deck.id);
+    if (!uid) throw new Error("User is not authenticated");
+    const docRef = doc(db, "users", uid, "decks", deck.id);
     await setDoc(docRef, deck, { merge: true });
   }
 
   public async deleteDeck(deckId: string): Promise<void> {
     const uid = this.getUserId();
-    if (!uid) throw new Error('User is not authenticated');
-    const docRef = doc(db, 'users', uid, 'decks', deckId);
+    if (!uid) throw new Error("User is not authenticated");
+    const docRef = doc(db, "users", uid, "decks", deckId);
     await deleteDoc(docRef);
   }
 }

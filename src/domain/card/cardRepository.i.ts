@@ -1,4 +1,4 @@
-import { CardEntity } from './cardEntity';
+import { CardEntity } from "./cardEntity";
 
 export interface ICardRepository {
   getCards(deckId?: string): Promise<CardEntity[]>;

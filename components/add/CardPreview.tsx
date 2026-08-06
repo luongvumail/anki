@@ -1,11 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import { CardData } from "../../src/infrastructure/ai/geminiService";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { SectionTitle } from "../ui/SectionTitle";
@@ -82,7 +76,9 @@ export const CardPreview = React.memo(function CardPreview({
         <View style={styles.previewRows}>
           <InfoRow label="Pinyin" value={cardData.pinyin} color={Colors.neon.cyan} />
           <InfoRow label="Nghĩa TV" value={cardData.translation} />
-          {cardData.hskLevel ? <InfoRow label="Cấp HSK" value={`HSK ${cardData.hskLevel}`} /> : null}
+          {cardData.hskLevel ? (
+            <InfoRow label="Cấp HSK" value={`HSK ${cardData.hskLevel}`} />
+          ) : null}
           {cardData.radical ? <InfoRow label="Bộ thủ" value={cardData.radical} /> : null}
           {cardData.strokeCount ? (
             <InfoRow label="Số nét" value={`${cardData.strokeCount} nét`} />
@@ -110,10 +106,10 @@ export const CardPreview = React.memo(function CardPreview({
               saved
                 ? "ĐÃ LƯU VÀO BỘ THẺ"
                 : saving
-                ? "ĐANG LƯU..."
-                : targetDeckName
-                ? `LƯU VÀO BỘ "${targetDeckName.toUpperCase()}"`
-                : "LƯU VÀO BỘ THẺ"
+                  ? "ĐANG LƯU..."
+                  : targetDeckName
+                    ? `LƯU VÀO BỘ "${targetDeckName.toUpperCase()}"`
+                    : "LƯU VÀO BỘ THẺ"
             }
             variant={saved ? "success" : "primary"}
             size="lg"
@@ -126,7 +122,15 @@ export const CardPreview = React.memo(function CardPreview({
   );
 });
 
-const InfoRow = React.memo(function InfoRow({ label, value, color }: { label: string; value: string; color?: string }) {
+const InfoRow = React.memo(function InfoRow({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+}) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>

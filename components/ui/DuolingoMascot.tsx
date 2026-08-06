@@ -31,7 +31,7 @@ export function DuolingoMascot({
           duration: 800,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     anim.start();
     return () => anim.stop();

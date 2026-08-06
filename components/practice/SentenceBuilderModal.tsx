@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,10 @@ import {
   Modal,
   ScrollView,
   Animated,
-  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { CardEntity } from "../../src/domain/card/cardEntity";
-import { useAppStore } from "../../src/ui/store/useAppStore";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { DuolingoCard } from "../ui/DuolingoCard";
@@ -40,7 +38,23 @@ function splitChineseSentence(sentence: string): string[] {
 }
 
 const COMMON_DISTRACTOR_TOKENS = [
-  "的", "了", "在", "是", "不", "也", "都", "和", "就", "过", "会", "很", "有", "要", "去", "这", "那"
+  "的",
+  "了",
+  "在",
+  "是",
+  "不",
+  "也",
+  "都",
+  "和",
+  "就",
+  "过",
+  "会",
+  "很",
+  "有",
+  "要",
+  "去",
+  "这",
+  "那",
 ];
 
 function getDistractorTokens(sentenceTokens: string[], count = 2): string[] {
@@ -66,11 +80,30 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
 
   const drawerAnim = useRef(new Animated.Value(300)).current;
 
-  // Prepare exercises from cards with examples
-  useEffect(() => {
-    if (visible && cards.length > 0) {
+  const setupExercise = useCallback(
+    (ex: SentenceExercise) => {
+      setIsChecked(false);
+      setIsCorrect(false);
+      setSelectedChips([]);
+      drawerAnim.setValue(300);
+
+      const mainChips = ex.wordChips.map((text, idx) => ({ id: idx, text }));
+      const distractors = getDistractorTokens(ex.wordChips, 2).map((text, idx) => ({
+        id: 100 + idx,
+        text,
+      }));
+
+      const allCombined = [...mainChips, ...distractors];
+      const shuffled = [...allCombined].sort(() => 0.5 - Math.random());
+      setAllChips(shuffled);
+    },
+    [drawerAnim]
+  );
+
+  const initExercises = useCallback(() => {
+    if (cards.length > 0) {
       const validCards = cards.filter(
-        (c) => c.examples && c.examples.length > 0 && c.examples[0].chinese,
+        (c) => c.examples && c.examples.length > 0 && c.examples[0].chinese
       );
       const shuffledCards = [...validCards].sort(() => 0.5 - Math.random());
       const selected = shuffledCards.slice(0, 5);
@@ -95,25 +128,14 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
         setupExercise(generated[0]);
       }
     }
-  }, [visible, cards]);
+  }, [cards, setupExercise]);
 
-  const setupExercise = (ex: SentenceExercise) => {
-    setIsChecked(false);
-    setIsCorrect(false);
-    setSelectedChips([]);
-    drawerAnim.setValue(300);
-
-    const mainChips = ex.wordChips.map((text, idx) => ({ id: idx, text }));
-    // Add 2 distractor tokens (từ gây nhiễu) to increase challenge
-    const distractors = getDistractorTokens(ex.wordChips, 2).map((text, idx) => ({
-      id: 100 + idx,
-      text,
-    }));
-
-    const allCombined = [...mainChips, ...distractors];
-    const shuffled = [...allCombined].sort(() => 0.5 - Math.random());
-    setAllChips(shuffled);
-  };
+  useEffect(() => {
+    if (visible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      initExercises();
+    }
+  }, [visible, initExercises]);
 
   const handleSelectChip = (chip: { id: number; text: string }) => {
     if (isChecked || selectedChipIds.has(chip.id)) return;
@@ -490,7 +512,12 @@ const styles = StyleSheet.create({
   resultTitle: { fontSize: 22, fontWeight: "800" },
   explainValue: { fontSize: 20, fontWeight: "800", color: "#FFFFFF", marginTop: 2 },
   explainPinyin: { fontSize: 16, fontWeight: "700", color: Colors.duolingo.blue, marginTop: 2 },
-  explainSubText: { fontSize: 15, fontWeight: "600", color: "rgba(255, 255, 255, 0.85)", marginTop: 2 },
+  explainSubText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.85)",
+    marginTop: 2,
+  },
 
   emptyContainer: {
     flex: 1,
@@ -512,5 +539,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   doneTitle: { fontSize: 24, fontWeight: "800", color: Colors.text.white },
-  doneSub: { fontSize: 14, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center", lineHeight: 20 },
+  doneSub: {
+    fontSize: 14,
+    color: Colors.duolingo.textMuted,
+    marginTop: 6,
+    textAlign: "center",
+    lineHeight: 20,
+  },
 });

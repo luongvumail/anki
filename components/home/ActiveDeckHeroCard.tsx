@@ -23,17 +23,13 @@ export function ActiveDeckHeroCard({
   onStartStudy,
   onChangeDeck,
 }: ActiveDeckHeroCardProps) {
-  const totalCards = deck.cardCount || (dueCount + learnedCount + newCount) || 0;
+  const totalCards = deck.cardCount || dueCount + learnedCount + newCount || 0;
 
   return (
     <View style={styles.cardContainer}>
       {/* Top Header Row: Deck Info & Change Deck Button */}
       <View style={styles.topRow}>
-        <TouchableOpacity
-          style={styles.deckTitleBtn}
-          onPress={onChangeDeck}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.deckTitleBtn} onPress={onChangeDeck} activeOpacity={0.8}>
           <View style={styles.titleTextGroup}>
             <Text style={styles.deckLabel}>BỘ THẺ ĐANG HỌC</Text>
             <View style={styles.nameRow}>
@@ -44,11 +40,7 @@ export function ActiveDeckHeroCard({
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.switchBadge}
-          onPress={onChangeDeck}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.switchBadge} onPress={onChangeDeck} activeOpacity={0.8}>
           <Text style={styles.switchBadgeText}>Đổi bộ</Text>
         </TouchableOpacity>
       </View>
@@ -58,9 +50,7 @@ export function ActiveDeckHeroCard({
         {/* DUE COUNT (RED) */}
         <View style={[styles.statBox, styles.statBoxDue]}>
           <View>
-            <Text style={[styles.statValueText, { color: Colors.duolingo.red }]}>
-              {dueCount}
-            </Text>
+            <Text style={[styles.statValueText, { color: Colors.duolingo.red }]}>{dueCount}</Text>
             <Text style={styles.statLabelText}>Cần ôn</Text>
           </View>
         </View>
@@ -78,9 +68,7 @@ export function ActiveDeckHeroCard({
         {/* NEW COUNT (BLUE) */}
         <View style={[styles.statBox, styles.statBoxNew]}>
           <View>
-            <Text style={[styles.statValueText, { color: "#FFFFFF" }]}>
-              {newCount}
-            </Text>
+            <Text style={[styles.statValueText, { color: "#FFFFFF" }]}>{newCount}</Text>
             <Text style={styles.statLabelText}>Từ mới</Text>
           </View>
         </View>
@@ -92,8 +80,8 @@ export function ActiveDeckHeroCard({
           dueCount > 0
             ? `ÔN TẬP NGAY (${dueCount} TỪ CẦN ÔN)`
             : totalCards > 0
-            ? "BẮT ĐẦU HỌC BÀI KẾ TIẾP"
-            : "THÊM TỪ VỰNG VÀO BỘ"
+              ? "BẮT ĐẦU HỌC BÀI KẾ TIẾP"
+              : "THÊM TỪ VỰNG VÀO BỘ"
         }
         variant="primary"
         size="lg"

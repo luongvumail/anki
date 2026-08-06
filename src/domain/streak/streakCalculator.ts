@@ -1,4 +1,4 @@
-import { Rating } from '../fsrs/fsrsTypes';
+import { Rating } from "../fsrs/fsrsTypes";
 
 export interface StreakState {
   currentStreak: number;
@@ -46,9 +46,7 @@ export class StreakCalculator {
       };
     }
 
-    const yesterdayStr = this.toDateString(
-      new Date(reviewDate.getTime() - 24 * 3600 * 1000)
-    );
+    const yesterdayStr = this.toDateString(new Date(reviewDate.getTime() - 24 * 3600 * 1000));
 
     if (lastDateStr === yesterdayStr) {
       // Consecutive day! Increment streak
@@ -70,8 +68,8 @@ export class StreakCalculator {
 
   private toDateString(date: Date): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 }

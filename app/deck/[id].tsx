@@ -15,9 +15,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import * as Speech from "expo-speech";
 import { useAppStore } from "../../src/ui/store/useAppStore";
 import { CardEntity, ensureFSRSState } from "../../src/domain/card/cardEntity";
-import { getPinyinToneColor } from "../../src/ui/utils/pinyinColor";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
-import { DeckIcon } from "../../components/ui/DeckIcon";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
@@ -27,6 +24,7 @@ import { ProgressBar } from "../../components/ui/ProgressBar";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
 import { computeLearnedCount } from "../../src/domain/card/cardUtils";
+import { Colors } from "@/constants/theme";
 
 export default function DeckDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -125,8 +123,6 @@ export default function DeckDetailScreen() {
 
   const renderCardItem = useCallback(
     ({ item }: { item: CardEntity }) => {
-      const pinyinColor = getPinyinToneColor(item.pinyin);
-
       return (
         <DuolingoCard
           style={styles.cardItem}
@@ -155,10 +151,7 @@ export default function DeckDetailScreen() {
             </View>
 
             {/* Speaker Audio Btn */}
-            <AudioButton
-              onPress={() => speak(item.character)}
-              size="sm"
-            />
+            <AudioButton onPress={() => speak(item.character)} size="sm" />
           </View>
         </DuolingoCard>
       );
@@ -268,7 +261,8 @@ export default function DeckDetailScreen() {
             )}
 
             <SectionTitle>
-              DANH SÁCH TỪ VỰNG ({searchQuery ? `${filteredCards.length}/${deckCards.length}` : deckCards.length})
+              DANH SÁCH TỪ VỰNG (
+              {searchQuery ? `${filteredCards.length}/${deckCards.length}` : deckCards.length})
             </SectionTitle>
 
             {/* Smart Search Bar */}
@@ -284,7 +278,10 @@ export default function DeckDetailScreen() {
                   autoCorrect={false}
                 />
                 {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearSearchBtn}>
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery("")}
+                    style={styles.clearSearchBtn}
+                  >
                     <Ionicons name="close-circle" size={18} color={Colors.duolingo.textMuted} />
                   </TouchableOpacity>
                 )}
@@ -301,11 +298,14 @@ export default function DeckDetailScreen() {
             />
           ) : searchQuery.trim().length > 0 ? (
             <DuolingoCard style={styles.emptyCard}>
-              <Ionicons name="search-outline" size={36} color={Colors.duolingo.textMuted} style={{ marginBottom: 8 }} />
+              <Ionicons
+                name="search-outline"
+                size={36}
+                color={Colors.duolingo.textMuted}
+                style={{ marginBottom: 8 }}
+              />
               <Text style={styles.emptyTitle}>Không tìm thấy từ vựng!</Text>
-              <Text style={styles.emptySub}>
-                Không có từ nào khớp với từ khóa "{searchQuery}".
-              </Text>
+              <Text style={styles.emptySub}>Không có từ nào khớp với từ khóa "{searchQuery}".</Text>
               <TouchableOpacity style={styles.resetSearchBtn} onPress={() => setSearchQuery("")}>
                 <Text style={styles.resetSearchText}>Xóa từ khóa tìm kiếm</Text>
               </TouchableOpacity>

@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CardEntity } from '../../domain/card/cardEntity';
-import { ReviewLog } from '../../domain/fsrs/fsrsTypes';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { CardEntity } from "../../domain/card/cardEntity";
+import { ReviewLog } from "../../domain/fsrs/fsrsTypes";
 
 export interface SyncOfflinePayload {
   id: string;
@@ -11,8 +11,8 @@ export interface SyncOfflinePayload {
   timestamp: string;
 }
 
-const OFFLINE_QUEUE_KEY = '@anki_offline_review_queue_v1';
-const CARDS_CACHE_KEY = '@anki_cards_cache_v1';
+const OFFLINE_QUEUE_KEY = "@anki_offline_review_queue_v1";
+const CARDS_CACHE_KEY = "@anki_cards_cache_v1";
 
 export class LocalStorageRepo {
   /**

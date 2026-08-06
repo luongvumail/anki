@@ -51,7 +51,7 @@ export default function DecksScreen() {
   useFocusEffect(
     useCallback(() => {
       loadReviewHistory();
-    }, [loadReviewHistory])
+    }, [loadReviewHistory]),
   );
 
   const [selectedIcon, setSelectedIcon] = useState(VECTOR_DECK_ICONS[0]);
@@ -124,7 +124,7 @@ export default function DecksScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -152,7 +152,8 @@ export default function DecksScreen() {
           <View style={styles.screenHeaderTitleBox}>
             <Text style={styles.screenTitle}>BỘ THẺ TỪ VỰNG</Text>
             <Text style={styles.screenSubtitle}>
-              {decks.length} bộ thẻ · {deckItemsStats.reduce((acc, curr) => acc + curr.total, 0)} từ vựng
+              {decks.length} bộ thẻ · {deckItemsStats.reduce((acc, curr) => acc + curr.total, 0)} từ
+              vựng
             </Text>
           </View>
 
@@ -198,7 +199,11 @@ export default function DecksScreen() {
                 {/* Deck Card Header (Tap anywhere to open card list!) */}
                 <View style={styles.deckHeaderRow}>
                   <View style={styles.deckIconBox}>
-                    <DeckIcon name={deck.icon || "book-outline"} size={22} color={Colors.duolingo.blue} />
+                    <DeckIcon
+                      name={deck.icon || "book-outline"}
+                      size={22}
+                      color={Colors.duolingo.blue}
+                    />
                   </View>
 
                   <View style={styles.deckMainTitleBox}>
@@ -206,7 +211,11 @@ export default function DecksScreen() {
                       <Text style={styles.deckTitle} numberOfLines={1}>
                         {deck.name}
                       </Text>
-                      <Ionicons name="chevron-forward" size={18} color={Colors.duolingo.textMuted} />
+                      <Ionicons
+                        name="chevron-forward"
+                        size={18}
+                        color={Colors.duolingo.textMuted}
+                      />
                     </View>
                     <Text style={styles.deckCardCountText}>
                       {total} từ vựng {due > 0 ? ` · ${due} thẻ cần ôn` : ""}
@@ -271,7 +280,10 @@ export default function DecksScreen() {
       >
         <View style={styles.modalContainer}>
           <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top + 8, 16) }]}>
-            <TouchableOpacity onPress={() => setShowCreate(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity
+              onPress={() => setShowCreate(false)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>TẠO BỘ THẺ MỚI</Text>
@@ -332,12 +344,8 @@ export default function DecksScreen() {
 
       {/* AI Add Card Full Overlay Modal */}
       {showAIAddModal && (
-        <AIAddCardModal
-          visible={showAIAddModal}
-          onClose={() => setShowAIAddModal(false)}
-        />
+        <AIAddCardModal visible={showAIAddModal} onClose={() => setShowAIAddModal(false)} />
       )}
-
     </View>
   );
 }
@@ -354,7 +362,12 @@ const styles = StyleSheet.create({
   },
   screenHeaderTitleBox: { flex: 1 },
   screenTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.5 },
-  screenSubtitle: { fontSize: 13, fontWeight: "600", color: Colors.duolingo.textMuted, marginTop: 2 },
+  screenSubtitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.duolingo.textMuted,
+    marginTop: 2,
+  },
 
   addDeckHeaderBtn: {
     flexDirection: "row",
@@ -369,7 +382,12 @@ const styles = StyleSheet.create({
   },
   addDeckHeaderBtnText: { fontSize: 12, fontWeight: "800", color: "#FFFFFF" },
 
-  emptyCard: { alignItems: "center", justifyContent: "center", padding: Spacing.xl, marginTop: Spacing.md },
+  emptyCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.xl,
+    marginTop: Spacing.md,
+  },
   emptyTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginTop: 12 },
   emptySub: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center" },
 
@@ -388,7 +406,12 @@ const styles = StyleSheet.create({
   deckMainTitleBox: { flex: 1 },
   titleChevronRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   deckTitle: { fontSize: 17, fontWeight: "800", color: "#FFFFFF", flexShrink: 1 },
-  deckCardCountText: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 2, fontWeight: "600" },
+  deckCardCountText: {
+    fontSize: 13,
+    color: Colors.duolingo.textMuted,
+    marginTop: 2,
+    fontWeight: "600",
+  },
 
   deleteBtn: { padding: 4 },
   deckDesc: { fontSize: 13, color: "rgba(255, 255, 255, 0.75)", marginTop: 6, lineHeight: 17 },

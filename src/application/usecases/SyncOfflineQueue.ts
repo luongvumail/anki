@@ -1,5 +1,8 @@
-import { ICardRepository } from '../../domain/card/cardRepository.i';
-import { LocalStorageRepo, SyncOfflinePayload } from '../../infrastructure/persistence/localStorageRepo';
+import { ICardRepository } from "../../domain/card/cardRepository.i";
+import {
+  LocalStorageRepo,
+  SyncOfflinePayload,
+} from "../../infrastructure/persistence/localStorageRepo";
 
 export interface SyncResult {
   syncedCount: number;
@@ -34,7 +37,7 @@ export class SyncOfflineQueueUseCase {
         syncedCount += 1;
       } catch (err: any) {
         failedCount += 1;
-        errors.push(`Card ${item.cardId} sync failed: ${err?.message || 'Unknown error'}`);
+        errors.push(`Card ${item.cardId} sync failed: ${err?.message || "Unknown error"}`);
       }
     }
 

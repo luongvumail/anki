@@ -33,8 +33,20 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
   const [isChecked, setIsChecked] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [timeLeft, setTimeLeft] = useState(5);
+  const [prevQuestionKey, setPrevQuestionKey] = useState(
+    `${question.card.id}-${question.type}`
+  );
 
-  const startTimeRef = useRef<number>(Date.now());
+  // React official pattern: adjust state during render when prop changes
+  const currentQuestionKey = `${question.card.id}-${question.type}`;
+  if (prevQuestionKey !== currentQuestionKey) {
+    setPrevQuestionKey(currentQuestionKey);
+    setSelectedIndex(null);
+    setIsChecked(false);
+    setTimeLeft(5);
+  }
+
+  const startTimeRef = useRef<number>(0);
   const responseTimeMsRef = useRef<number>(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -55,12 +67,9 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
   }, []);
 
   useEffect(() => {
-    // Reset timer & timing on new question
+    // Reset timing and animation values on new question
     startTimeRef.current = Date.now();
     responseTimeMsRef.current = 0;
-    setSelectedIndex(null);
-    setIsChecked(false);
-    setTimeLeft(5);
     drawerAnim.setValue(300);
     shakeAnim.setValue(0);
     bounceAnim.setValue(1);
@@ -72,7 +81,15 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
         setTimeLeft((prev) => {
           if (prev <= 1) {
             if (timerRef.current) clearInterval(timerRef.current);
-            // Auto timeout trigger
+            responseTimeMsRef.current = 5000;
+            setIsChecked(true);
+            triggerHaptic("error");
+            Animated.spring(drawerAnim, {
+              toValue: 0,
+              tension: 65,
+              friction: 8,
+              useNativeDriver: true,
+            }).start();
             return 0;
           }
           return prev - 1;
@@ -82,28 +99,19 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
 
     // Auto play audio if listening question
     if (question.type === "listening") {
-      playTTS(question.audioText || question.card.character);
+      const textToPlay = question.audioText || question.card.character;
+      if (textToPlay) {
+        Speech.speak(textToPlay, {
+          language: "zh-CN",
+          rate: 0.8,
+        });
+      }
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [question, playTTS, drawerAnim, shakeAnim, bounceAnim, isFastRepairMode]);
-
-  // Handle timeout in fast repair mode
-  useEffect(() => {
-    if (isFastRepairMode && timeLeft === 0 && !isChecked) {
-      responseTimeMsRef.current = 5000;
-      setIsChecked(true);
-      triggerHaptic("error");
-      Animated.spring(drawerAnim, {
-        toValue: 0,
-        tension: 65,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [timeLeft, isFastRepairMode, isChecked, drawerAnim]);
 
   const handleSelectOption = (index: number) => {
     if (isChecked) return;

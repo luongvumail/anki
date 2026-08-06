@@ -1,10 +1,9 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform , View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 
-import { View } from "react-native";
 import { GlobalAccountModal } from "../../components/home/GlobalAccountModal";
 
 export default function TabLayout() {
@@ -43,7 +42,11 @@ export default function TabLayout() {
           options={{
             title: "Luyện tập",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "extension-puzzle" : "extension-puzzle-outline"} size={24} color={color} />
+              <Ionicons
+                name={focused ? "extension-puzzle" : "extension-puzzle-outline"}
+                size={24}
+                color={color}
+              />
             ),
           }}
         />
@@ -52,7 +55,11 @@ export default function TabLayout() {
           options={{
             title: "Thống kê",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={24} color={color} />
+              <Ionicons
+                name={focused ? "stats-chart" : "stats-chart-outline"}
+                size={24}
+                color={color}
+              />
             ),
           }}
         />

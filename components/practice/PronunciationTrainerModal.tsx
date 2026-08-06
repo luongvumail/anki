@@ -194,9 +194,7 @@ export function PronunciationTrainerModal({
       const targetPinyinClean = stripDiacritics(currentCard.pinyin || "");
 
       // Clean spoken text: strip punctuation
-      const cleanSpoken = spokenText
-        .trim()
-        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()!?！。，？"']/g, "");
+      const cleanSpoken = spokenText.trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()!?！。，？"']/g, "");
       const normalizedSpoken = cleanSpoken.replace(/\s+/g, "");
       const spokenPinyinClean = stripDiacritics(cleanSpoken);
 
@@ -387,7 +385,9 @@ Return ONLY a JSON object with this format (no markdown codeblock, no extra text
               return {
                 transcript: parsed.transcript ? String(parsed.transcript).trim() : "",
                 errorDetail: parsed.errorDetail ? String(parsed.errorDetail).trim() : undefined,
-                pronunciationTip: parsed.pronunciationTip ? String(parsed.pronunciationTip).trim() : undefined,
+                pronunciationTip: parsed.pronunciationTip
+                  ? String(parsed.pronunciationTip).trim()
+                  : undefined,
               };
             }
           } catch {
@@ -398,7 +398,9 @@ Return ONLY a JSON object with this format (no markdown codeblock, no extra text
 
         const errText = await response.text();
         lastErrText = errText;
-        console.warn(`[Gemini Audio] Model ${modelName} failed status ${response.status}: ${errText.slice(0, 100)}`);
+        console.warn(
+          `[Gemini Audio] Model ${modelName} failed status ${response.status}: ${errText.slice(0, 100)}`,
+        );
       } catch (e: any) {
         lastErrText = e?.message || String(e);
       }
@@ -654,7 +656,9 @@ Return ONLY a JSON object with this format (no markdown codeblock, no extra text
                   ) : null}
                 </Text>
                 {currentCard.translation ? (
-                  <Text style={styles.compareTranslationText}>Nghĩa: {currentCard.translation}</Text>
+                  <Text style={styles.compareTranslationText}>
+                    Nghĩa: {currentCard.translation}
+                  </Text>
                 ) : null}
               </View>
 
@@ -676,7 +680,12 @@ Return ONLY a JSON object with this format (no markdown codeblock, no extra text
               <View style={styles.diagnosisBox}>
                 {errorDetail ? (
                   <View style={styles.diagRow}>
-                    <Ionicons name="alert-circle-outline" size={18} color="#FFD166" style={{ marginTop: 2 }} />
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={18}
+                      color="#FFD166"
+                      style={{ marginTop: 2 }}
+                    />
                     <Text style={styles.diagText}>
                       <Text style={{ fontWeight: "800", color: "#FFD166" }}>Chẩn đoán: </Text>
                       {errorDetail}
@@ -686,7 +695,12 @@ Return ONLY a JSON object with this format (no markdown codeblock, no extra text
 
                 {pronunciationTip ? (
                   <View style={[styles.diagRow, errorDetail ? { marginTop: 6 } : null]}>
-                    <Ionicons name="bulb-outline" size={18} color="#06D6A0" style={{ marginTop: 2 }} />
+                    <Ionicons
+                      name="bulb-outline"
+                      size={18}
+                      color="#06D6A0"
+                      style={{ marginTop: 2 }}
+                    />
                     <Text style={styles.diagText}>
                       <Text style={{ fontWeight: "800", color: "#06D6A0" }}>Mẹo đọc: </Text>
                       {pronunciationTip}
@@ -797,7 +811,12 @@ const styles = StyleSheet.create({
   },
   characterBig: { fontSize: 48, fontWeight: "800", color: "#FFFFFF", marginBottom: 4 },
   pinyinText: { fontSize: 20, fontWeight: "700", color: Colors.duolingo.blue, marginBottom: 2 },
-  translationText: { fontSize: 16, fontWeight: "600", color: "rgba(255, 255, 255, 0.85)", marginBottom: Spacing.sm },
+  translationText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.85)",
+    marginBottom: Spacing.sm,
+  },
   listenBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -942,12 +961,22 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.15)",
   },
   compareItem: { flexDirection: "column" },
-  compareLabel: { fontSize: 11, fontWeight: "800", color: "rgba(255, 255, 255, 0.7)", letterSpacing: 0.5 },
+  compareLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "rgba(255, 255, 255, 0.7)",
+    letterSpacing: 0.5,
+  },
   compareTargetText: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginTop: 1 },
   comparePinyinText: { fontSize: 16, fontWeight: "700", color: Colors.duolingo.blue },
   compareTranslationText: { fontSize: 13, color: "rgba(255, 255, 255, 0.8)", fontWeight: "600" },
   compareSpokenText: { fontSize: 16, fontWeight: "800", color: "#FFD166", marginTop: 1 },
-  compareSpokenMuted: { fontSize: 13, fontStyle: "italic", color: "rgba(255, 255, 255, 0.6)", marginTop: 1 },
+  compareSpokenMuted: {
+    fontSize: 13,
+    fontStyle: "italic",
+    color: "rgba(255, 255, 255, 0.6)",
+    marginTop: 1,
+  },
 
   diagnosisBox: {
     backgroundColor: "rgba(0, 0, 0, 0.35)",

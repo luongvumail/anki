@@ -35,7 +35,11 @@ export function GlobalAccountModal() {
         onPress: async () => {
           closeAccountModal();
           await auth.signOut();
-          useAppStore.setState({ decks: [], cards: {}, streakState: { currentStreak: 0, longestStreak: 0, lastStudyDate: null } });
+          useAppStore.setState({
+            decks: [],
+            cards: {},
+            streakState: { currentStreak: 0, longestStreak: 0, lastStudyDate: null },
+          });
         },
       },
     ]);

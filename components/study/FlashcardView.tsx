@@ -18,8 +18,8 @@ import { AudioButton } from "../ui/AudioButton";
 
 import { RetrievabilityBadge } from "./fsrs/RetrievabilityBadge";
 import { FSRSRatingButtons } from "./fsrs/FSRSRatingButtons";
-import { Rating, State } from "@/src/domain/fsrs/fsrsTypes";
-import { ensureFSRSState, CardEntity } from "@/src/domain/card/cardEntity";
+import { Rating } from "@/src/domain/fsrs/fsrsTypes";
+import { CardEntity } from "@/src/domain/card/cardEntity";
 
 interface FlashcardViewProps {
   card: CardEntity;
@@ -55,6 +55,12 @@ export function FlashcardView({
   const { height } = useWindowDimensions();
   const [showAnswer, setShowAnswer] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [prevCardId, setPrevCardId] = useState(cardEntity.id);
+
+  if (prevCardId !== cardEntity.id) {
+    setPrevCardId(cardEntity.id);
+    setShowAnswer(false);
+  }
 
   // Smooth gesture & transition animations
   const pan = useRef(new Animated.ValueXY()).current;
@@ -68,8 +74,7 @@ export function FlashcardView({
     onNextRef.current = onNext;
     onPrevRef.current = onPrev;
 
-    // Reset card state and trigger smooth fade-in
-    setShowAnswer(false);
+    // Reset animation values and trigger smooth fade-in
     revealAnim.setValue(0);
     pan.setValue({ x: 0, y: 15 });
     opacityAnim.setValue(0);
@@ -245,13 +250,7 @@ export function FlashcardView({
               )}
 
               {/* Speaker Audio Button (Only on Unrevealed state to avoid duplicate icons) */}
-              {!showAnswer && (
-                <AudioButton
-                  onPress={playTTS}
-                  isPlaying={speaking}
-                  size="sm"
-                />
-              )}
+              {!showAnswer && <AudioButton onPress={playTTS} isPlaying={speaking} size="sm" />}
             </View>
 
             {/* UNREVEALED STATE: CLEAN HERO CHARACTER + TAP PROMPT */}
@@ -287,11 +286,7 @@ export function FlashcardView({
                     <View style={styles.revealedMainInfo}>
                       <View style={styles.pinyinRow}>
                         <Text style={styles.pinyinText}>{card.pinyin}</Text>
-                        <AudioButton
-                          onPress={playTTS}
-                          isPlaying={speaking}
-                          size="sm"
-                        />
+                        <AudioButton onPress={playTTS} isPlaying={speaking} size="sm" />
                       </View>
                       <Text style={styles.translationText}>{card.translation}</Text>
                     </View>
@@ -300,7 +295,12 @@ export function FlashcardView({
                   {/* RADICAL BREAKDOWN BOX */}
                   {card.radical ? (
                     <View style={styles.radicalBreakdownBox}>
-                      <Ionicons name="layers-outline" size={16} color={Colors.duolingo.purple} style={{ marginTop: 2 }} />
+                      <Ionicons
+                        name="layers-outline"
+                        size={16}
+                        color={Colors.duolingo.purple}
+                        style={{ marginTop: 2 }}
+                      />
                       <Text style={styles.radicalContentText}>{card.radical}</Text>
                     </View>
                   ) : null}
@@ -328,7 +328,11 @@ export function FlashcardView({
                             {ex.pinyin && <Text style={styles.examplePy}>{ex.pinyin}</Text>}
                             <Text style={styles.exampleVi}>{ex.vietnamese}</Text>
                           </View>
-                          <Ionicons name="volume-medium-outline" size={18} color={Colors.duolingo.textMuted} />
+                          <Ionicons
+                            name="volume-medium-outline"
+                            size={18}
+                            color={Colors.duolingo.textMuted}
+                          />
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -352,7 +356,9 @@ export function FlashcardView({
             {!showAnswer && (
               <View style={styles.gestureGuidePill}>
                 <Ionicons name="swap-vertical" size={14} color={Colors.duolingo.textMuted} />
-                <Text style={styles.gestureGuideText}>Vuốt lên để xem tiếp • Vuốt xuống để quay lại</Text>
+                <Text style={styles.gestureGuideText}>
+                  Vuốt lên để xem tiếp • Vuốt xuống để quay lại
+                </Text>
               </View>
             )}
 

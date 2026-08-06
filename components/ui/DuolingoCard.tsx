@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-import {
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  ViewStyle,
-} from "react-native";
+import { TouchableOpacity, View, StyleSheet, ViewStyle } from "react-native";
 import { Colors, Radii, Spacing } from "../../constants/theme";
 
 export interface DuolingoCardProps {
@@ -97,8 +92,8 @@ export function DuolingoCard({
 const styles = StyleSheet.create({
   cardBase: {
     width: "100%",
-    borderRadius: Radii.lg,              // --radius-lg: 16px
-    borderWidth: 0,                       // KHÔNG border mảnh bao quanh (Rule 2)
+    borderRadius: Radii.lg, // --radius-lg: 16px
+    borderWidth: 0, // KHÔNG border mảnh bao quanh (Rule 2)
     overflow: "hidden",
   },
 });

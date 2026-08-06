@@ -43,21 +43,13 @@ export function DuolingoHeader({
       {/* Top Indicators Row: Streak Only with Vector Icons */}
       <View style={styles.statsRow}>
         {/* Streak Pill */}
-        <TouchableOpacity
-          style={styles.statPill}
-          activeOpacity={0.8}
-          onPress={onStreakPress}
-        >
+        <TouchableOpacity style={styles.statPill} activeOpacity={0.8} onPress={onStreakPress}>
           <Ionicons name="flame" size={18} color={Colors.duolingo.yellow} />
           <Text style={[styles.statValue, { color: Colors.duolingo.yellow }]}>{streakCount}</Text>
         </TouchableOpacity>
 
         {/* Profile Avatar - Always rendered for 100% header layout stability */}
-        <TouchableOpacity
-          style={styles.avatarBtn}
-          onPress={handleAvatarPress}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.avatarBtn} onPress={handleAvatarPress} activeOpacity={0.8}>
           <Ionicons name="person-circle" size={28} color={Colors.duolingo.blue} />
         </TouchableOpacity>
       </View>

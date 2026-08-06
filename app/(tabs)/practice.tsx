@@ -1,31 +1,22 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "../../src/ui/store/useAppStore";
 import { CardEntity } from "../../src/domain/card/cardEntity";
-import { getLevelInfo } from "../../src/domain/user/userProgress";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
+import { Colors, Spacing, Radii } from "../../constants/theme";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { SectionTitle } from "../../components/ui/SectionTitle";
-import { ProgressBar } from "../../components/ui/ProgressBar";
 import { SpeedMatchModal } from "../../components/practice/SpeedMatchModal";
 import { SentenceBuilderModal } from "../../components/practice/SentenceBuilderModal";
 import { PronunciationTrainerModal } from "../../components/practice/PronunciationTrainerModal";
 
 export default function PracticeScreen() {
   const insets = useSafeAreaInsets();
-  const xp = useAppStore((s) => s.xp);
+
   const cards = useAppStore((s) => s.cards);
   const decks = useAppStore((s) => s.decks);
   const fetchDecks = useAppStore((s) => s.fetchDecks);
@@ -39,7 +30,7 @@ export default function PracticeScreen() {
   useFocusEffect(
     useCallback(() => {
       loadReviewHistory();
-    }, [loadReviewHistory])
+    }, [loadReviewHistory]),
   );
 
   useEffect(() => {
@@ -64,13 +55,11 @@ export default function PracticeScreen() {
     return list;
   }, [cards]);
 
-  const levelInfo = useMemo(() => getLevelInfo(xp), [xp]);
-
   const handleOpenSpeedMatch = () => {
     if (allCardsList.length < 2) {
       Alert.alert(
         "Chưa đủ từ vựng",
-        "Bạn cần thêm ít nhất 2 từ vựng vào bộ thẻ để chơi Game Ghép Từ."
+        "Bạn cần thêm ít nhất 2 từ vựng vào bộ thẻ để chơi Game Ghép Từ.",
       );
       return;
     }
@@ -79,13 +68,13 @@ export default function PracticeScreen() {
 
   const handleOpenSentenceBuilder = () => {
     const validCards = allCardsList.filter(
-      (c) => c.examples && c.examples.length > 0 && c.examples[0].chinese
+      (c) => c.examples && c.examples.length > 0 && c.examples[0].chinese,
     );
 
     if (validCards.length === 0) {
       Alert.alert(
         "Chưa có câu ví dụ",
-        "Bạn cần nạp các từ vựng có câu ví dụ (bằng AI) để bắt đầu bài tập Xếp Từ Thành Câu."
+        "Bạn cần nạp các từ vựng có câu ví dụ (bằng AI) để bắt đầu bài tập Xếp Từ Thành Câu.",
       );
       return;
     }
@@ -94,10 +83,7 @@ export default function PracticeScreen() {
 
   const handleOpenPronunciationTrainer = () => {
     if (allCardsList.length === 0) {
-      Alert.alert(
-        "Chưa có từ vựng",
-        "Bạn cần nạp từ vựng vào bộ thẻ trước khi luyện phát âm."
-      );
+      Alert.alert("Chưa có từ vựng", "Bạn cần nạp từ vựng vào bộ thẻ trước khi luyện phát âm.");
       return;
     }
     setShowPronunciationTrainer(true);
@@ -172,7 +158,8 @@ export default function PracticeScreen() {
             <View style={styles.modeTextCol}>
               <Text style={styles.modeTitle}>PHÒNG LUYỆN PHÁT ÂM AI</Text>
               <Text style={styles.modeDesc}>
-                Thu âm giọng đọc Tiếng Trung, AI phân tích nhận diện Pinyin & 4 thanh điệu chuẩn xác.
+                Thu âm giọng đọc Tiếng Trung, AI phân tích nhận diện Pinyin & 4 thanh điệu chuẩn
+                xác.
               </Text>
             </View>
           </View>
@@ -213,7 +200,6 @@ export default function PracticeScreen() {
           cards={allCardsList}
         />
       )}
-
     </View>
   );
 }
@@ -223,11 +209,34 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md },
 
   levelCard: { marginBottom: Spacing.lg, padding: Spacing.md },
-  levelHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: Spacing.md },
-  levelBadgeBox: { backgroundColor: "#131F24", paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.md },
+  levelHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  levelBadgeBox: {
+    backgroundColor: "#131F24",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radii.md,
+  },
   levelBadgeTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
-  levelBadgeSub: { fontSize: 11, color: Colors.duolingo.textMuted, marginTop: 1, fontWeight: "600" },
-  xpBox: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(255, 200, 0, 0.15)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radii.full },
+  levelBadgeSub: {
+    fontSize: 11,
+    color: Colors.duolingo.textMuted,
+    marginTop: 1,
+    fontWeight: "600",
+  },
+  xpBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255, 200, 0, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radii.full,
+  },
   xpValText: { fontSize: 14, fontWeight: "800", color: Colors.duolingo.yellow },
 
   levelProgressRow: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -236,7 +245,13 @@ const styles = StyleSheet.create({
 
   modeCard: { marginBottom: Spacing.md, padding: Spacing.md },
   modeRow: { flexDirection: "row", gap: 12, alignItems: "center" },
-  modeIconTile: { width: 52, height: 52, borderRadius: Radii.lg, alignItems: "center", justifyContent: "center" },
+  modeIconTile: {
+    width: 52,
+    height: 52,
+    borderRadius: Radii.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   modeTextCol: { flex: 1 },
   modeTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
   modeDesc: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 4, lineHeight: 17 },

@@ -1,4 +1,4 @@
-import { DeckEntity } from './deckEntity';
+import { DeckEntity } from "./deckEntity";
 
 export interface IDeckRepository {
   getDecks(): Promise<DeckEntity[]>;

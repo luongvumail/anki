@@ -1,5 +1,5 @@
-import { CardEntity, ensureFSRSState } from './cardEntity';
-import { State } from '../fsrs/fsrsTypes';
+import { CardEntity, ensureFSRSState } from "./cardEntity";
+import { State } from "../fsrs/fsrsTypes";
 
 export function isDue(srs?: { due?: string; dueDate?: string }): boolean {
   if (!srs) return true;
@@ -60,7 +60,11 @@ export function computeLearnedCount(cards: CardEntity[]): number {
 /**
  * Returns user-facing mastery percentage (0-100) for a deck or card set.
  */
-export function getDeckMasteryPct(cardCount: number, dueCount: number, cards?: CardEntity[]): number {
+export function getDeckMasteryPct(
+  cardCount: number,
+  dueCount: number,
+  cards?: CardEntity[],
+): number {
   if (cards && cards.length > 0) {
     const total = cards.length;
     if (total <= 0) return 0;

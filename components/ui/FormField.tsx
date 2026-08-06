@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,8 @@ import {
   TextInputProps,
   ViewStyle,
   TextStyle,
-} from 'react-native';
-import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
+} from "react-native";
+import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 
 interface FormFieldProps extends TextInputProps {
   label: string;
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.bold,
     color: Colors.text.secondary,
     letterSpacing: 1.1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: 6,
     marginLeft: 2,
   },
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.tertiary,
     borderRadius: Radii.card,
     minHeight: 48,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   inputWrapperFocused: {
     backgroundColor: Colors.bg.tertiary,

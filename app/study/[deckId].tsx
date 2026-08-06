@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -46,11 +40,24 @@ export default function StudyScreen() {
   if (!isCardLoading && deckCards.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <Ionicons name="book-outline" size={48} color={Colors.duolingo.textMuted} style={{ marginBottom: 12 }} />
+        <Ionicons
+          name="book-outline"
+          size={48}
+          color={Colors.duolingo.textMuted}
+          style={{ marginBottom: 12 }}
+        />
         <Text style={{ fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginBottom: 6 }}>
           Bộ thẻ này chưa có từ vựng!
         </Text>
-        <Text style={{ fontSize: 13, color: Colors.duolingo.textMuted, textAlign: "center", marginBottom: 20, paddingHorizontal: 32 }}>
+        <Text
+          style={{
+            fontSize: 13,
+            color: Colors.duolingo.textMuted,
+            textAlign: "center",
+            marginBottom: 20,
+            paddingHorizontal: 32,
+          }}
+        >
           Vui lòng quay lại danh sách bộ thẻ và thêm thẻ từ vựng trước khi bắt đầu học.
         </Text>
         <DuolingoButton
@@ -112,8 +119,8 @@ export default function StudyScreen() {
               stage === "preview"
                 ? Colors.duolingo.blue
                 : stage === "repair"
-                ? Colors.duolingo.yellow
-                : Colors.duolingo.green
+                  ? Colors.duolingo.yellow
+                  : Colors.duolingo.green
             }
           />
         </View>
@@ -124,8 +131,8 @@ export default function StudyScreen() {
             stage === "preview"
               ? styles.stageBadgePreview
               : stage === "repair"
-              ? styles.stageBadgeRepair
-              : styles.stageBadgeValidation,
+                ? styles.stageBadgeRepair
+                : styles.stageBadgeValidation,
           ]}
         >
           <Ionicons
@@ -133,16 +140,16 @@ export default function StudyScreen() {
               stage === "preview"
                 ? "card-outline"
                 : stage === "repair"
-                ? "flash"
-                : "checkmark-circle-outline"
+                  ? "flash"
+                  : "checkmark-circle-outline"
             }
             size={13}
             color={
               stage === "preview"
                 ? Colors.duolingo.blue
                 : stage === "repair"
-                ? Colors.duolingo.yellow
-                : Colors.duolingo.green
+                  ? Colors.duolingo.yellow
+                  : Colors.duolingo.green
             }
           />
           <Text
@@ -153,16 +160,12 @@ export default function StudyScreen() {
                   stage === "preview"
                     ? Colors.duolingo.blue
                     : stage === "repair"
-                    ? Colors.duolingo.yellow
-                    : Colors.duolingo.green,
+                      ? Colors.duolingo.yellow
+                      : Colors.duolingo.green,
               },
             ]}
           >
-            {stage === "preview"
-              ? "NẠP TỪ"
-              : stage === "repair"
-              ? "CẮM CỜ"
-              : "KIỂM TRA"}
+            {stage === "preview" ? "NẠP TỪ" : stage === "repair" ? "CẮM CỜ" : "KIỂM TRA"}
           </Text>
         </View>
       </View>

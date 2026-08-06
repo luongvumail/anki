@@ -23,12 +23,7 @@ import {
 } from "firebase/auth";
 import { auth } from "../src/infrastructure/firebase/firebaseApp";
 import { getAuthErrorMessage } from "../src/ui/utils/errorHandler";
-import {
-  Colors,
-  Spacing,
-  Radii,
-  triggerHaptic,
-} from "../constants/theme";
+import { Colors, Spacing, Radii, triggerHaptic } from "../constants/theme";
 import { DuolingoButton } from "../components/ui/DuolingoButton";
 import { DuolingoCard } from "../components/ui/DuolingoCard";
 
@@ -133,11 +128,7 @@ export default function AuthScreen() {
           setLoading(false);
           return;
         }
-        const cred = await createUserWithEmailAndPassword(
-          auth,
-          email.trim(),
-          password,
-        );
+        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
         await updateProfile(cred.user, { displayName: name.trim() });
         triggerHaptic("success");
       }
@@ -281,7 +272,15 @@ export default function AuthScreen() {
         {/* 3D Primary Button */}
         <DuolingoButton
           title={loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
-          icon={loading ? undefined : <Ionicons name={mode === "login" ? "log-in" : "person-add"} size={20} color="#FFFFFF" />}
+          icon={
+            loading ? undefined : (
+              <Ionicons
+                name={mode === "login" ? "log-in" : "person-add"}
+                size={20}
+                color="#FFFFFF"
+              />
+            )
+          }
           variant="primary"
           size="lg"
           disabled={loading}
@@ -298,9 +297,7 @@ export default function AuthScreen() {
             onPress={() => toggleMode(mode === "login" ? "register" : "login")}
             hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
           >
-            <Text style={styles.footerLink}>
-              {mode === "login" ? " Tạo ngay" : " Đăng nhập"}
-            </Text>
+            <Text style={styles.footerLink}>{mode === "login" ? " Tạo ngay" : " Đăng nhập"}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

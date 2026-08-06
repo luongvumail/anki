@@ -1,15 +1,21 @@
-import { StateCreator } from 'zustand';
-import { GenerateAICardsInput, GenerateAICardsUseCase } from '../../../application/usecases/GenerateAICards';
-import { ProcessCardReviewUseCase } from '../../../application/usecases/ProcessCardReview';
-import { SyncOfflineQueueUseCase } from '../../../application/usecases/SyncOfflineQueue';
-import { CardEntity, ensureFSRSState } from '../../../domain/card/cardEntity';
-import { FSRSEngine } from '../../../domain/fsrs/fsrsEngine';
-import { Rating, ReviewLog } from '../../../domain/fsrs/fsrsTypes';
-import { GeminiService } from '../../../infrastructure/ai/geminiService';
-import { FirestoreCardRepository } from '../../../infrastructure/persistence/firestoreRepo';
-import { LocalStorageRepo, SyncOfflinePayload } from '../../../infrastructure/persistence/localStorageRepo';
-import { ReviewTrackerRepository } from '../../../infrastructure/persistence/reviewTrackerRepo';
-import { AppStoreState } from '../types';
+import { StateCreator } from "zustand";
+import {
+  GenerateAICardsInput,
+  GenerateAICardsUseCase,
+} from "../../../application/usecases/GenerateAICards";
+import { ProcessCardReviewUseCase } from "../../../application/usecases/ProcessCardReview";
+import { SyncOfflineQueueUseCase } from "../../../application/usecases/SyncOfflineQueue";
+import { CardEntity, ensureFSRSState } from "../../../domain/card/cardEntity";
+import { FSRSEngine } from "../../../domain/fsrs/fsrsEngine";
+import { Rating, ReviewLog } from "../../../domain/fsrs/fsrsTypes";
+import { GeminiService } from "../../../infrastructure/ai/geminiService";
+import { FirestoreCardRepository } from "../../../infrastructure/persistence/firestoreRepo";
+import {
+  LocalStorageRepo,
+  SyncOfflinePayload,
+} from "../../../infrastructure/persistence/localStorageRepo";
+import { ReviewTrackerRepository } from "../../../infrastructure/persistence/reviewTrackerRepo";
+import { AppStoreState } from "../types";
 
 const localRepo = new LocalStorageRepo();
 const remoteRepo = new FirestoreCardRepository();
@@ -27,18 +33,21 @@ export interface CardSlice {
 
   fetchCards: (deckId: string) => Promise<CardEntity[]>;
   updateCard: (cardId: string, deckId: string, updates: Partial<CardEntity>) => Promise<void>;
-  processReview: (card: CardEntity, rating: Rating) => Promise<{ updatedCard: CardEntity; log: ReviewLog }>;
+  processReview: (
+    card: CardEntity,
+    rating: Rating,
+  ) => Promise<{ updatedCard: CardEntity; log: ReviewLog }>;
   syncOfflineQueue: () => Promise<void>;
   generateAICards: (input: GenerateAICardsInput) => Promise<CardEntity[]>;
   setCardsForDeck: (deckId: string, cards: CardEntity[]) => void;
-  addCard: (card: Omit<CardEntity, 'id' | 'createdAt' | 'updatedAt'>) => Promise<CardEntity>;
+  addCard: (card: Omit<CardEntity, "id" | "createdAt" | "updatedAt">) => Promise<CardEntity>;
   deleteCard: (cardId: string, deckId: string) => Promise<void>;
   resetDeckProgress: (deckId: string) => Promise<void>;
 }
 
 function generateId(prefix: string): string {
   try {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
       return `${prefix}-${crypto.randomUUID()}`;
     }
   } catch {}
@@ -60,7 +69,7 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
       }));
       return fetched;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cards';
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch cards";
       set({ cardError: errorMessage, isCardLoading: false });
       return get().cards[deckId] || [];
     }
@@ -75,14 +84,14 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
     }));
   },
 
-  addCard: async (cardData: Omit<CardEntity, 'id' | 'createdAt' | 'updatedAt'>) => {
+  addCard: async (cardData: Omit<CardEntity, "id" | "createdAt" | "updatedAt">) => {
     const now = new Date();
     const nowStr = now.toISOString();
     const initialFSRS = cardData.fsrs ?? fsrsEngine.createEmptyCard(now);
 
     const newCard: CardEntity = {
       ...cardData,
-      id: generateId('card'),
+      id: generateId("card"),
       fsrs: initialFSRS,
       createdAt: nowStr,
       updatedAt: nowStr,
@@ -95,7 +104,7 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
     try {
       await remoteRepo.saveCard(newCard);
     } catch (err) {
-      console.warn('[cardSlice] Failed to save card remotely:', err);
+      console.warn("[cardSlice] Failed to save card remotely:", err);
     }
     return newCard;
   },
@@ -115,7 +124,7 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
     try {
       await remoteRepo.saveCard(updatedCard);
     } catch (err) {
-      console.warn('[cardSlice] Failed to update card remotely:', err);
+      console.warn("[cardSlice] Failed to update card remotely:", err);
     }
   },
 
@@ -130,7 +139,7 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
     try {
       await remoteRepo.deleteCard(cardId);
     } catch (err) {
-      console.warn('[cardSlice] Failed to delete card remotely:', err);
+      console.warn("[cardSlice] Failed to delete card remotely:", err);
     }
   },
 
@@ -180,7 +189,7 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
     try {
       await syncUseCase.execute();
     } catch (err: unknown) {
-      console.warn('[cardSlice] Sync failed:', err);
+      console.warn("[cardSlice] Sync failed:", err);
     }
   },
 
@@ -198,7 +207,7 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
 
       return createdCards;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate AI cards';
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate AI cards";
       set({ cardError: errorMessage, isCardLoading: false });
       throw err;
     }
@@ -223,7 +232,7 @@ export const createCardSlice: StateCreator<AppStoreState, [], [], CardSlice> = (
     try {
       await remoteRepo.saveCards(resetCards);
     } catch (err) {
-      console.warn('[cardSlice] Failed to reset deck progress remotely:', err);
+      console.warn("[cardSlice] Failed to reset deck progress remotely:", err);
     }
   },
 });

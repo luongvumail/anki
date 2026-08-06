@@ -43,11 +43,7 @@ export const DeckPicker = React.memo(function DeckPicker({
   return (
     <>
       {/* Trigger Card Component to Open Target Deck Picker */}
-      <TouchableOpacity
-        style={styles.pickerTriggerCard}
-        onPress={onToggleOpen}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={styles.pickerTriggerCard} onPress={onToggleOpen} activeOpacity={0.8}>
         <View style={styles.triggerLeftRow}>
           <View style={styles.triggerTextContainer}>
             <Text style={styles.triggerDeckTitle} numberOfLines={1}>
@@ -64,83 +60,73 @@ export const DeckPicker = React.memo(function DeckPicker({
         </View>
       </TouchableOpacity>
 
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={onToggleOpen}
-      >
-      <TouchableWithoutFeedback onPress={onToggleOpen}>
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-            <View style={styles.sheetContainer}>
-              {/* SHEET HEADER */}
-              <View style={styles.sheetHeader}>
-                <View style={styles.dragHandle} />
-                <View style={styles.headerTitleRow}>
-                  <Text style={styles.sheetTitle}>CHỌN BỘ THẺ LƯU TỪ</Text>
+      <Modal visible={isOpen} transparent animationType="slide" onRequestClose={onToggleOpen}>
+        <TouchableWithoutFeedback onPress={onToggleOpen}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={styles.sheetContainer}>
+                {/* SHEET HEADER */}
+                <View style={styles.sheetHeader}>
+                  <View style={styles.dragHandle} />
+                  <View style={styles.headerTitleRow}>
+                    <Text style={styles.sheetTitle}>CHỌN BỘ THẺ LƯU TỪ</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={onToggleOpen}
+                    style={styles.closeBtn}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="close" size={22} color={Colors.duolingo.textMuted} />
+                  </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  onPress={onToggleOpen}
-                  style={styles.closeBtn}
-                  activeOpacity={0.8}
+                {/* DECK LIST */}
+                <ScrollView
+                  style={styles.sheetList}
+                  contentContainerStyle={styles.sheetListContent}
+                  showsVerticalScrollIndicator={false}
                 >
-                  <Ionicons name="close" size={22} color={Colors.duolingo.textMuted} />
-                </TouchableOpacity>
+                  {decks.map((deck) => {
+                    const isSelected = selectedDeckId === deck.id;
+                    return (
+                      <TouchableOpacity
+                        key={deck.id}
+                        style={[styles.deckCard3D, isSelected && styles.deckCard3DSelected]}
+                        onPress={() => onSelectDeck(deck.id)}
+                        activeOpacity={0.85}
+                      >
+                        <View style={styles.deckCardLeft}>
+                          <View style={styles.deckInfo}>
+                            <Text
+                              style={[
+                                styles.deckNameText,
+                                isSelected && styles.deckNameTextSelected,
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {deck.name}
+                            </Text>
+                            <Text style={styles.deckSubText}>{deck.cardCount || 0} từ vựng</Text>
+                          </View>
+                        </View>
+
+                        {isSelected ? (
+                          <View style={styles.selectedBadge}>
+                            <Text style={styles.selectedBadgeText}>ĐÃ CHỌN</Text>
+                          </View>
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
               </View>
-
-              {/* DECK LIST */}
-              <ScrollView
-                style={styles.sheetList}
-                contentContainerStyle={styles.sheetListContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {decks.map((deck) => {
-                  const isSelected = selectedDeckId === deck.id;
-                  return (
-                    <TouchableOpacity
-                      key={deck.id}
-                      style={[
-                        styles.deckCard3D,
-                        isSelected && styles.deckCard3DSelected,
-                      ]}
-                      onPress={() => onSelectDeck(deck.id)}
-                      activeOpacity={0.85}
-                    >
-                      <View style={styles.deckCardLeft}>
-                        <View style={styles.deckInfo}>
-                          <Text
-                            style={[
-                              styles.deckNameText,
-                              isSelected && styles.deckNameTextSelected,
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {deck.name}
-                          </Text>
-                          <Text style={styles.deckSubText}>
-                            {deck.cardCount || 0} từ vựng
-                          </Text>
-                        </View>
-                      </View>
-
-                      {isSelected ? (
-                        <View style={styles.selectedBadge}>
-                          <Text style={styles.selectedBadgeText}>ĐÃ CHỌN</Text>
-                        </View>
-                      ) : null}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
-  </>
-);
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </>
+  );
 });
 
 const styles = StyleSheet.create({

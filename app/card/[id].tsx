@@ -14,7 +14,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import * as Speech from "expo-speech";
 import { useAppStore } from "../../src/ui/store/useAppStore";
 import { isDue } from "../../src/domain/card/cardUtils";
-import { getPinyinToneColor } from "../../src/ui/utils/pinyinColor";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
@@ -99,7 +98,6 @@ export default function CardDetailScreen() {
     );
   }
 
-  const pinyinColor = getPinyinToneColor(card.pinyin);
 
   return (
     <View style={styles.container}>
@@ -185,7 +183,13 @@ export default function CardDetailScreen() {
         <SectionTitle>TRẠNG THÁI TRÍ NHỚ (FSRS v5)</SectionTitle>
         <DuolingoCard style={styles.detailCard}>
           {(() => {
-            const fsrs = (card as any).fsrs || { stability: 0, difficulty: 5, reps: card.srs?.repetitions || 0, lapses: 0, due: card.srs?.dueDate || new Date().toISOString() };
+            const fsrs = (card as any).fsrs || {
+              stability: 0,
+              difficulty: 5,
+              reps: card.srs?.repetitions || 0,
+              lapses: 0,
+              due: card.srs?.dueDate || new Date().toISOString(),
+            };
             return (
               <>
                 <View style={styles.detailRow}>
@@ -203,26 +207,34 @@ export default function CardDetailScreen() {
                     ]}
                   >
                     <Text style={styles.statusBadgeText}>
-                      {isDue({ due: fsrs.due }) ? "CẦN ÔN TẬP" : fsrs.reps > 0 ? "ĐÃ THUỘC" : "TỪ MỚI"}
+                      {isDue({ due: fsrs.due })
+                        ? "CẦN ÔN TẬP"
+                        : fsrs.reps > 0
+                          ? "ĐÃ THUỘC"
+                          : "TỪ MỚI"}
                     </Text>
                   </View>
                 </View>
 
                 <View style={[styles.detailRow, styles.borderTop]}>
                   <Text style={styles.detailLabel}>Độ ổn định (Stability - S)</Text>
-                  <Text style={styles.detailVal}>{fsrs.stability ? `${fsrs.stability} ngày` : 'Mới'}</Text>
+                  <Text style={styles.detailVal}>
+                    {fsrs.stability ? `${fsrs.stability} ngày` : "Mới"}
+                  </Text>
                 </View>
 
                 <View style={[styles.detailRow, styles.borderTop]}>
                   <Text style={styles.detailLabel}>Độ khó (Difficulty - D)</Text>
                   <Text style={styles.detailVal}>
-                    {fsrs.difficulty ? `${fsrs.difficulty}/10` : '5/10'}
+                    {fsrs.difficulty ? `${fsrs.difficulty}/10` : "5/10"}
                   </Text>
                 </View>
 
                 <View style={[styles.detailRow, styles.borderTop]}>
                   <Text style={styles.detailLabel}>Số lần ôn / Số lần quên</Text>
-                  <Text style={styles.detailVal}>{fsrs.reps || 0} lần / {fsrs.lapses || 0} lần</Text>
+                  <Text style={styles.detailVal}>
+                    {fsrs.reps || 0} lần / {fsrs.lapses || 0} lần
+                  </Text>
                 </View>
               </>
             );

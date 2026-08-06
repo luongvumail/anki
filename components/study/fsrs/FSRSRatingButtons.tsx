@@ -1,10 +1,10 @@
-import * as Haptics from 'expo-haptics';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { CardEntity, ensureFSRSState } from '../../../src/domain/card/cardEntity';
-import { FSRSEngine } from '../../../src/domain/fsrs/fsrsEngine';
-import { FSRSScheduleResult, Rating } from '../../../src/domain/fsrs/fsrsTypes';
-import { Colors } from '../../../constants/theme';
+import * as Haptics from "expo-haptics";
+import React from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { CardEntity, ensureFSRSState } from "../../../src/domain/card/cardEntity";
+import { FSRSEngine } from "../../../src/domain/fsrs/fsrsEngine";
+import { FSRSScheduleResult, Rating } from "../../../src/domain/fsrs/fsrsTypes";
+import { Colors } from "../../../constants/theme";
 
 interface FSRSRatingButtonsProps {
   card: CardEntity;
@@ -27,10 +27,10 @@ export const FSRSRatingButtons: React.FC<FSRSRatingButtonsProps> = ({
     const schedDays = item.log.scheduled_days;
 
     if (schedDays === 0) {
-      return '10m';
+      return "10m";
     }
     if (schedDays === 1) {
-      return '1d';
+      return "1d";
     }
     if (schedDays < 30) {
       return `${schedDays}d`;
@@ -59,11 +59,7 @@ export const FSRSRatingButtons: React.FC<FSRSRatingButtonsProps> = ({
       <Pressable
         disabled={disabled}
         onPress={() => handlePress(Rating.Again)}
-        style={({ pressed }) => [
-          styles.button,
-          styles.againBtn,
-          pressed && styles.pressed,
-        ]}
+        style={({ pressed }) => [styles.button, styles.againBtn, pressed && styles.pressed]}
       >
         <Text style={styles.btnTitle}>Quên</Text>
         <Text style={styles.btnInterval}>{formatIntervalLabel(Rating.Again)}</Text>
@@ -73,11 +69,7 @@ export const FSRSRatingButtons: React.FC<FSRSRatingButtonsProps> = ({
       <Pressable
         disabled={disabled}
         onPress={() => handlePress(Rating.Hard)}
-        style={({ pressed }) => [
-          styles.button,
-          styles.hardBtn,
-          pressed && styles.pressed,
-        ]}
+        style={({ pressed }) => [styles.button, styles.hardBtn, pressed && styles.pressed]}
       >
         <Text style={styles.btnTitle}>Khó</Text>
         <Text style={styles.btnInterval}>{formatIntervalLabel(Rating.Hard)}</Text>
@@ -87,11 +79,7 @@ export const FSRSRatingButtons: React.FC<FSRSRatingButtonsProps> = ({
       <Pressable
         disabled={disabled}
         onPress={() => handlePress(Rating.Good)}
-        style={({ pressed }) => [
-          styles.button,
-          styles.goodBtn,
-          pressed && styles.pressed,
-        ]}
+        style={({ pressed }) => [styles.button, styles.goodBtn, pressed && styles.pressed]}
       >
         <Text style={styles.btnTitle}>Tốt</Text>
         <Text style={styles.btnInterval}>{formatIntervalLabel(Rating.Good)}</Text>
@@ -101,11 +89,7 @@ export const FSRSRatingButtons: React.FC<FSRSRatingButtonsProps> = ({
       <Pressable
         disabled={disabled}
         onPress={() => handlePress(Rating.Easy)}
-        style={({ pressed }) => [
-          styles.button,
-          styles.easyBtn,
-          pressed && styles.pressed,
-        ]}
+        style={({ pressed }) => [styles.button, styles.easyBtn, pressed && styles.pressed]}
       >
         <Text style={styles.btnTitle}>Dễ</Text>
         <Text style={styles.btnInterval}>{formatIntervalLabel(Rating.Easy)}</Text>
@@ -116,8 +100,8 @@ export const FSRSRatingButtons: React.FC<FSRSRatingButtonsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 8,
@@ -126,8 +110,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderBottomWidth: 4,
   },
   pressed: {
@@ -151,13 +135,13 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.duolingo.blueDark,
   },
   btnTitle: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    color: "#FFFFFF",
+    fontWeight: "800",
     fontSize: 15,
   },
   btnInterval: {
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: '700',
+    color: "rgba(255,255,255,0.85)",
+    fontWeight: "700",
     fontSize: 12,
     marginTop: 2,
   },

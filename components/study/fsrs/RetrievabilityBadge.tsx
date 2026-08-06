@@ -1,7 +1,7 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { FSRSEngine } from '../../../src/domain/fsrs/fsrsEngine';
-import { State } from '../../../src/domain/fsrs/fsrsTypes';
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { FSRSEngine } from "../../../src/domain/fsrs/fsrsEngine";
+import { State } from "../../../src/domain/fsrs/fsrsTypes";
 
 interface RetrievabilityBadgeProps {
   stability: number;
@@ -26,10 +26,7 @@ export const RetrievabilityBadge: React.FC<RetrievabilityBadgeProps> = ({
 
   const now = new Date();
   const lastDate = new Date(lastReview);
-  const elapsedDays = Math.max(
-    0,
-    (now.getTime() - lastDate.getTime()) / (1000 * 3600 * 24)
-  );
+  const elapsedDays = Math.max(0, (now.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
 
   const retrievability = engine.calculateRetrievability(elapsedDays, stability);
   const percentage = Math.round(retrievability * 100);
@@ -58,37 +55,37 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginVertical: 6,
   },
   newBadge: {
-    backgroundColor: '#EBF5FF',
-    borderColor: '#3B82F6',
+    backgroundColor: "#EBF5FF",
+    borderColor: "#3B82F6",
   },
   greenBadge: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#10B981',
+    backgroundColor: "#ECFDF5",
+    borderColor: "#10B981",
   },
   yellowBadge: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#F59E0B',
+    backgroundColor: "#FFFBEB",
+    borderColor: "#F59E0B",
   },
   redBadge: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#EF4444',
+    backgroundColor: "#FEF2F2",
+    borderColor: "#EF4444",
   },
   text: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#3B82F6',
+    fontWeight: "700",
+    color: "#3B82F6",
   },
   greenText: {
-    color: '#059669',
+    color: "#059669",
   },
   yellowText: {
-    color: '#D97706',
+    color: "#D97706",
   },
   redText: {
-    color: '#DC2626',
+    color: "#DC2626",
   },
 });

@@ -1,22 +1,9 @@
 import React, { useState } from "react";
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from "react-native";
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from "react-native";
 import { Colors, Radii } from "../../constants/theme";
 
 export type DuolingoButtonVariant =
-  | "primary"
-  | "success"
-  | "blue"
-  | "error"
-  | "purple"
-  | "yellow"
-  | "secondary"
-  | "ghost";
+  "primary" | "success" | "blue" | "error" | "purple" | "yellow" | "secondary" | "ghost";
 
 export type DuolingoButtonSize = "lg" | "md" | "sm";
 

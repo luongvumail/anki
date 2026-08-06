@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert } from 'react-native';
-import { router } from 'expo-router';
-import { generateQuizQuestion, QuizQuestion } from '../../application/usecases/GenerateQuiz';
-import { WeakTagType } from '../../../components/study/QuizCardView';
-import { triggerHaptic } from '../../../constants/theme';
-import { CardEntity, ensureFSRSState } from '../../domain/card/cardEntity';
-import { isDue } from '../../domain/card/cardUtils';
-import { Rating } from '../../domain/fsrs/fsrsTypes';
-import { useAppStore } from '../store/useAppStore';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert } from "react-native";
+import { router } from "expo-router";
+import { generateQuizQuestion, QuizQuestion } from "../../application/usecases/GenerateQuiz";
+import { WeakTagType } from "../../../components/study/QuizCardView";
+import { triggerHaptic } from "../../../constants/theme";
+import { CardEntity, ensureFSRSState } from "../../domain/card/cardEntity";
+import { isDue } from "../../domain/card/cardUtils";
+import { Rating } from "../../domain/fsrs/fsrsTypes";
+import { useAppStore } from "../store/useAppStore";
 
-export type SessionStage = 'preview' | 'validation' | 'repair' | 'done';
+export type SessionStage = "preview" | "validation" | "repair" | "done";
 
 export interface StudySessionState {
   deckId: string;
@@ -33,10 +33,10 @@ export function useStudySession(deckId: string) {
   const deckCards = useMemo(() => (deckId ? cardsMap[deckId] || [] : []), [cardsMap, deckId]);
   const deck = useMemo(
     () => (Array.isArray(decks) ? decks.find((d) => d.id === deckId) : undefined),
-    [decks, deckId]
+    [decks, deckId],
   );
 
-  const [stage, setStage] = useState<SessionStage>('preview');
+  const [stage, setStage] = useState<SessionStage>("preview");
   const [session, setSession] = useState<StudySessionState | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [targetCards, setTargetCards] = useState<CardEntity[]>([]);
@@ -57,7 +57,7 @@ export function useStudySession(deckId: string) {
   }, [deckId]);
 
   useEffect(() => {
-    if (deckCards.length > 0 && !sessionInitialized.current && stage !== 'done' && deckId) {
+    if (deckCards.length > 0 && !sessionInitialized.current && stage !== "done" && deckId) {
       sessionInitialized.current = true;
       ratedCardIdsInSession.current = new Set();
       const dueCards = deckCards.filter((c) => {
@@ -81,7 +81,7 @@ export function useStudySession(deckId: string) {
       setTargetCards(chosenCards);
       setQuestions(generatedQuestions);
       setPreviewIndex(0);
-      setStage('preview');
+      setStage("preview");
       setSession({
         deckId,
         queue: chosenCards,
@@ -97,8 +97,8 @@ export function useStudySession(deckId: string) {
     if (previewIndex < targetCards.length - 1) {
       setPreviewIndex((prev) => prev + 1);
     } else {
-      triggerHaptic('success');
-      setStage('validation');
+      triggerHaptic("success");
+      setStage("validation");
       setSession((prev) => (prev ? { ...prev, currentIndex: 0 } : null));
     }
   }, [previewIndex, targetCards.length]);
@@ -178,13 +178,13 @@ export function useStudySession(deckId: string) {
             .filter((q): q is QuizQuestion => q !== null);
           setRepairQuestions(repairQs);
           setRepairIndex(0);
-          setStage('repair');
+          setStage("repair");
         } else {
-          setStage('done');
+          setStage("done");
         }
       }
     },
-    [session, questions, targetCards, deckCards, processReview, missedOrSlowCardIds]
+    [session, questions, targetCards, deckCards, processReview, missedOrSlowCardIds],
   );
 
   const handleRepairAnswer = useCallback(
@@ -199,21 +199,21 @@ export function useStudySession(deckId: string) {
       const nextIdx = repairIndex + 1;
       setRepairIndex(nextIdx);
       if (nextIdx >= repairQuestions.length) {
-        setStage('done');
+        setStage("done");
       }
     },
-    [repairQuestions, repairIndex, processReview]
+    [repairQuestions, repairIndex, processReview],
   );
 
   const handleExitSession = useCallback(() => {
     if (session && session.reviewedCount > 0) {
       Alert.alert(
-        'Thoát phiên học?',
-        'Tiến trình FSRS của các thẻ đã làm Quiz đã được tự động lưu. Bạn có muốn thoát không?',
+        "Thoát phiên học?",
+        "Tiến trình FSRS của các thẻ đã làm Quiz đã được tự động lưu. Bạn có muốn thoát không?",
         [
-          { text: 'Tiếp tục học', style: 'cancel' },
-          { text: 'Thoát', style: 'destructive', onPress: () => router.back() },
-        ]
+          { text: "Tiếp tục học", style: "cancel" },
+          { text: "Thoát", style: "destructive", onPress: () => router.back() },
+        ],
       );
     } else {
       router.back();
@@ -221,15 +221,23 @@ export function useStudySession(deckId: string) {
   }, [session]);
 
   const progress = useMemo(() => {
-    if (stage === 'preview') {
+    if (stage === "preview") {
       return Math.min(1, (previewIndex + 1) / Math.max(1, targetCards.length));
-    } else if (stage === 'validation') {
+    } else if (stage === "validation") {
       return session ? Math.min(1, session.currentIndex / Math.max(1, questions.length)) : 0;
-    } else if (stage === 'repair') {
+    } else if (stage === "repair") {
       return Math.min(1, (repairIndex + 1) / Math.max(1, repairQuestions.length));
     }
     return 1;
-  }, [stage, previewIndex, targetCards.length, session, questions.length, repairIndex, repairQuestions.length]);
+  }, [
+    stage,
+    previewIndex,
+    targetCards.length,
+    session,
+    questions.length,
+    repairIndex,
+    repairQuestions.length,
+  ]);
 
   const currentPreviewCard = useMemo(() => {
     const currentPreviewCardId = targetCards[previewIndex]?.id;

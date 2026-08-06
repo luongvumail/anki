@@ -45,7 +45,8 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
       : 0;
 
   const mascotExpression = accuracy >= 80 ? "celebrate" : accuracy >= 50 ? "happy" : "thinking";
-  const mascotSpeech = accuracy >= 80 ? "Xuất sắc! 太棒了!" : accuracy >= 50 ? "Khá tốt! 加油!" : "Cần ôn thêm!";
+  const mascotSpeech =
+    accuracy >= 80 ? "Xuất sắc! 太棒了!" : accuracy >= 50 ? "Khá tốt! 加油!" : "Cần ôn thêm!";
   const doneTitle = accuracy >= 50 ? "HOÀN THÀNH BÀI HỌC!" : "CẦN ÔN TẬP THÊM!";
   const doneSub =
     accuracy >= 80
@@ -77,7 +78,9 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
           </DuolingoCard>
 
           <DuolingoCard style={styles.statBox}>
-            <Text style={[styles.statVal, { color: Colors.duolingo.blue }]}>{session.reviewedCount}</Text>
+            <Text style={[styles.statVal, { color: Colors.duolingo.blue }]}>
+              {session.reviewedCount}
+            </Text>
             <Text style={styles.statLabel}>TỪ ĐÃ ÔN</Text>
           </DuolingoCard>
 

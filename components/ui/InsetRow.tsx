@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { Colors, Typography, Spacing } from '../../constants/theme';
+import React from "react";
+import { View, Text, StyleSheet, ViewStyle, TextStyle } from "react-native";
+import { Colors, Typography, Spacing } from "../../constants/theme";
 
 interface InsetRowProps {
   label: string;
@@ -36,7 +36,7 @@ export function InsetRow({
             valueStyle,
           ]}
         >
-          {value ?? ''}
+          {value ?? ""}
         </Text>
       )}
     </View>
@@ -45,8 +45,8 @@ export function InsetRow({
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.cellHorizontal,
     paddingVertical: Spacing.cellVertical,
     minHeight: Spacing.cellMinHeight,

@@ -1,6 +1,6 @@
-import { CardEntity, ensureFSRSState } from '../../domain/card/cardEntity';
+import { CardEntity, ensureFSRSState } from "../../domain/card/cardEntity";
 
-export type QuestionType = 'meaning_choice' | 'pinyin_choice' | 'listening' | 'cloze';
+export type QuestionType = "meaning_choice" | "pinyin_choice" | "listening" | "cloze";
 
 export interface QuizQuestion {
   card: CardEntity;
@@ -13,22 +13,35 @@ export interface QuizQuestion {
   clozeTranslation?: string;
   options: string[]; // 4 choices
   correctAnswer: string;
-  weakTag?: 'pinyin' | 'character' | 'meaning';
+  weakTag?: "pinyin" | "character" | "meaning";
 }
 
-const FALLBACK_CHARACTERS = ['好', '你', '学', '中', '国', '人', '爱', '生', '水', '大', '小', '日'];
-const FALLBACK_PINYINS = ['hǎo', 'nǐ', 'xué', 'zhōng', 'guó', 'rén', 'ài', 'shēng', 'shuǐ', 'dà'];
+const FALLBACK_CHARACTERS = [
+  "好",
+  "你",
+  "学",
+  "中",
+  "国",
+  "人",
+  "爱",
+  "生",
+  "水",
+  "大",
+  "小",
+  "日",
+];
+const FALLBACK_PINYINS = ["hǎo", "nǐ", "xué", "zhōng", "guó", "rén", "ài", "shēng", "shuǐ", "dà"];
 const FALLBACK_TRANSLATIONS = [
-  'Xin chào',
-  'Tốt / Hảo',
-  'Học sinh',
-  'Cảm ơn',
-  'Nước uống',
-  'To lớn',
-  'Tạm biệt',
-  'Yêu thương',
-  'Bạn bè',
-  'Thức ăn',
+  "Xin chào",
+  "Tốt / Hảo",
+  "Học sinh",
+  "Cảm ơn",
+  "Nước uống",
+  "To lớn",
+  "Tạm biệt",
+  "Yêu thương",
+  "Bạn bè",
+  "Thức ăn",
 ];
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -44,31 +57,31 @@ function generateToneVariations(pinyin: string): string[] {
   if (!pinyin) return [];
 
   const toneMap: Record<string, string[]> = {
-    a: ['ā', 'á', 'ǎ', 'à'],
-    e: ['ē', 'é', 'ě', 'è'],
-    i: ['ī', 'í', 'ǐ', 'ì'],
-    o: ['ō', 'ó', 'ǒ', 'ò'],
-    u: ['ū', 'ú', 'ǔ', 'ù'],
-    ā: ['á', 'ǎ', 'à'],
-    á: ['ā', 'ǎ', 'à'],
-    ǎ: ['ā', 'á', 'à'],
-    à: ['ā', 'á', 'ǎ'],
-    ē: ['é', 'ě', 'è'],
-    é: ['ē', 'ě', 'è'],
-    ě: ['ē', 'é', 'è'],
-    è: ['ē', 'é', 'ě'],
-    ī: ['í', 'ǐ', 'ì'],
-    í: ['ī', 'ǐ', 'ì'],
-    ǐ: ['ī', 'í', 'ì'],
-    ì: ['ī', 'í', 'ǐ'],
-    ō: ['ó', 'ǒ', 'ò'],
-    ó: ['ō', 'ǒ', 'ò'],
-    ǒ: ['ō', 'ó', 'ò'],
-    ò: ['ō', 'ó', 'ǒ'],
-    ū: ['ú', 'ǔ', 'ù'],
-    ú: ['ū', 'ǔ', 'ù'],
-    ǔ: ['ū', 'ú', 'ù'],
-    ù: ['ū', 'ú', 'ǔ'],
+    a: ["ā", "á", "ǎ", "à"],
+    e: ["ē", "é", "ě", "è"],
+    i: ["ī", "í", "ǐ", "ì"],
+    o: ["ō", "ó", "ǒ", "ò"],
+    u: ["ū", "ú", "ǔ", "ù"],
+    ā: ["á", "ǎ", "à"],
+    á: ["ā", "ǎ", "à"],
+    ǎ: ["ā", "á", "à"],
+    à: ["ā", "á", "ǎ"],
+    ē: ["é", "ě", "è"],
+    é: ["ē", "ě", "è"],
+    ě: ["ē", "é", "è"],
+    è: ["ē", "é", "ě"],
+    ī: ["í", "ǐ", "ì"],
+    í: ["ī", "ǐ", "ì"],
+    ǐ: ["ī", "í", "ì"],
+    ì: ["ī", "í", "ǐ"],
+    ō: ["ó", "ǒ", "ò"],
+    ó: ["ō", "ǒ", "ò"],
+    ǒ: ["ō", "ó", "ò"],
+    ò: ["ō", "ó", "ǒ"],
+    ū: ["ú", "ǔ", "ù"],
+    ú: ["ū", "ǔ", "ù"],
+    ǔ: ["ū", "ú", "ù"],
+    ù: ["ū", "ú", "ǔ"],
   };
 
   const variations: string[] = [];
@@ -86,9 +99,9 @@ function generateToneVariations(pinyin: string): string[] {
 }
 
 function getCharacterDistractors(card: CardEntity, allCards: CardEntity[]): string[] {
-  const target = card.character || '';
+  const target = card.character || "";
   const uniquePool = Array.from(
-    new Set(allCards.map((c) => c.character).filter((ch) => ch && ch !== target))
+    new Set(allCards.map((c) => c.character).filter((ch) => ch && ch !== target)),
   );
 
   for (const fallback of FALLBACK_CHARACTERS) {
@@ -103,9 +116,9 @@ function getCharacterDistractors(card: CardEntity, allCards: CardEntity[]): stri
 }
 
 function getTranslationDistractors(card: CardEntity, allCards: CardEntity[]): string[] {
-  const target = card.translation || '';
+  const target = card.translation || "";
   const uniquePool = Array.from(
-    new Set(allCards.map((c) => c.translation).filter((tr) => tr && tr !== target))
+    new Set(allCards.map((c) => c.translation).filter((tr) => tr && tr !== target)),
   );
 
   for (const fallback of FALLBACK_TRANSLATIONS) {
@@ -120,7 +133,7 @@ function getTranslationDistractors(card: CardEntity, allCards: CardEntity[]): st
 }
 
 function getPinyinDistractors(card: CardEntity, allCards: CardEntity[]): string[] {
-  const target = card.pinyin || '';
+  const target = card.pinyin || "";
   const distractors: string[] = [];
 
   const toneVars = generateToneVariations(target);
@@ -136,8 +149,8 @@ function getPinyinDistractors(card: CardEntity, allCards: CardEntity[]): string[
       new Set(
         allCards
           .map((c) => c.pinyin)
-          .filter((py) => py && py !== target && !distractors.includes(py))
-      )
+          .filter((py) => py && py !== target && !distractors.includes(py)),
+      ),
     );
 
     for (const py of shuffleArray(otherPinyins)) {
@@ -160,26 +173,26 @@ function getPinyinDistractors(card: CardEntity, allCards: CardEntity[]): string[
 
 export function determineQuestionType(
   card: CardEntity,
-  weakTag?: 'pinyin' | 'character' | 'meaning'
+  weakTag?: "pinyin" | "character" | "meaning",
 ): QuestionType {
-  if (weakTag === 'pinyin') return 'pinyin_choice';
-  if (weakTag === 'meaning') return 'meaning_choice';
-  if (weakTag === 'character') return 'listening';
+  if (weakTag === "pinyin") return "pinyin_choice";
+  if (weakTag === "meaning") return "meaning_choice";
+  if (weakTag === "character") return "listening";
 
   const fsrsState = ensureFSRSState(card);
   const reps = fsrsState.reps;
   const hasExamples = card.examples && card.examples.length > 0 && card.examples[0].chinese;
 
   if (reps === 0) {
-    return 'meaning_choice';
+    return "meaning_choice";
   } else if (reps <= 2) {
-    return 'pinyin_choice';
+    return "pinyin_choice";
   } else if (reps <= 4) {
-    return 'listening';
+    return "listening";
   } else if (hasExamples) {
-    return 'cloze';
+    return "cloze";
   } else {
-    return 'meaning_choice';
+    return "meaning_choice";
   }
 }
 
@@ -187,18 +200,18 @@ export function generateQuizQuestion(
   card: CardEntity,
   allCards: CardEntity[],
   forcedType?: QuestionType,
-  weakTag?: 'pinyin' | 'character' | 'meaning'
+  weakTag?: "pinyin" | "character" | "meaning",
 ): QuizQuestion {
   const type = forcedType || determineQuestionType(card, weakTag);
 
-  if (type === 'meaning_choice') {
+  if (type === "meaning_choice") {
     const distractors = getTranslationDistractors(card, allCards);
     const options = shuffleArray(Array.from(new Set([card.translation, ...distractors])));
 
     return {
       card,
-      type: 'meaning_choice',
-      prompt: 'Chọn nghĩa Tiếng Việt của từ Hán tự này:',
+      type: "meaning_choice",
+      prompt: "Chọn nghĩa Tiếng Việt của từ Hán tự này:",
       targetText: card.character,
       subText: card.pinyin || undefined,
       options,
@@ -206,10 +219,10 @@ export function generateQuizQuestion(
     };
   }
 
-  if (type === 'cloze' && card.examples && card.examples.length > 0) {
+  if (type === "cloze" && card.examples && card.examples.length > 0) {
     const ex = card.examples[0];
     if (ex.chinese) {
-      let targetToReplace = '';
+      let targetToReplace = "";
       if (ex.chinese.includes(card.character)) {
         targetToReplace = card.character;
       } else {
@@ -222,14 +235,14 @@ export function generateQuizQuestion(
       }
 
       if (targetToReplace) {
-        const blankedChinese = ex.chinese.replaceAll(targetToReplace, ' [ _____ ] ');
+        const blankedChinese = ex.chinese.replaceAll(targetToReplace, " [ _____ ] ");
         const distractors = getCharacterDistractors(card, allCards);
         const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
 
         return {
           card,
-          type: 'cloze',
-          prompt: 'Điền từ thích hợp vào ô trống trong câu:',
+          type: "cloze",
+          prompt: "Điền từ thích hợp vào ô trống trong câu:",
           clozeSentence: blankedChinese,
           clozeTranslation: ex.vietnamese,
           options,
@@ -239,14 +252,14 @@ export function generateQuizQuestion(
     }
   }
 
-  if (type === 'listening') {
+  if (type === "listening") {
     const distractors = getCharacterDistractors(card, allCards);
     const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
 
     return {
       card,
-      type: 'listening',
-      prompt: 'Nghe phát âm và chọn Chữ Hán đúng:',
+      type: "listening",
+      prompt: "Nghe phát âm và chọn Chữ Hán đúng:",
       audioText: card.character,
       subText: card.translation || undefined,
       options,
@@ -260,8 +273,8 @@ export function generateQuizQuestion(
 
   return {
     card,
-    type: 'pinyin_choice',
-    prompt: 'Chọn Phiên âm Pinyin & Thanh điệu đúng:',
+    type: "pinyin_choice",
+    prompt: "Chọn Phiên âm Pinyin & Thanh điệu đúng:",
     targetText: card.character,
     subText: card.translation,
     options,

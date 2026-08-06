@@ -1,12 +1,12 @@
-import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View, Image, Animated } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../src/infrastructure/firebase/firebaseApp';
-import { useAppStore } from '../src/ui/store/useAppStore';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import { Colors } from '../constants/theme';
+import { useEffect, useState, useRef } from "react";
+import { StyleSheet, View, Image, Animated } from "react-native";
+import { Stack, router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../src/infrastructure/firebase/firebaseApp";
+import { useAppStore } from "../src/ui/store/useAppStore";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { Colors } from "../constants/theme";
 
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
@@ -39,7 +39,8 @@ export default function RootLayout() {
     // 2. Listen to authentication state changes
     const unsub = onAuthStateChanged(auth, async (user) => {
       const isLoggingIn = prevUserIdRef.current === null && user !== null;
-      const isLoggingOut = prevUserIdRef.current !== null && prevUserIdRef.current !== undefined && user === null;
+      const isLoggingOut =
+        prevUserIdRef.current !== null && prevUserIdRef.current !== undefined && user === null;
 
       prevUserIdRef.current = user ? user.uid : null;
 
@@ -59,9 +60,9 @@ export default function RootLayout() {
         } catch (e) {
           console.warn("[RootLayout] Initial data fetch failed:", e);
         }
-        router.replace('/(tabs)');
+        router.replace("/(tabs)");
       } else {
-        router.replace('/auth');
+        router.replace("/auth");
       }
 
       if (isLoggingOut) {
@@ -99,7 +100,7 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <StatusBar style="light" />
-      
+
       <View style={styles.container}>
         <Stack
           screenOptions={{
@@ -112,7 +113,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="study/[deckId]"
             options={{
-              presentation: 'fullScreenModal',
+              presentation: "fullScreenModal",
               contentStyle: { backgroundColor: Colors.bg.primary },
             }}
           />
@@ -121,7 +122,10 @@ export default function RootLayout() {
         </Stack>
 
         {showSplash && (
-          <Animated.View style={[styles.splashOverlay, { opacity: splashOpacity }]} pointerEvents="none">
+          <Animated.View
+            style={[styles.splashOverlay, { opacity: splashOpacity }]}
+            pointerEvents="none"
+          >
             <Animated.View
               style={[
                 styles.logoContainer,
@@ -134,7 +138,7 @@ export default function RootLayout() {
               <View style={styles.glowRing}>
                 <View style={styles.appIconBox}>
                   <Image
-                    source={require('../assets/adaptive-icon.png')}
+                    source={require("../assets/adaptive-icon.png")}
                     style={styles.appIconImage}
                     resizeMode="cover"
                   />
@@ -154,29 +158,29 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.primary,
   },
   splashOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     backgroundColor: Colors.bg.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 9999,
   },
   logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   glowRing: {
     width: 106,
     height: 106,
     borderRadius: 28,
     backgroundColor: Colors.accent.indigoDim,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
-    borderColor: 'rgba(94, 106, 210, 0.25)',
+    borderColor: "rgba(94, 106, 210, 0.25)",
     // Soft shadow for native platforms supporting it
     shadowColor: Colors.accent.indigo,
     shadowOpacity: 0.35,
@@ -187,7 +191,7 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 22,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   appIconImage: {
     width: 86,

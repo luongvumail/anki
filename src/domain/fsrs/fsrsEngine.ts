@@ -1,4 +1,4 @@
-import { DEFAULT_FSRS_PARAMETERS } from './fsrsConstants';
+import { DEFAULT_FSRS_PARAMETERS } from "./fsrsConstants";
 import {
   FSRSCardState,
   FSRSItemScheduling,
@@ -7,7 +7,7 @@ import {
   Rating,
   ReviewLog,
   State,
-} from './fsrsTypes';
+} from "./fsrsTypes";
 
 /**
  * FSRS v5 Math & Scheduling Engine
@@ -83,12 +83,7 @@ export class FSRSEngine {
   /**
    * Updates stability after successful recall (Rating >= Good/Hard).
    */
-  private nextRecallStability(
-    d: number,
-    s: number,
-    r: number,
-    rating: Rating
-  ): number {
+  private nextRecallStability(d: number, s: number, r: number, rating: Rating): number {
     const w = this.params.w;
     const hardPenalty = rating === Rating.Hard ? w[11] : 1.0;
     const easyBonus = rating === Rating.Easy ? w[12] : 1.0;
@@ -109,10 +104,7 @@ export class FSRSEngine {
   private nextForgetStability(d: number, s: number, r: number): number {
     const w = this.params.w;
     const forgetStab =
-      w[13] *
-      Math.pow(d, -w[14]) *
-      (Math.pow(s + 1, w[15]) - 1) *
-      Math.exp(w[16] * (1 - r));
+      w[13] * Math.pow(d, -w[14]) * (Math.pow(s + 1, w[15]) - 1) * Math.exp(w[16] * (1 - r));
     return Math.max(0.1, forgetStab);
   }
 
@@ -141,7 +133,7 @@ export class FSRSEngine {
   public scheduleCard(
     card: FSRSCardState,
     rating: Rating,
-    now: Date = new Date()
+    now: Date = new Date(),
   ): FSRSItemScheduling {
     const isNew = card.state === State.New || card.last_review === null;
     const lastReviewDate = card.last_review ? new Date(card.last_review) : now;
@@ -168,20 +160,16 @@ export class FSRSEngine {
         nextState = State.Relearning;
         lapses += 1;
       } else {
-        nextStability = this.nextRecallStability(
-          card.difficulty,
-          card.stability,
-          currentR,
-          rating
-        );
+        nextStability = this.nextRecallStability(card.difficulty, card.stability, currentR, rating);
         nextState = State.Review;
       }
     }
 
-    const scheduledDays =
-      rating === Rating.Again ? 0 : this.calculateNextInterval(nextStability);
+    const scheduledDays = rating === Rating.Again ? 0 : this.calculateNextInterval(nextStability);
 
-    const dueTime = new Date(now.getTime() + (scheduledDays === 0 ? 10 * 60 * 1000 : scheduledDays * 24 * 3600 * 1000));
+    const dueTime = new Date(
+      now.getTime() + (scheduledDays === 0 ? 10 * 60 * 1000 : scheduledDays * 24 * 3600 * 1000),
+    );
 
     const nextCard: FSRSCardState = {
       stability: Number(nextStability.toFixed(4)),

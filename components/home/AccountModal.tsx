@@ -99,12 +99,7 @@ export function AccountModal({
     >
       <View style={styles.modalContainer}>
         {/* Header Bar */}
-        <View
-          style={[
-            styles.modalHeader,
-            { paddingTop: Math.max(insets.top + 8, 16) },
-          ]}
-        >
+        <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top + 8, 16) }]}>
           <TouchableOpacity
             style={styles.doneBtn}
             onPress={onClose}

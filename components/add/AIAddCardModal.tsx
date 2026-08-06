@@ -18,8 +18,6 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { GeminiService, CardData } from "../../src/infrastructure/ai/geminiService";
-
-const geminiService = new GeminiService();
 import { useAppStore } from "../../src/ui/store/useAppStore";
 import { getFirestoreErrorMessage, getGeminiErrorMessage } from "../../src/ui/utils/errorHandler";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
@@ -28,6 +26,8 @@ import { DeckPicker } from "./DeckPicker";
 import { CardPreview } from "./CardPreview";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { DuolingoButton } from "../ui/DuolingoButton";
+
+const geminiService = new GeminiService();
 
 const MAX_WORDS = 10;
 
@@ -315,7 +315,11 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
       <View style={styles.container}>
         {/* Header Modal */}
         <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 16) }]}>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={onClose}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>NẠP TỪ VỰNG BẰNG AI</Text>
@@ -393,7 +397,11 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
               )}
 
               <DuolingoButton
-                title={analyzingBatch ? "ĐANG PHÂN TÍCH AI..." : `TẠO THẺ AI (${parsedCount}/${MAX_WORDS})`}
+                title={
+                  analyzingBatch
+                    ? "ĐANG PHÂN TÍCH AI..."
+                    : `TẠO THẺ AI (${parsedCount}/${MAX_WORDS})`
+                }
                 variant="primary"
                 size="lg"
                 disabled={analyzingBatch || parsedCount === 0}

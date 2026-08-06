@@ -55,11 +55,7 @@ export function AudioButton({
       activeOpacity={0.75}
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
     >
-      <Ionicons
-        name={isPlaying ? "volume-high" : "volume-medium"}
-        size={iconSize}
-        color={color}
-      />
+      <Ionicons name={isPlaying ? "volume-high" : "volume-medium"} size={iconSize} color={color} />
     </TouchableOpacity>
   );
 }

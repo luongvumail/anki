@@ -45,7 +45,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <Text style={styles.title}>ỨNG DỤNG GẶP SỰ CỐ TẠM THỜI</Text>
           <Text style={styles.message}>
-            {this.state.error?.message || "Đã xảy ra lỗi ngoài dự kiến. Bạn hãy thử tải lại trang nhé!"}
+            {this.state.error?.message ||
+              "Đã xảy ra lỗi ngoài dự kiến. Bạn hãy thử tải lại trang nhé!"}
           </Text>
 
           <DuolingoButton

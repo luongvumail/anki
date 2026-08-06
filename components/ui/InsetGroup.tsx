@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Radii } from '../../constants/theme';
+import React from "react";
+import { View, StyleSheet, ViewStyle } from "react-native";
+import { Colors, Radii } from "../../constants/theme";
 
 interface InsetGroupProps {
   children: React.ReactNode;
@@ -15,6 +15,6 @@ const styles = StyleSheet.create({
   insetGroup: {
     backgroundColor: Colors.bg.secondary,
     borderRadius: Radii.card,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 });

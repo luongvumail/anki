@@ -1,9 +1,11 @@
 # Kế hoạch Tái cấu trúc Anki App: Thuật toán FSRS & Clean Architecture (Phương án B)
 
 ## 📌 Overview & Goals
+
 Tái cấu trúc toàn bộ ứng dụng Anki (React Native / Expo SDK 57) từ thuật toán SM-2 cũ lên **FSRS v5 (Free Spaced Repetition Scheduler)**, đồng thời tái thiết kế kiến trúc từ dạng Slice monolithic sang **Clean Layered Architecture** để nâng cao chất lượng code, khả năng bảo mật, hỗ trợ Offline-first và hoàn thiện trải nghiệm người dùng Duolingo 3D Tactile.
 
 ## 🎯 Project Type & Agent Routing
+
 - **Project Type:** MOBILE (Expo SDK 57 / React Native 0.86)
 - **Primary Agent:** `@mobile-developer` / `@project-planner`
 - **Supporting Skills:** `clean-code`, `architecture`, `mobile-design`, `database-design`, `lint-and-validate`
@@ -11,6 +13,7 @@ Tái cấu trúc toàn bộ ứng dụng Anki (React Native / Expo SDK 57) từ 
 ---
 
 ## 🏆 Success Criteria
+
 1. **FSRS v5 Engine Core:** 100% thẻ mới & thẻ cũ hoạt động chính xác theo thuật toán FSRS v5 với 4 giá trị biến số ($S$, $D$, $R$, $State$).
 2. **Clean Layered Architecture:** Phân tách rõ ràng 4 tầng: `domain/` (pure TS math), `application/` (use-cases), `infrastructure/` (Firestore & local storage), `ui/` (Expo screens & Duolingo 3D components).
 3. **Data Security & Validation:** 100% dữ liệu từ Gemini AI, Firestore, và Local Storage được kiểm soát bằng `Zod` schemas. Bảo vệ API Key.
@@ -20,6 +23,7 @@ Tái cấu trúc toàn bộ ứng dụng Anki (React Native / Expo SDK 57) từ 
 ---
 
 ## 🛠️ Tech Stack & Architecture Decisions
+
 - **FSRS Core:** Custom / `ts-fsrs` Lightweight Engine (Zero runtime dependencies in domain layer)
 - **State & Local Storage:** Zustand v5 + `@react-native-async-storage/async-storage` (Offline Sync Queue)
 - **Validation:** `zod` schema library
@@ -77,6 +81,7 @@ src/
 ## 📋 Task Breakdown
 
 ### Phase 1: Core Domain & FSRS Engine Implementation
+
 - [x] **Task 1.1: Build FSRS Engine Core Math Module**
   - **Agent:** `@mobile-developer`
   - **Skills:** `clean-code`, `architecture`
@@ -92,6 +97,7 @@ src/
   - **VERIFY:** Run `npx tsc --noEmit` clean validation.
 
 ### Phase 2: Application Use-Cases & Repository Layer
+
 - [x] **Task 2.1: Implement FSRS Review Process Use-Case**
   - **Agent:** `@mobile-developer`
   - **Skills:** `clean-code`, `database-design`
@@ -114,6 +120,7 @@ src/
   - **VERIFY:** Test AI prompt parsing against strict JSON schema.
 
 ### Phase 3: Zustand Store & Firebase Infrastructure Adaptation
+
 - [x] **Task 3.1: Refactor Firestore Repository & Migration Helper**
   - **Agent:** `@mobile-developer`
   - **Skills:** `database-design`
@@ -129,6 +136,7 @@ src/
   - **VERIFY:** Integrated state updates trigger zero re-render waterfalls.
 
 ### Phase 4: UI/UX & Duolingo 3D Component Refinement
+
 - [x] **Task 4.1: Build FSRSRatingButtons Component with Dynamic Intervals**
   - **Agent:** `@mobile-developer`
   - **Skills:** `mobile-design`, `frontend-design`
@@ -153,6 +161,7 @@ src/
 ---
 
 ## 🔍 Phase X: Final Verification Plan
+
 - [x] **Step 1: Typecheck & Linting:** Run `npm run typecheck` & `npm run lint`
 - [x] **Step 2: Security Audit:** Verify no API keys exposed in repository, security rules scoped by `userId`.
 - [x] **Step 3: FSRS Mathematical Accuracy Check:** Verify $S$ increases on Good/Easy and drops on Again according to FSRS v5 formula.

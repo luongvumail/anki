@@ -14,7 +14,10 @@ interface BadgesGalleryProps {
   learnedCards?: number;
 }
 
-export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearned }: BadgesGalleryProps) {
+export function BadgesGallery({
+  streakCount: propStreak,
+  learnedCards: propLearned,
+}: BadgesGalleryProps) {
   const unlockedBadgeIds = useAppStore((s) => s.unlockedBadgeIds || []);
   const checkAndUnlockBadges = useAppStore((s) => s.checkAndUnlockBadges);
 
@@ -57,10 +60,12 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
           return (
             <DuolingoCard
               key={badge.id}
-              style={[
-                styles.badgeCard,
-                isUnlocked ? styles.badgeUnlockedCard : styles.badgeLockedCard,
-              ] as any}
+              style={
+                [
+                  styles.badgeCard,
+                  isUnlocked ? styles.badgeUnlockedCard : styles.badgeLockedCard,
+                ] as any
+              }
             >
               <View style={[styles.iconBox, isUnlocked ? styles.iconUnlocked : styles.iconLocked]}>
                 <Ionicons
@@ -70,7 +75,10 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
                 />
               </View>
 
-              <Text style={[styles.badgeTitle, isUnlocked && styles.badgeTitleUnlocked]} numberOfLines={1}>
+              <Text
+                style={[styles.badgeTitle, isUnlocked && styles.badgeTitleUnlocked]}
+                numberOfLines={1}
+              >
                 {badge.title}
               </Text>
 

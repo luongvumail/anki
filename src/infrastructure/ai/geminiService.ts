@@ -247,7 +247,7 @@ Trả về JSON array (CHỈ JSON array, không markdown), với mỗi phần t�
         throw new Error(`Expected ${inputs.length} results, got ${results.length}`);
       }
       return results;
-    } catch (err) {
+    } catch {
       return Promise.all(inputs.map((input) => this.generateCardData(input)));
     }
   }

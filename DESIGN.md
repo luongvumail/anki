@@ -41,10 +41,12 @@ components:
 # Duolingo 3D Tactile Anki
 
 ## Overview
+
 A playful, tactile 3D interface inspired by Duolingo for spaced repetition Chinese learning.
 Features 3D pressable buttons with bottom shadow depths, clear color-coded FSRS action feedback, high contrast typography on sleek dark background (`#131F24`), and responsive haptic micro-animations.
 
 ## Colors
+
 - **Primary Green (#58CC02 / #58A700):** Used for Good rating button, XP gains, mastery indicators, and completion triggers.
 - **Secondary Blue (#1CB0F6 / #1899D6):** Used for Easy rating button, navigation pills, primary actions, and active deck status.
 - **Warning Yellow (#FFC800 / #E6B400):** Used for Hard rating button, streak counters, and repair stage badges.
@@ -53,9 +55,11 @@ Features 3D pressable buttons with bottom shadow depths, clear color-coded FSRS 
 - **Dark Canvas (#131F24 & #1F2C34):** Soft dark mode background and tactile cards (`#2B3D4F` border) preventing eye strain.
 
 ## Elevation & Depth
+
 - **3D Pressable Effect:** Buttons feature a 3-4px bottom border in a darker tint of the face color. On press, the button translates down 3px with zero elevation jump.
 
 ## Do's and Don'ts
+
 - **Do** show human-readable FSRS time intervals (`Again 10m`, `Hard 1.2d`, `Good 3.5d`, `Easy 8d`) on the 3D buttons.
 - **Do** trigger light haptic feedback on button press using `expo-haptics`.
 - **Don't** use light background colors for main screens.

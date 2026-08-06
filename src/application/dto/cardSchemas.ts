@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { Rating, State } from '../../domain/fsrs/fsrsTypes';
+import { z } from "zod";
+import { Rating, State } from "../../domain/fsrs/fsrsTypes";
 
 export const RatingSchema = z.nativeEnum(Rating);
 export const StateSchema = z.nativeEnum(State);

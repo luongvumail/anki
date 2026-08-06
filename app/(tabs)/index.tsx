@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,12 +6,9 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { auth } from "../../src/infrastructure/firebase/firebaseApp";
 import { useAppStore } from "../../src/ui/store/useAppStore";
 import { Colors, Spacing } from "../../constants/theme";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
@@ -21,6 +18,7 @@ import { ZigZagSkillPath } from "../../components/home/ZigZagSkillPath";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
 import { computeDueCount } from "../../src/domain/card/cardUtils";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
@@ -47,7 +45,7 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       loadReviewHistory();
-    }, [loadReviewHistory])
+    }, [loadReviewHistory]),
   );
 
   const onRefresh = async () => {
@@ -115,12 +113,8 @@ export default function DashboardScreen() {
 
       {/* AI Add Card Full Overlay Modal */}
       {showAIAddModal && (
-        <AIAddCardModal
-          visible={showAIAddModal}
-          onClose={() => setShowAIAddModal(false)}
-        />
+        <AIAddCardModal visible={showAIAddModal} onClose={() => setShowAIAddModal(false)} />
       )}
-
     </View>
   );
 }

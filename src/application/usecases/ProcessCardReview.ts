@@ -1,7 +1,7 @@
-import { CardEntity, ensureFSRSState } from '../../domain/card/cardEntity';
-import { FSRSEngine } from '../../domain/fsrs/fsrsEngine';
-import { Rating, ReviewLog } from '../../domain/fsrs/fsrsTypes';
-import { StreakCalculator, StreakState } from '../../domain/streak/streakCalculator';
+import { CardEntity, ensureFSRSState } from "../../domain/card/cardEntity";
+import { FSRSEngine } from "../../domain/fsrs/fsrsEngine";
+import { Rating, ReviewLog } from "../../domain/fsrs/fsrsTypes";
+import { StreakCalculator, StreakState } from "../../domain/streak/streakCalculator";
 
 export interface ProcessCardReviewInput {
   card: CardEntity;
@@ -23,7 +23,7 @@ export class ProcessCardReviewUseCase {
 
   constructor(
     engine: FSRSEngine = new FSRSEngine(),
-    streakCalculator: StreakCalculator = new StreakCalculator()
+    streakCalculator: StreakCalculator = new StreakCalculator(),
   ) {
     this.engine = engine;
     this.streakCalculator = streakCalculator;
@@ -36,11 +36,7 @@ export class ProcessCardReviewUseCase {
     const currentFSRS = ensureFSRSState(card, now);
 
     // Schedule using FSRS Engine
-    const { card: nextFSRSState, log } = this.engine.scheduleCard(
-      currentFSRS,
-      rating,
-      now
-    );
+    const { card: nextFSRSState, log } = this.engine.scheduleCard(currentFSRS, rating, now);
 
     const updatedCard: CardEntity = {
       ...card,

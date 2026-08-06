@@ -1,11 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const REVIEW_HISTORY_KEY = '@anki_review_history';
+const REVIEW_HISTORY_KEY = "@anki_review_history";
 
 export function getLocalDateString(d: Date = new Date()): string {
   const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -20,7 +20,7 @@ export class ReviewTrackerRepository {
       this.cache = json ? JSON.parse(json) : {};
       return this.cache!;
     } catch (e) {
-      console.warn('[ReviewTrackerRepo] Error reading review history:', e);
+      console.warn("[ReviewTrackerRepo] Error reading review history:", e);
       return {};
     }
   }
@@ -37,11 +37,11 @@ export class ReviewTrackerRepository {
         try {
           await AsyncStorage.setItem(REVIEW_HISTORY_KEY, JSON.stringify(this.cache));
         } catch (e) {
-          console.warn('[ReviewTrackerRepo] Error saving review history:', e);
+          console.warn("[ReviewTrackerRepo] Error saving review history:", e);
         }
       }, 2000);
     } catch (e) {
-      console.warn('[ReviewTrackerRepo] Error recording review:', e);
+      console.warn("[ReviewTrackerRepo] Error recording review:", e);
     }
   }
 

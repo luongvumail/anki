@@ -1,8 +1,8 @@
-import { CardEntity } from '../../domain/card/cardEntity';
-import { ICardRepository } from '../../domain/card/cardRepository.i';
-import { FSRSEngine } from '../../domain/fsrs/fsrsEngine';
-import { GeminiService } from '../../infrastructure/ai/geminiService';
-import { GenerateAICardsPayloadSchema } from '../dto/cardSchemas';
+import { CardEntity } from "../../domain/card/cardEntity";
+import { ICardRepository } from "../../domain/card/cardRepository.i";
+import { FSRSEngine } from "../../domain/fsrs/fsrsEngine";
+import { GeminiService } from "../../infrastructure/ai/geminiService";
+import { GenerateAICardsPayloadSchema } from "../dto/cardSchemas";
 
 export interface GenerateAICardsInput {
   topic: string;
@@ -19,7 +19,7 @@ export class GenerateAICardsUseCase {
   constructor(
     geminiService: GeminiService,
     cardRepository: ICardRepository,
-    fsrsEngine: FSRSEngine = new FSRSEngine()
+    fsrsEngine: FSRSEngine = new FSRSEngine(),
   ) {
     this.geminiService = geminiService;
     this.cardRepository = cardRepository;
@@ -37,7 +37,7 @@ export class GenerateAICardsUseCase {
     const result = await this.geminiService.generateCards(
       validated.topic,
       validated.count,
-      validated.hskLevel
+      validated.hskLevel,
     );
 
     const now = new Date();
