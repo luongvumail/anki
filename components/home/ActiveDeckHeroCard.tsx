@@ -2,12 +2,12 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Radii, Spacing } from "../../constants/theme";
-import { Deck } from "../../store/slices/types";
+import { DeckEntity } from "../../src/domain/deck/deckEntity";
 import { DeckIcon } from "../ui/DeckIcon";
 import { DuolingoButton } from "../ui/DuolingoButton";
 
 interface ActiveDeckHeroCardProps {
-  deck: Deck;
+  deck: DeckEntity;
   dueCount: number;
   learnedCount: number;
   newCount: number;

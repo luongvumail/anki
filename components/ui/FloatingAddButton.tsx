@@ -1,16 +1,15 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
   Animated,
   PanResponder,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Radii } from "../../constants/theme";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const FAB_SIZE = 54;
 
 interface FloatingAddButtonProps {
@@ -20,11 +19,18 @@ interface FloatingAddButtonProps {
 
 export function FloatingAddButton({ onPress, bottomOffset }: FloatingAddButtonProps) {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [pressed, setPressed] = useState(false);
 
   const defaultBottom = bottomOffset !== undefined ? bottomOffset : Math.max(insets.bottom + 65, 80);
-  const defaultY = SCREEN_HEIGHT - defaultBottom - FAB_SIZE;
-  const defaultX = SCREEN_WIDTH - 18 - FAB_SIZE;
+  const defaultY = screenHeight - defaultBottom - FAB_SIZE;
+  const defaultX = screenWidth - 18 - FAB_SIZE;
+
+  // Track latest screen dimensions and insets in ref for PanResponder closures
+  const dimRef = useRef({ width: screenWidth, height: screenHeight, insets });
+  useEffect(() => {
+    dimRef.current = { width: screenWidth, height: screenHeight, insets };
+  }, [screenWidth, screenHeight, insets]);
 
   // Single Animated.ValueXY initialized at default position
   const pan = useRef(new Animated.ValueXY({ x: defaultX, y: defaultY })).current;
@@ -58,9 +64,11 @@ export function FloatingAddButton({ onPress, bottomOffset }: FloatingAddButtonPr
           const rawX = lastPos.current.x + gestureState.dx;
           const rawY = lastPos.current.y + gestureState.dy;
 
+          const { width: currentW, height: currentH, insets: currentInsets } = dimRef.current;
+
           // Clamp bounds within visible screen
-          const clampedX = Math.max(12, Math.min(SCREEN_WIDTH - FAB_SIZE - 12, rawX));
-          const clampedY = Math.max(insets.top + 10, Math.min(SCREEN_HEIGHT - insets.bottom - FAB_SIZE - 20, rawY));
+          const clampedX = Math.max(12, Math.min(currentW - FAB_SIZE - 12, rawX));
+          const clampedY = Math.max(currentInsets.top + 10, Math.min(currentH - currentInsets.bottom - FAB_SIZE - 20, rawY));
 
           lastPos.current = { x: clampedX, y: clampedY };
 

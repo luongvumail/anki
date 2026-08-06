@@ -11,16 +11,15 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../../store/slices/types";
-import { useStore } from "../../store/useStore";
-import { recordReviewToday } from "../../lib/reviewTracker";
+import { CardEntity } from "../../src/domain/card/cardEntity";
+import { useAppStore } from "../../src/ui/store/useAppStore";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { ProgressBar } from "../ui/ProgressBar";
 
 interface SentenceExercise {
-  card: Card;
+  card: CardEntity;
   fullChinese: string;
   pinyin: string;
   vietnamese: string;
@@ -30,7 +29,7 @@ interface SentenceExercise {
 export interface SentenceBuilderModalProps {
   visible: boolean;
   onClose: () => void;
-  cards: Card[];
+  cards: CardEntity[];
 }
 
 function splitChineseSentence(sentence: string): string[] {
@@ -53,7 +52,6 @@ function getDistractorTokens(sentenceTokens: string[], count = 2): string[] {
 
 export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilderModalProps) {
   const insets = useSafeAreaInsets();
-  const addXP = useStore((s) => s.addXP);
 
   const [exercises, setExercises] = useState<SentenceExercise[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -139,12 +137,10 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
     const correct = userBuilt === targetClean;
     setIsCorrect(correct);
     setIsChecked(true);
-    recordReviewToday().catch(() => {});
 
     if (correct) {
       triggerHaptic("success");
       setCorrectCount((prev) => prev + 1);
-      addXP(15);
     } else {
       triggerHaptic("error");
     }

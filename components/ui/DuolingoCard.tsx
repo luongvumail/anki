@@ -28,7 +28,7 @@ export function DuolingoCard({
     switch (variant) {
       case "active":
         return {
-          bg: "#1D3545",
+          bg: Colors.duolingo.cardBgActive,
           borderBottom: Colors.duolingo.blue,
         };
       case "success":
@@ -44,8 +44,8 @@ export function DuolingoCard({
       case "default":
       default:
         return {
-          bg: Colors.duolingo.bgSoftDark,
-          borderBottom: "#18242B",
+          bg: Colors.duolingo.bgSoft,
+          borderBottom: Colors.duolingo.cardBottom,
         };
     }
   };

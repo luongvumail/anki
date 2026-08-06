@@ -3,15 +3,14 @@ import { StyleSheet, View, Image, Animated } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { useStore } from '../store/useStore';
+import { auth } from '../src/infrastructure/firebase/firebaseApp';
+import { useAppStore } from '../src/ui/store/useAppStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Colors } from '../constants/theme';
 
 export default function RootLayout() {
-  const setUserId = useStore(s => s.setUserId);
   const [showSplash, setShowSplash] = useState(true);
-  
+
   // Animation refs
   const splashOpacity = useRef(new Animated.Value(1)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -45,7 +44,6 @@ export default function RootLayout() {
       prevUserIdRef.current = user ? user.uid : null;
 
       if (isLoggingIn || isLoggingOut) {
-        // Ensure splash is visible and reset animation values during auth transitions
         setShowSplash(true);
         splashOpacity.setValue(1);
         logoOpacity.setValue(1);
@@ -53,19 +51,16 @@ export default function RootLayout() {
       }
 
       if (user) {
-        setUserId(user.uid);
         try {
-          // Pre-fetch decks and user progress (XP, badges) inside RootLayout
           await Promise.all([
-            useStore.getState().fetchDecks(),
-            useStore.getState().fetchUserProgress(),
+            useAppStore.getState().fetchDecks(),
+            useAppStore.getState().loadReviewHistory(),
           ]);
         } catch (e) {
           console.warn("[RootLayout] Initial data fetch failed:", e);
         }
         router.replace('/(tabs)');
       } else {
-        setUserId(null);
         router.replace('/auth');
       }
 

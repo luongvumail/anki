@@ -11,9 +11,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { auth } from "../../lib/firebase";
-import { getStreakCount } from "../../lib/reviewTracker";
-import { useStore } from "../../store/useStore";
+import { auth } from "../../src/infrastructure/firebase/firebaseApp";
+import { useAppStore } from "../../src/ui/store/useAppStore";
 import { Colors, Spacing } from "../../constants/theme";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
@@ -21,17 +20,17 @@ import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
 import { ZigZagSkillPath } from "../../components/home/ZigZagSkillPath";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
-import { Deck } from "../../store/slices/types";
-import { computeDueCount } from "../../lib/deckUtils";
+import { computeDueCount } from "../../src/domain/card/cardUtils";
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const decks = useStore((s) => s.decks);
-  const fetchDecks = useStore((s) => s.fetchDecks);
-  const isLoading = useStore((s) => s.isLoading);
-  const cardsState = useStore((s) => s.cards);
+  const decks = useAppStore((s) => s.decks);
+  const fetchDecks = useAppStore((s) => s.fetchDecks);
+  const loadReviewHistory = useAppStore((s) => s.loadReviewHistory);
+  const streakCount = useAppStore((s) => s.streakCount);
+  const isDeckLoading = useAppStore((s) => s.isDeckLoading);
+  const cardsState = useAppStore((s) => s.cards);
   const [refreshing, setRefreshing] = useState(false);
-  const [streakCount, setStreakCount] = useState(0);
 
   const [showAIAddModal, setShowAIAddModal] = useState(false);
 
@@ -47,8 +46,8 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      getStreakCount().then(setStreakCount);
-    }, [])
+      loadReviewHistory();
+    }, [loadReviewHistory])
   );
 
   const onRefresh = async () => {
@@ -76,7 +75,7 @@ export default function DashboardScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {isLoading && decks.length === 0 ? (
+        {isDeckLoading && decks.length === 0 ? (
           <ActivityIndicator
             size="small"
             color={Colors.duolingo.green}
@@ -99,7 +98,7 @@ export default function DashboardScreen() {
           <ZigZagSkillPath
             decks={decks}
             dueCardsMap={dueCardsMap}
-            onSelectDeck={(deck: Deck) => {
+            onSelectDeck={(deck) => {
               const due = dueCardsMap[deck.id] || 0;
               if (due > 0) {
                 router.push(`/study/${deck.id}`);

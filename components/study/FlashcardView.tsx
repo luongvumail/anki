@@ -12,18 +12,17 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Speech from "expo-speech";
-import { Card } from "../../store/slices/types";
 import { Colors, Radii, Spacing, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";
 
-import { RetrievabilityBadge } from "@/src/ui/components/fsrs/RetrievabilityBadge";
-import { FSRSRatingButtons } from "@/src/ui/components/fsrs/FSRSRatingButtons";
+import { RetrievabilityBadge } from "./fsrs/RetrievabilityBadge";
+import { FSRSRatingButtons } from "./fsrs/FSRSRatingButtons";
 import { Rating, State } from "@/src/domain/fsrs/fsrsTypes";
 import { ensureFSRSState, CardEntity } from "@/src/domain/card/cardEntity";
 
 interface FlashcardViewProps {
-  card: Card;
+  card: CardEntity;
   currentIndex: number;
   totalCards: number;
   onNext: () => void;

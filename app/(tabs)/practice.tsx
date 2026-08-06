@@ -10,9 +10,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useStore, Card } from "../../store/useStore";
-import { getLevelInfo } from "../../store/slices/userProgressSlice";
-import { getStreakCount } from "../../lib/reviewTracker";
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { CardEntity } from "../../src/domain/card/cardEntity";
+import { getLevelInfo } from "../../src/domain/user/userProgress";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
@@ -25,23 +25,21 @@ import { PronunciationTrainerModal } from "../../components/practice/Pronunciati
 
 export default function PracticeScreen() {
   const insets = useSafeAreaInsets();
-  const xp = useStore((s) => s.xp);
-  const fetchUserProgress = useStore((s) => s.fetchUserProgress);
-  const cards = useStore((s) => s.cards);
-  const decks = useStore((s) => s.decks);
-  const fetchDecks = useStore((s) => s.fetchDecks);
-  const fetchCards = useStore((s) => s.fetchCards);
-
-  const [streakCount, setStreakCount] = useState(0);
+  const xp = useAppStore((s) => s.xp);
+  const cards = useAppStore((s) => s.cards);
+  const decks = useAppStore((s) => s.decks);
+  const fetchDecks = useAppStore((s) => s.fetchDecks);
+  const fetchCards = useAppStore((s) => s.fetchCards);
+  const loadReviewHistory = useAppStore((s) => s.loadReviewHistory);
+  const streakCount = useAppStore((s) => s.streakCount);
   const [showSpeedMatch, setShowSpeedMatch] = useState(false);
   const [showSentenceBuilder, setShowSentenceBuilder] = useState(false);
   const [showPronunciationTrainer, setShowPronunciationTrainer] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      fetchUserProgress();
-      getStreakCount().then(setStreakCount);
-    }, [fetchUserProgress])
+      loadReviewHistory();
+    }, [loadReviewHistory])
   );
 
   useEffect(() => {
@@ -59,7 +57,7 @@ export default function PracticeScreen() {
   }, [decks, cards, fetchCards]);
 
   const allCardsList = useMemo(() => {
-    let list: Card[] = [];
+    let list: CardEntity[] = [];
     Object.values(cards).forEach((deckCards) => {
       list = list.concat(deckCards);
     });

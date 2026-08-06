@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { Alert } from "react-native";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
-import { auth } from "../../lib/firebase";
-import { useStore } from "../../store/useStore";
-import { getAuthErrorMessage } from "../../lib/errorHandler";
-import { cancelDailyStudyReminder } from "../../lib/notificationService";
+import { auth } from "../../src/infrastructure/firebase/firebaseApp";
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { getAuthErrorMessage } from "../../src/ui/utils/errorHandler";
+import { cancelDailyStudyReminder } from "../../src/infrastructure/notifications/notificationService";
 import { AccountModal } from "./AccountModal";
 
 export function GlobalAccountModal() {
-  const isAccountModalOpen = useStore((s) => s.isAccountModalOpen);
-  const closeAccountModal = useStore((s) => s.closeAccountModal);
+  const isAccountModalOpen = useAppStore((s) => s.isAccountModalOpen);
+  const closeAccountModal = useAppStore((s) => s.closeAccountModal);
   const user = auth.currentUser;
 
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -35,7 +35,7 @@ export function GlobalAccountModal() {
         onPress: async () => {
           closeAccountModal();
           await auth.signOut();
-          useStore.setState({ decks: [], cards: {}, session: null, userId: null });
+          useAppStore.setState({ decks: [], cards: {}, streakState: { currentStreak: 0, longestStreak: 0, lastStudyDate: null } });
         },
       },
     ]);

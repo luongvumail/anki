@@ -13,8 +13,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useStore } from "../../store/useStore";
-import { getFirestoreErrorMessage } from "../../lib/errorHandler";
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { getFirestoreErrorMessage } from "../../src/ui/utils/errorHandler";
 import { Colors, Spacing, Radii, VECTOR_DECK_ICONS, triggerHaptic } from "../../constants/theme";
 import { DeckIcon } from "../../components/ui/DeckIcon";
 import { SectionTitle } from "../../components/ui/SectionTitle";
@@ -25,25 +25,24 @@ import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
-import { getStreakCount } from "../../lib/reviewTracker";
 import {
   computeDueCount,
   computeNewCount,
   computeReviewDueCount,
   getDeckMasteryPct,
-} from "../../lib/deckUtils";
+} from "../../src/domain/card/cardUtils";
 
 export default function DecksScreen() {
   const insets = useSafeAreaInsets();
-  const decks = useStore((s) => s.decks);
-  const cardsState = useStore((s) => s.cards);
-  const fetchDecks = useStore((s) => s.fetchDecks);
-  const createDeck = useStore((s) => s.createDeck);
-  const deleteDeck = useStore((s) => s.deleteDeck);
-  const isLoading = useStore((s) => s.isLoading);
-  const userId = useStore((s) => s.userId);
+  const decks = useAppStore((s) => s.decks);
+  const cardsState = useAppStore((s) => s.cards);
+  const fetchDecks = useAppStore((s) => s.fetchDecks);
+  const createDeck = useAppStore((s) => s.createDeck);
+  const deleteDeck = useAppStore((s) => s.deleteDeck);
+  const isDeckLoading = useAppStore((s) => s.isDeckLoading);
+  const loadReviewHistory = useAppStore((s) => s.loadReviewHistory);
+  const streakCount = useAppStore((s) => s.streakCount);
 
-  const [streakCount, setStreakCount] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [showAIAddModal, setShowAIAddModal] = useState(false);
   const [deckName, setDeckName] = useState("");
@@ -51,8 +50,8 @@ export default function DecksScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      getStreakCount().then(setStreakCount);
-    }, [])
+      loadReviewHistory();
+    }, [loadReviewHistory])
   );
 
   const [selectedIcon, setSelectedIcon] = useState(VECTOR_DECK_ICONS[0]);
@@ -74,9 +73,9 @@ export default function DecksScreen() {
   }, [decks, cardsState]);
 
   useEffect(() => {
-    if (userId && decks.length === 0) fetchDecks();
+    if (decks.length === 0) fetchDecks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -167,7 +166,7 @@ export default function DecksScreen() {
           </TouchableOpacity>
         </View>
 
-        {isLoading && decks.length === 0 ? (
+        {isDeckLoading && decks.length === 0 ? (
           <ActivityIndicator
             size="small"
             color={Colors.duolingo.blue}

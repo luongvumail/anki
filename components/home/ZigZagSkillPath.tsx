@@ -2,14 +2,14 @@ import React, { useRef, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Radii, Spacing } from "../../constants/theme";
-import { Deck } from "../../store/slices/types";
+import { DeckEntity } from "../../src/domain/deck/deckEntity";
 import { DeckIcon } from "../ui/DeckIcon";
 import { DuolingoMascot } from "../ui/DuolingoMascot";
 
 interface ZigZagSkillPathProps {
-  decks: Deck[];
+  decks: DeckEntity[];
   dueCardsMap: Record<string, number>;
-  onSelectDeck: (deck: Deck) => void;
+  onSelectDeck: (deck: DeckEntity) => void;
 }
 
 export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkillPathProps) {

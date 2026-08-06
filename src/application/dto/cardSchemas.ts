@@ -80,9 +80,10 @@ export const ReviewLogSchema = z.object({
 });
 
 export const SyncOfflinePayloadSchema = z.object({
+  id: z.string().min(1),
   cardId: z.string().min(1),
   deckId: z.string().min(1),
-  cardState: FSRSCardStateSchema,
+  card: CardEntitySchema,
   reviewLog: ReviewLogSchema,
   timestamp: z.string(),
 });

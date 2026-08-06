@@ -12,22 +12,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Speech from "expo-speech";
-import { useStore } from "../../store/useStore";
-import { isDue } from "../../lib/srs";
-import { getPinyinToneColor } from "../../lib/pinyinColor";
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { isDue } from "../../src/domain/card/cardUtils";
+import { getPinyinToneColor } from "../../src/ui/utils/pinyinColor";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { AudioButton } from "../../components/ui/AudioButton";
-import { generateRadical } from "../../lib/gemini";
+import { GeminiService } from "../../src/infrastructure/ai/geminiService";
+
+const geminiService = new GeminiService();
 
 export default function CardDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id, deckId } = useLocalSearchParams<{ id: string; deckId: string }>();
-  const cards = useStore((s) => s.cards);
-  const deleteCard = useStore((s) => s.deleteCard);
-  const updateCard = useStore((s) => s.updateCard);
+  const cards = useAppStore((s) => s.cards);
+  const deleteCard = useAppStore((s) => s.deleteCard);
+  const updateCard = useAppStore((s) => s.updateCard);
   const [speaking, setSpeaking] = useState(false);
   const [generatingRadical, setGeneratingRadical] = useState(false);
 
@@ -74,7 +76,7 @@ export default function CardDetailScreen() {
     try {
       setGeneratingRadical(true);
       triggerHaptic("light");
-      const radical = await generateRadical(card.character);
+      const radical = await geminiService.generateRadical(card.character);
       if (radical && radical.trim().length > 0) {
         await updateCard(card.id, deckId, { radical });
         triggerHaptic("success");
@@ -179,45 +181,52 @@ export default function CardDetailScreen() {
           </DuolingoCard>
         )}
 
-        {/* SRS Learning Status Card */}
-        <SectionTitle>TRẠNG THÁI TRÍ NHỚ (SRS)</SectionTitle>
+        {/* FSRS v5 Learning Status Card */}
+        <SectionTitle>TRẠNG THÁI TRÍ NHỚ (FSRS v5)</SectionTitle>
         <DuolingoCard style={styles.detailCard}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Trạng thái hiện tại</Text>
-            <View
-              style={[
-                styles.statusBadge,
-                {
-                  backgroundColor: isDue(card.srs)
-                    ? Colors.duolingo.red
-                    : card.srs?.repetitions > 0
-                      ? Colors.duolingo.green
-                      : Colors.duolingo.blue,
-                },
-              ]}
-            >
-              <Text style={styles.statusBadgeText}>
-                {isDue(card.srs) ? "CẦN ÔN TẬP" : card.srs?.repetitions > 0 ? "ĐÃ THUỘC" : "TỪ MỚI"}
-              </Text>
-            </View>
-          </View>
+          {(() => {
+            const fsrs = (card as any).fsrs || { stability: 0, difficulty: 5, reps: card.srs?.repetitions || 0, lapses: 0, due: card.srs?.dueDate || new Date().toISOString() };
+            return (
+              <>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Trạng thái hiện tại</Text>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      {
+                        backgroundColor: isDue({ due: fsrs.due })
+                          ? Colors.duolingo.red
+                          : fsrs.reps > 0
+                            ? Colors.duolingo.green
+                            : Colors.duolingo.blue,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.statusBadgeText}>
+                      {isDue({ due: fsrs.due }) ? "CẦN ÔN TẬP" : fsrs.reps > 0 ? "ĐÃ THUỘC" : "TỪ MỚI"}
+                    </Text>
+                  </View>
+                </View>
 
-          <View style={[styles.detailRow, styles.borderTop]}>
-            <Text style={styles.detailLabel}>Số lần đã ôn thành công</Text>
-            <Text style={styles.detailVal}>{card.srs?.repetitions || 0} lần</Text>
-          </View>
+                <View style={[styles.detailRow, styles.borderTop]}>
+                  <Text style={styles.detailLabel}>Độ ổn định (Stability - S)</Text>
+                  <Text style={styles.detailVal}>{fsrs.stability ? `${fsrs.stability} ngày` : 'Mới'}</Text>
+                </View>
 
-          <View style={[styles.detailRow, styles.borderTop]}>
-            <Text style={styles.detailLabel}>Khoảng cách lặp lại (Interval)</Text>
-            <Text style={styles.detailVal}>{card.srs?.interval || 0} ngày</Text>
-          </View>
+                <View style={[styles.detailRow, styles.borderTop]}>
+                  <Text style={styles.detailLabel}>Độ khó (Difficulty - D)</Text>
+                  <Text style={styles.detailVal}>
+                    {fsrs.difficulty ? `${fsrs.difficulty}/10` : '5/10'}
+                  </Text>
+                </View>
 
-          <View style={[styles.detailRow, styles.borderTop]}>
-            <Text style={styles.detailLabel}>Hệ số dễ (Ease Factor)</Text>
-            <Text style={styles.detailVal}>
-              {((card.srs?.easeFactor || 2.5) * 100).toFixed(0)}%
-            </Text>
-          </View>
+                <View style={[styles.detailRow, styles.borderTop]}>
+                  <Text style={styles.detailLabel}>Số lần ôn / Số lần quên</Text>
+                  <Text style={styles.detailVal}>{fsrs.reps || 0} lần / {fsrs.lapses || 0} lần</Text>
+                </View>
+              </>
+            );
+          })()}
         </DuolingoCard>
 
         {/* Example Sentences */}

@@ -13,8 +13,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Speech from "expo-speech";
-import { useStore, Card } from "../../store/useStore";
-import { getPinyinToneColor } from "../../lib/pinyinColor";
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { CardEntity, ensureFSRSState } from "../../src/domain/card/cardEntity";
+import { getPinyinToneColor } from "../../src/ui/utils/pinyinColor";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DeckIcon } from "../../components/ui/DeckIcon";
 import { SectionTitle } from "../../components/ui/SectionTitle";
@@ -25,19 +26,17 @@ import { ProgressBar } from "../../components/ui/ProgressBar";
 
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
+import { computeLearnedCount } from "../../src/domain/card/cardUtils";
 
 export default function DeckDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const decks = useStore((s) => s.decks);
-  const cards = useStore((s) => s.cards);
-  const fetchCards = useStore((s) => s.fetchCards);
-  const fetchMoreCards = useStore((s) => s.fetchMoreCards);
-  const isFetchingMore = useStore((s) => s.isFetchingMoreCards[id || ""]);
-  const hasMore = useStore((s) => s.hasMoreCards[id || ""]);
-  const deleteDeck = useStore((s) => s.deleteDeck);
-  const resetDeckProgress = useStore((s) => s.resetDeckProgress);
-  const isLoading = useStore((s) => s.isLoading);
+  const decks = useAppStore((s) => s.decks);
+  const cards = useAppStore((s) => s.cards);
+  const fetchCards = useAppStore((s) => s.fetchCards);
+  const deleteDeck = useAppStore((s) => s.deleteDeck);
+  const resetDeckProgress = useAppStore((s) => s.resetDeckProgress);
+  const isCardLoading = useAppStore((s) => s.isCardLoading);
 
   const [showAIAddModal, setShowAIAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,11 +56,14 @@ export default function DeckDetailScreen() {
   }, [deckCards, searchQuery]);
 
   const learnedCardsCount = useMemo(() => {
-    return deckCards.filter((c) => c.srs && c.srs.repetitions > 0).length;
+    return computeLearnedCount(deckCards);
   }, [deckCards]);
 
   const weakCards = useMemo(() => {
-    return deckCards.filter((c) => c.srs && c.srs.easeFactor < 2.1 && c.srs.repetitions > 0);
+    return deckCards.filter((c) => {
+      const fsrs = ensureFSRSState(c);
+      return fsrs.difficulty > 7.0 && fsrs.reps > 0;
+    });
   }, [deckCards]);
 
   const masteryPct = useMemo(() => {
@@ -122,7 +124,7 @@ export default function DeckDetailScreen() {
   };
 
   const renderCardItem = useCallback(
-    ({ item }: { item: Card }) => {
+    ({ item }: { item: CardEntity }) => {
       const pinyinColor = getPinyinToneColor(item.pinyin);
 
       return (
@@ -207,21 +209,6 @@ export default function DeckDetailScreen() {
         maxToRenderPerBatch={10}
         windowSize={5}
         removeClippedSubviews={true}
-        onEndReached={() => {
-          if (id && !searchQuery) {
-            fetchMoreCards(id);
-          }
-        }}
-        onEndReachedThreshold={0.4}
-        ListFooterComponent={
-          isFetchingMore ? (
-            <ActivityIndicator
-              size="small"
-              color={Colors.duolingo.blue}
-              style={{ marginVertical: 16 }}
-            />
-          ) : null
-        }
         ListHeaderComponent={
           <View style={styles.listHeader}>
             {/* Deck Summary Hero Card */}
@@ -306,7 +293,7 @@ export default function DeckDetailScreen() {
           </View>
         }
         ListEmptyComponent={
-          isLoading ? (
+          isCardLoading ? (
             <ActivityIndicator
               size="small"
               color={Colors.duolingo.blue}

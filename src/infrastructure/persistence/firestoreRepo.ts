@@ -7,10 +7,13 @@ import {
   query,
   setDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import { CardEntity, ensureFSRSState } from '../../domain/card/cardEntity';
 import { ICardRepository } from '../../domain/card/cardRepository.i';
-import { auth, db } from '../../../lib/firebase';
+import { DeckEntity } from '../../domain/deck/deckEntity';
+import { IDeckRepository } from '../../domain/deck/deckRepository.i';
+import { auth, db } from '../firebase/firebaseApp';
 
 export class FirestoreCardRepository implements ICardRepository {
   private getUserId(): string | null {
@@ -26,6 +29,8 @@ export class FirestoreCardRepository implements ICardRepository {
   }
 
   public async getCards(deckId?: string): Promise<CardEntity[]> {
+    const uid = this.getUserId();
+    if (!uid) return [];
     const colRef = this.getCollectionRef();
     let q = query(colRef);
     if (deckId) {
@@ -41,7 +46,6 @@ export class FirestoreCardRepository implements ICardRepository {
         ...data,
         id: docSnap.id,
       };
-      // Auto-migrate SM-2 cards to FSRS state on read
       const fsrs = ensureFSRSState(rawCard, now);
       return {
         ...rawCard,
@@ -81,8 +85,28 @@ export class FirestoreCardRepository implements ICardRepository {
   }
 
   public async saveCards(cards: CardEntity[]): Promise<void> {
-    for (const card of cards) {
-      await this.saveCard(card);
+    const uid = this.getUserId();
+    if (!uid || cards.length === 0) return;
+
+    // Batch writes in chunks of 500 (Firestore limit)
+    const CHUNK_SIZE = 450;
+    for (let i = 0; i < cards.length; i += CHUNK_SIZE) {
+      const chunk = cards.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      const nowStr = new Date().toISOString();
+
+      for (const card of chunk) {
+        const docRef = doc(db, 'users', uid, 'cards', card.id);
+        const fsrs = ensureFSRSState(card);
+        const payload: CardEntity = {
+          ...card,
+          fsrs,
+          updatedAt: nowStr,
+        };
+        batch.set(docRef, payload, { merge: true });
+      }
+
+      await batch.commit();
     }
   }
 
@@ -90,6 +114,37 @@ export class FirestoreCardRepository implements ICardRepository {
     const uid = this.getUserId();
     if (!uid) throw new Error('User is not authenticated');
     const docRef = doc(db, 'users', uid, 'cards', cardId);
+    await deleteDoc(docRef);
+  }
+}
+
+export class FirestoreDeckRepository implements IDeckRepository {
+  private getUserId(): string | null {
+    return auth.currentUser ? auth.currentUser.uid : null;
+  }
+
+  public async getDecks(): Promise<DeckEntity[]> {
+    const uid = this.getUserId();
+    if (!uid) return [];
+    const colRef = collection(db, 'users', uid, 'decks');
+    const snapshot = await getDocs(colRef);
+    return snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...(docSnap.data() as Omit<DeckEntity, 'id'>),
+    }));
+  }
+
+  public async saveDeck(deck: DeckEntity): Promise<void> {
+    const uid = this.getUserId();
+    if (!uid) throw new Error('User is not authenticated');
+    const docRef = doc(db, 'users', uid, 'decks', deck.id);
+    await setDoc(docRef, deck, { merge: true });
+  }
+
+  public async deleteDeck(deckId: string): Promise<void> {
+    const uid = this.getUserId();
+    if (!uid) throw new Error('User is not authenticated');
+    const docRef = doc(db, 'users', uid, 'decks', deckId);
     await deleteDoc(docRef);
   }
 }

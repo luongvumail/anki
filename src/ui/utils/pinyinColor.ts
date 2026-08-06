@@ -4,7 +4,7 @@
 // Tone 3: Soft Purple (#C084FC)
 // Tone 4: Neon Coral (#FB7185)
 
-import { Colors } from '../constants/theme';
+import { Colors } from '../../../constants/theme';
 
 const TONE1_REGEX = /[āēīōūǖ1]/i;
 const TONE2_REGEX = /[áéíóúǘ2]/i;

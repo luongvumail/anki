@@ -2,10 +2,10 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { auth } from "../../lib/firebase";
+import { auth } from "../../src/infrastructure/firebase/firebaseApp";
 import { Colors, Radii, Spacing } from "../../constants/theme";
 
-import { useStore } from "../../store/useStore";
+import { useAppStore } from "../../src/ui/store/useAppStore";
 
 interface DuolingoHeaderProps {
   userName?: string;
@@ -26,7 +26,7 @@ export function DuolingoHeader({
   onStreakPress,
 }: DuolingoHeaderProps) {
   const insets = useSafeAreaInsets();
-  const openAccountModal = useStore((s) => s.openAccountModal);
+  const openAccountModal = useAppStore((s) => s.openAccountModal);
   const authUser = auth.currentUser;
   const resolvedName =
     userName || authUser?.displayName || (authUser?.email ? authUser.email.split("@")[0] : "Bạn");

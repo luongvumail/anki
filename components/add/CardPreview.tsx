@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Animated,
 } from "react-native";
-import { CardData } from "../../lib/gemini";
+import { CardData } from "../../src/infrastructure/ai/geminiService";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { SectionTitle } from "../ui/SectionTitle";
 import { DuolingoButton } from "../ui/DuolingoButton";

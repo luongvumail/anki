@@ -21,8 +21,8 @@ import {
   updateProfile,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { auth } from "../lib/firebase";
-import { getAuthErrorMessage } from "../lib/errorHandler";
+import { auth } from "../src/infrastructure/firebase/firebaseApp";
+import { getAuthErrorMessage } from "../src/ui/utils/errorHandler";
 import {
   Colors,
   Spacing,

@@ -17,10 +17,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { generateCardDataBatch, CardData } from "../../lib/gemini";
-import { createDefaultSRSState } from "../../lib/srs";
-import { useStore } from "../../store/useStore";
-import { getFirestoreErrorMessage, getGeminiErrorMessage } from "../../lib/errorHandler";
+import { GeminiService, CardData } from "../../src/infrastructure/ai/geminiService";
+
+const geminiService = new GeminiService();
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { getFirestoreErrorMessage, getGeminiErrorMessage } from "../../src/ui/utils/errorHandler";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { SectionTitle } from "../ui/SectionTitle";
 import { DeckPicker } from "./DeckPicker";
@@ -58,11 +59,10 @@ export interface AIAddCardModalProps {
 
 export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardModalProps) {
   const insets = useSafeAreaInsets();
-  const decks = useStore((s) => s.decks);
-  const cards = useStore((s) => s.cards);
-  const addCard = useStore((s) => s.addCard);
-  const findExistingCard = useStore((s) => s.findExistingCard);
-  const fetchCards = useStore((s) => s.fetchCards);
+  const decks = useAppStore((s) => s.decks);
+  const cards = useAppStore((s) => s.cards);
+  const addCard = useAppStore((s) => s.addCard);
+  const fetchCards = useAppStore((s) => s.fetchCards);
 
   const [input, setInput] = useState("");
   const [selectedDeckId, setSelectedDeckId] = useState<string>(initialDeckId || "");
@@ -163,7 +163,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     saveToHistory(parsed);
 
     try {
-      const results = await generateCardDataBatch(newWords);
+      const results = await geminiService.generateCardDataBatch(newWords);
 
       const seenChars = new Set<string>();
       const finalItems: WordItem[] = [];
@@ -233,10 +233,12 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
     let savedCount = 0;
 
     try {
+      const currentDeckCards = cards[selectedDeckId] || [];
+
       for (const item of validItemsToSave) {
         if (!item.data) continue;
 
-        const existing = findExistingCard(item.data.character, selectedDeckId);
+        const existing = currentDeckCards.find((c) => c.character === item.data?.character);
         if (existing) continue;
 
         await addCard({
@@ -245,7 +247,6 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
           pinyin: item.data.pinyin,
           translation: item.data.translation,
           examples: item.data.examples || [],
-          srs: createDefaultSRSState(),
         });
         savedCount++;
       }
@@ -257,7 +258,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
           const newAiCount = currentAiCount + savedCount;
           await AsyncStorage.setItem("@anki_ai_added_count", newAiCount.toString());
           if (newAiCount >= 50) {
-            useStore.getState().unlockBadge("ai_50");
+            useAppStore.getState().checkAndUnlockBadges();
           }
         } catch {
           // ignore

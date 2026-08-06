@@ -3,17 +3,18 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Animated } from 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useStore, Card } from "../../store/useStore";
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { CardEntity } from "../../src/domain/card/cardEntity";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 
-import { getReviewHistory, getStreakCount, getLocalDateString } from "../../lib/reviewTracker";
-import { isDue } from "../../lib/srs";
+import { getLocalDateString } from "../../src/infrastructure/persistence/reviewTrackerRepo";
+import { computeDueCount, computeLearnedCount, computeNewCount } from "../../src/domain/card/cardUtils";
 import { BadgesGallery } from "../../components/stats/BadgesGallery";
-import { getLevelInfo } from "../../store/slices/userProgressSlice";
+import { getLevelInfo } from "../../src/domain/user/userProgress";
 
 interface DayActivity {
   dateStr: string;
@@ -42,34 +43,29 @@ function getLast7Days(): DayActivity[] {
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
-  const decks = useStore((s) => s.decks);
-  const cards = useStore((s) => s.cards);
-  const fetchDecks = useStore((s) => s.fetchDecks);
-  const fetchCards = useStore((s) => s.fetchCards);
-  const userId = useStore((s) => s.userId);
+  const decks = useAppStore((s) => s.decks);
+  const cards = useAppStore((s) => s.cards);
+  const fetchDecks = useAppStore((s) => s.fetchDecks);
+  const fetchCards = useAppStore((s) => s.fetchCards);
+  const loadReviewHistory = useAppStore((s) => s.loadReviewHistory);
+  const reviewHistory = useAppStore((s) => s.reviewHistory);
+  const streakCount = useAppStore((s) => s.streakCount);
   const [loadingCards, setLoadingCards] = useState(true);
-  const [reviewHistory, setReviewHistory] = useState<Record<string, number>>({});
-  const [streakCount, setStreakCount] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const loadAllData = useCallback(async () => {
-    if (!userId) return;
     setLoadingCards(true);
     if (decks.length === 0) {
       await fetchDecks();
     }
 
-    const currentDecks = useStore.getState().decks;
+    const currentDecks = useAppStore.getState().decks;
     if (currentDecks.length > 0) {
       await Promise.all(currentDecks.map((d) => fetchCards(d.id)));
     }
 
-    const history = await getReviewHistory();
-    const streak = await getStreakCount();
-    setReviewHistory(history);
-    setStreakCount(streak);
-
+    await loadReviewHistory();
     setLoadingCards(false);
 
     Animated.timing(fadeAnim, {
@@ -77,7 +73,7 @@ export default function StatsScreen() {
       duration: 350,
       useNativeDriver: true,
     }).start();
-  }, [userId, decks.length, fetchDecks, fetchCards, fadeAnim]);
+  }, [decks.length, fetchDecks, fetchCards, loadReviewHistory, fadeAnim]);
 
   useFocusEffect(
     useCallback(() => {
@@ -86,7 +82,7 @@ export default function StatsScreen() {
   );
 
   const allCardsList = useMemo(() => {
-    let list: Card[] = [];
+    let list: CardEntity[] = [];
     Object.values(cards).forEach((deckCards) => {
       list = list.concat(deckCards);
     });
@@ -96,15 +92,15 @@ export default function StatsScreen() {
   const totalCardsCount = allCardsList.length;
 
   const dueCount = useMemo(() => {
-    return allCardsList.filter((c) => isDue(c.srs)).length;
+    return computeDueCount(allCardsList as any);
   }, [allCardsList]);
 
   const learnedCount = useMemo(() => {
-    return allCardsList.filter((c) => c.srs && c.srs.repetitions > 0).length;
+    return computeLearnedCount(allCardsList as any);
   }, [allCardsList]);
 
   const newCardsCount = useMemo(() => {
-    return allCardsList.filter((c) => !c.srs || c.srs.repetitions === 0).length;
+    return computeNewCount(allCardsList as any);
   }, [allCardsList]);
 
   const retentionRatePct = useMemo(() => {
@@ -125,7 +121,7 @@ export default function StatsScreen() {
     return max > 0 ? max : 1;
   }, [weeklyActivity]);
 
-  const xp = useStore((s) => s.xp || 0);
+  const xp = useAppStore((s) => s.xp || 0);
   const levelInfo = useMemo(() => getLevelInfo(xp), [xp]);
 
   return (

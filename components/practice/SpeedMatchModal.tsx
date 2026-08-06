@@ -10,9 +10,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../../store/slices/types";
-import { useStore } from "../../store/useStore";
-import { recordReviewToday } from "../../lib/reviewTracker";
+import { CardEntity } from "../../src/domain/card/cardEntity";
+import { useAppStore } from "../../src/ui/store/useAppStore";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { ProgressBar } from "../ui/ProgressBar";
@@ -29,14 +28,13 @@ interface MatchTile {
 export interface SpeedMatchModalProps {
   visible: boolean;
   onClose: () => void;
-  cards: Card[];
+  cards: CardEntity[];
 }
 
 export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const addXP = useStore((s) => s.addXP);
-  const unlockBadge = useStore((s) => s.unlockBadge);
+  const checkAndUnlockBadges = useAppStore((s) => s.checkAndUnlockBadges);
 
   const [timeLeft, setTimeLeft] = useState(60);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -50,8 +48,8 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Generate round of tiles with dynamic pair count scaling (Round 1: 4 pairs, Round 2: 5 pairs, Round 3+: 6 pairs)
-  const generateRoundTiles = useCallback((availableCards: Card[], currentRound: number) => {
+  // Generate round of tiles with dynamic pair count scaling
+  const generateRoundTiles = useCallback((availableCards: CardEntity[], currentRound: number) => {
     if (availableCards.length < 2) return [];
 
     const pairsCount = Math.min(availableCards.length, Math.min(3 + currentRound, 6));
@@ -107,21 +105,14 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
     } else if (isPlaying && timeLeft === 0) {
       setIsPlaying(false);
       setIsGameOver(true);
-      const earnedXP = matchedPairs * 2 + 15;
-      addXP(earnedXP);
-      if (matchedPairs >= 25) {
-        unlockBadge("speed_25");
-        unlockBadge("speed_15");
-      } else if (matchedPairs >= 15) {
-        unlockBadge("speed_15");
-      }
+      checkAndUnlockBadges();
       triggerHaptic("success");
     }
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isPlaying, timeLeft, matchedPairs, addXP, unlockBadge]);
+  }, [isPlaying, timeLeft, matchedPairs, checkAndUnlockBadges]);
 
   const handleTilePress = (tile: MatchTile) => {
     if (!isPlaying || tile.matched || tile.id === selectedTileId) return;
@@ -139,7 +130,6 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
     if (firstTile.cardId === tile.cardId && firstTile.type !== tile.type) {
       // MATCH SUCCESS!
       triggerHaptic("success");
-      recordReviewToday().catch(() => {});
       setMatchedPairs((prev) => prev + 1);
       setScore((prev) => prev + 20);
 

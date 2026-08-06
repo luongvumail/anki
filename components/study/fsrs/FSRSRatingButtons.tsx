@@ -1,9 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { CardEntity, ensureFSRSState } from '../../../domain/card/cardEntity';
-import { FSRSEngine } from '../../../domain/fsrs/fsrsEngine';
-import { FSRSScheduleResult, Rating } from '../../../domain/fsrs/fsrsTypes';
+import { CardEntity, ensureFSRSState } from '../../../src/domain/card/cardEntity';
+import { FSRSEngine } from '../../../src/domain/fsrs/fsrsEngine';
+import { FSRSScheduleResult, Rating } from '../../../src/domain/fsrs/fsrsTypes';
+import { Colors } from '../../../constants/theme';
 
 interface FSRSRatingButtonsProps {
   card: CardEntity;
@@ -134,20 +135,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   againBtn: {
-    backgroundColor: '#FF4B4B',
-    borderBottomColor: '#EA2B2B',
+    backgroundColor: Colors.srs.again,
+    borderBottomColor: Colors.duolingo.redDark,
   },
   hardBtn: {
-    backgroundColor: '#FFC800',
-    borderBottomColor: '#E5B200',
+    backgroundColor: Colors.duolingo.yellow,
+    borderBottomColor: Colors.duolingo.yellowDark,
   },
   goodBtn: {
-    backgroundColor: '#58CC02',
-    borderBottomColor: '#46A302',
+    backgroundColor: Colors.srs.good,
+    borderBottomColor: Colors.duolingo.greenDark,
   },
   easyBtn: {
-    backgroundColor: '#1CB0F6',
-    borderBottomColor: '#1899D6',
+    backgroundColor: Colors.srs.easy,
+    borderBottomColor: Colors.duolingo.blueDark,
   },
   btnTitle: {
     color: '#FFFFFF',

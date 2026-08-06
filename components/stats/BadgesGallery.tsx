@@ -1,11 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useStore } from "../../store/useStore";
-import { ALL_BADGES } from "../../store/slices/userProgressSlice";
+import { useAppStore } from "../../src/ui/store/useAppStore";
+import { ALL_BADGES } from "../../src/domain/user/userProgress";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { SectionTitle } from "../ui/SectionTitle";
+
+import { computeLearnedCount } from "../../src/domain/card/cardUtils";
 
 interface BadgesGalleryProps {
   streakCount?: number;
@@ -13,13 +15,13 @@ interface BadgesGalleryProps {
 }
 
 export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearned }: BadgesGalleryProps) {
-  const unlockedBadgeIds = useStore((s) => s.unlockedBadgeIds || []);
-  const checkAndUnlockBadges = useStore((s) => s.checkAndUnlockBadges);
+  const unlockedBadgeIds = useAppStore((s) => s.unlockedBadgeIds || []);
+  const checkAndUnlockBadges = useAppStore((s) => s.checkAndUnlockBadges);
 
-  const fallbackCards = useStore((s) => {
+  const fallbackCards = useAppStore((s) => {
     let count = 0;
     Object.values(s.cards).forEach((list) => {
-      count += list.filter((c) => c.srs && c.srs.repetitions > 0).length;
+      count += computeLearnedCount(list);
     });
     return count;
   });

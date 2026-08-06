@@ -3,34 +3,31 @@ import { View, Text, StyleSheet, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Spacing, triggerHaptic } from "../../constants/theme";
-import { StudySession } from "../../store/slices/types";
-import { useStore } from "../../store/useStore";
+import { useAppStore } from "../../src/ui/store/useAppStore";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { DuolingoMascot } from "../ui/DuolingoMascot";
+import { computeLearnedCount } from "../../src/domain/card/cardUtils";
 
 interface SessionDoneScreenProps {
-  session: StudySession;
+  session: any;
   onDone: () => void;
 }
 
 export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
   const insets = useSafeAreaInsets();
-  const addXP = useStore((s) => s.addXP);
-  const checkAndUnlockBadges = useStore((s) => s.checkAndUnlockBadges);
+  const checkAndUnlockBadges = useAppStore((s) => s.checkAndUnlockBadges);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const earnedXP = Math.max(15, (session.reviewedCount || 0) * 10);
 
   useEffect(() => {
     triggerHaptic("success");
-    addXP(earnedXP);
 
-    // Calculate learned cards count to check and unlock badges real-time
-    const allCards = useStore.getState().cards;
+    const allCards = useAppStore.getState().cards;
     let totalLearned = 0;
     Object.values(allCards).forEach((deckList) => {
-      totalLearned += deckList.filter((c) => c.srs && c.srs.repetitions > 0).length;
+      totalLearned += computeLearnedCount(deckList);
     });
     checkAndUnlockBadges(1, totalLearned);
 

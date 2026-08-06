@@ -10,11 +10,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Typography, Radii, Spacing } from "../../constants/theme";
-import { Deck } from "../../store/slices/types";
+import { DeckEntity } from "../../src/domain/deck/deckEntity";
 import { DeckIcon } from "../ui/DeckIcon";
 
 interface DeckPickerProps {
-  decks: Deck[];
+  decks: DeckEntity[];
   selectedDeckId: string;
   isOpen: boolean;
   onToggleOpen: () => void;

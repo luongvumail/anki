@@ -8,21 +8,16 @@ export const Colors = {
     // Primary colors
     green: '#58CC02',                    // --color-primary-green
     greenDark: '#58A700',                // --color-primary-green-dark
-    greenShadow: '#58A700',
-    greenLight: 'rgba(88, 204, 2, 0.15)',
     greenDim: 'rgba(88, 204, 2, 0.15)',
     blue: '#1CB0F6',                     // --color-blue
     blueDark: '#1899D6',                 // --color-blue-dark
     blueDim: 'rgba(28, 176, 246, 0.15)',
     red: '#FF4B4B',                      // --color-red
     redDark: '#EA2B2B',                  // --color-red-dark
-    redShadow: '#EA2B2B',
-    redLight: 'rgba(255, 75, 75, 0.15)',
     redDim: 'rgba(255, 75, 75, 0.15)',
     yellow: '#FFC800',                   // --color-yellow
     yellowDark: '#E6B400',               // --color-yellow-dark
     yellowDim: 'rgba(255, 200, 0, 0.15)',
-    orange: '#FFC800',
     purple: '#CE82FF',                   // --color-purple
     purpleDark: '#A568CC',               // --color-purple-dark
     purpleDim: 'rgba(206, 130, 255, 0.15)',
@@ -30,10 +25,12 @@ export const Colors = {
     // Neutral - Dark Mode (default canvas)
     bg: '#131F24',                       // --color-bg-dark
     bgSoft: '#1F2C34',                   // --color-bg-soft-dark
+    bgSoftDark: '#1F2C34',
     border: '#2B3D4F',                   // --color-border
     text: '#F0F3F6',                     // --color-text
     textMuted: '#777777',                // --color-text-muted
     disabled: '#2B3D4F',                 // --color-disabled
+    disabledBg: '#2B3D4F',
     disabledText: '#526575',             // --color-disabled-text
 
     // Neutral - Light Mode
@@ -43,11 +40,8 @@ export const Colors = {
     textLight: '#3C3C3C',                // --color-text
     disabledLight: '#E5E5E5',
 
-    bgDark: '#131F24',
-    bgSoftDark: '#1F2C34',
-    disabledBg: '#2B3D4F',
-
     cardBg: '#1F2C34',
+    cardBgActive: '#1D3545',
     cardBorder: '#2B3D4F',
     cardBottom: '#18242B',
     selectedBg: '#1F2C34',

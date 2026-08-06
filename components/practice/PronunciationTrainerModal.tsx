@@ -19,9 +19,8 @@ import {
   RecordingPresets,
   setAudioModeAsync,
 } from "expo-audio";
-import { Card } from "../../store/slices/types";
-import { useStore } from "../../store/useStore";
-import { recordReviewToday } from "../../lib/reviewTracker";
+import { CardEntity } from "../../src/domain/card/cardEntity";
+import { useAppStore } from "../../src/ui/store/useAppStore";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";
@@ -30,7 +29,7 @@ import { ProgressBar } from "../ui/ProgressBar";
 export interface PronunciationTrainerModalProps {
   visible: boolean;
   onClose: () => void;
-  cards: Card[];
+  cards: CardEntity[];
 }
 
 export function PronunciationTrainerModal({
@@ -39,10 +38,9 @@ export function PronunciationTrainerModal({
   cards,
 }: PronunciationTrainerModalProps) {
   const insets = useSafeAreaInsets();
-  const addXP = useStore((s) => s.addXP);
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [shuffledCards, setShuffledCards] = useState<Card[]>([]);
+  const [shuffledCards, setShuffledCards] = useState<CardEntity[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -204,8 +202,6 @@ export function PronunciationTrainerModal({
 
       setRecognizedText(cleanSpoken);
 
-      recordReviewToday().catch(() => {});
-
       let calcScore = 0;
       let msg = "";
       let finalErrorDetail: string | null = null;
@@ -239,7 +235,6 @@ export function PronunciationTrainerModal({
           finalErrorDetail = null;
           finalTip = aiPronunciationTip || fallbackToneTip;
           triggerHaptic("success");
-          addXP(20);
         } else {
           // Check partial character overlap
           let matchedCharsCount = 0;
@@ -261,7 +256,6 @@ export function PronunciationTrainerModal({
               `Chú ý cao độ thanh điệu hoặc phụ âm đầu. Từ chuẩn là "${targetChar}" (${currentCard.pinyin}).`;
             finalTip = aiPronunciationTip || fallbackToneTip;
             triggerHaptic("warning");
-            addXP(10);
           } else {
             // Case 4: Wrong Word / Mispronounced Completely
             calcScore = 30;
@@ -287,7 +281,7 @@ export function PronunciationTrainerModal({
         useNativeDriver: true,
       }).start();
     },
-    [shuffledCards, currentIndex, addXP, drawerAnim],
+    [shuffledCards, currentIndex, drawerAnim],
   );
 
   // Interface for Gemini JSON speech analysis
