@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "../../src/ui/store/useAppStore";
 import { ALL_BADGES } from "../../src/domain/user/userProgress";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
+import { Colors, Spacing } from "../../constants/theme";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { SectionTitle } from "../ui/SectionTitle";
 

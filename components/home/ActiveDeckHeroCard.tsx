@@ -1,9 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { Colors, Radii, Spacing } from "../../constants/theme";
 import { DeckEntity } from "../../src/domain/deck/deckEntity";
-import { DeckIcon } from "../ui/DeckIcon";
 import { DuolingoButton } from "../ui/DuolingoButton";
 
 interface ActiveDeckHeroCardProps {

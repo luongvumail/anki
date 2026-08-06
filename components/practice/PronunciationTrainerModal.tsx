@@ -20,7 +20,6 @@ import {
   setAudioModeAsync,
 } from "expo-audio";
 import { CardEntity } from "../../src/domain/card/cardEntity";
-import { useAppStore } from "../../src/ui/store/useAppStore";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";

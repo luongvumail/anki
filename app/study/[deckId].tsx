@@ -24,7 +24,6 @@ export default function StudyScreen() {
     targetCards,
     previewIndex,
     repairIndex,
-    repairQuestions,
     progress,
     currentPreviewCard,
     currentValidationQuestion,

@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { CardEntity } from "../../src/domain/card/cardEntity";
@@ -46,32 +40,35 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const generateRoundTiles = useCallback((sourceCards: CardEntity[], round: number): MatchTile[] => {
-    if (sourceCards.length === 0) return [];
-    const shuffledPool = [...sourceCards].sort(() => 0.5 - Math.random());
-    const roundCards = shuffledPool.slice(0, 4);
+  const generateRoundTiles = useCallback(
+    (sourceCards: CardEntity[], round: number): MatchTile[] => {
+      if (sourceCards.length === 0) return [];
+      const shuffledPool = [...sourceCards].sort(() => 0.5 - Math.random());
+      const roundCards = shuffledPool.slice(0, 4);
 
-    const generatedTiles: MatchTile[] = [];
-    roundCards.forEach((c, idx) => {
-      generatedTiles.push({
-        id: `char-${round}-${idx}-${c.id}`,
-        cardId: c.id,
-        text: c.character,
-        subText: c.pinyin,
-        type: "character",
-        matched: false,
+      const generatedTiles: MatchTile[] = [];
+      roundCards.forEach((c, idx) => {
+        generatedTiles.push({
+          id: `char-${round}-${idx}-${c.id}`,
+          cardId: c.id,
+          text: c.character,
+          subText: c.pinyin,
+          type: "character",
+          matched: false,
+        });
+        generatedTiles.push({
+          id: `trans-${round}-${idx}-${c.id}`,
+          cardId: c.id,
+          text: c.translation,
+          type: "translation",
+          matched: false,
+        });
       });
-      generatedTiles.push({
-        id: `trans-${round}-${idx}-${c.id}`,
-        cardId: c.id,
-        text: c.translation,
-        type: "translation",
-        matched: false,
-      });
-    });
 
-    return generatedTiles.sort(() => 0.5 - Math.random());
-  }, []);
+      return generatedTiles.sort(() => 0.5 - Math.random());
+    },
+    [],
+  );
 
   const startGame = useCallback(() => {
     setTimeLeft(60);

@@ -97,13 +97,13 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
       const shuffled = [...allCombined].sort(() => 0.5 - Math.random());
       setAllChips(shuffled);
     },
-    [drawerAnim]
+    [drawerAnim],
   );
 
   const initExercises = useCallback(() => {
     if (cards.length > 0) {
       const validCards = cards.filter(
-        (c) => c.examples && c.examples.length > 0 && c.examples[0].chinese
+        (c) => c.examples && c.examples.length > 0 && c.examples[0].chinese,
       );
       const shuffledCards = [...validCards].sort(() => 0.5 - Math.random());
       const selected = shuffledCards.slice(0, 5);

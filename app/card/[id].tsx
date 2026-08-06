@@ -98,7 +98,6 @@ export default function CardDetailScreen() {
     );
   }
 
-
   return (
     <View style={styles.container}>
       {/* Clean Sub-screen Header Bar */}

@@ -1,7 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Spacing, Radii } from "../constants/theme";
+import { Colors, Spacing } from "../constants/theme";
 import { DuolingoButton } from "./ui/DuolingoButton";
 import { DuolingoMascot } from "./ui/DuolingoMascot";
 

@@ -11,7 +11,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Typography, Radii, Spacing } from "../../constants/theme";
 import { DeckEntity } from "../../src/domain/deck/deckEntity";
-import { DeckIcon } from "../ui/DeckIcon";
 
 interface DeckPickerProps {
   decks: DeckEntity[];

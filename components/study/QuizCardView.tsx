@@ -33,9 +33,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
   const [isChecked, setIsChecked] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [timeLeft, setTimeLeft] = useState(5);
-  const [prevQuestionKey, setPrevQuestionKey] = useState(
-    `${question.card.id}-${question.type}`
-  );
+  const [prevQuestionKey, setPrevQuestionKey] = useState(`${question.card.id}-${question.type}`);
 
   // React official pattern: adjust state during render when prop changes
   const currentQuestionKey = `${question.card.id}-${question.type}`;
