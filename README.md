@@ -6,16 +6,16 @@
 
 ## ✨ Tính Năng Chính
 
-| Tính năng | Mô tả |
-|---|---|
-| 📚 **Quản lý bộ thẻ** | Tạo, xóa, xem chi tiết bộ thẻ; tìm kiếm từ vựng theo chữ Hán / Pinyin / nghĩa |
-| 🤖 **Nạp thẻ AI** | Nhập chữ Hán → Gemini tự động điền Pinyin, nghĩa TV, HSK, bộ thủ, câu ví dụ. Lọc trùng tự động |
-| 🧠 **Ôn tập FSRS** | Luồng học 3 giai đoạn: Preview → Quiz → Repair. Thuật toán FSRS tính interval, stability, difficulty |
-| 🎮 **Mini-games** | Speed Match (60s ghép cặp Hán↔nghĩa), Sentence Builder (xếp từ thành câu), Pronunciation Trainer |
-| 🔊 **TTS & Audio** | Phát âm chuẩn Phổ thông (expo-audio + expo-speech), tô màu thanh điệu Pinyin |
-| 🔥 **Streak & XP** | Chuỗi ngày học liên tục, điểm XP, cấp bậc từ 初学者 đến 汉字宗师, bộ huy hiệu thành tích |
-| 📊 **Thống kê** | Biểu đồ 7 ngày, tổng từ đã học, tỷ lệ thành thạo, lịch sử ôn tập |
-| ☁️ **Sync Firebase** | Dữ liệu đồng bộ Firestore realtime. Offline queue tự động sync khi có mạng |
+| Tính năng             | Mô tả                                                                                                |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| 📚 **Quản lý bộ thẻ** | Tạo, xóa, xem chi tiết bộ thẻ; tìm kiếm từ vựng theo chữ Hán / Pinyin / nghĩa                        |
+| 🤖 **Nạp thẻ AI**     | Nhập chữ Hán → Gemini tự động điền Pinyin, nghĩa TV, HSK, bộ thủ, câu ví dụ. Lọc trùng tự động       |
+| 🧠 **Ôn tập FSRS**    | Luồng học 3 giai đoạn: Preview → Quiz → Repair. Thuật toán FSRS tính interval, stability, difficulty |
+| 🎮 **Mini-games**     | Speed Match (60s ghép cặp Hán↔nghĩa), Sentence Builder (xếp từ thành câu), Pronunciation Trainer     |
+| 🔊 **TTS & Audio**    | Phát âm chuẩn Phổ thông (expo-audio + expo-speech), tô màu thanh điệu Pinyin                         |
+| 🔥 **Streak & XP**    | Chuỗi ngày học liên tục, điểm XP, cấp bậc từ 初学者 đến 汉字宗师, bộ huy hiệu thành tích             |
+| 📊 **Thống kê**       | Biểu đồ 7 ngày, tổng từ đã học, tỷ lệ thành thạo, lịch sử ôn tập                                     |
+| ☁️ **Sync Firebase**  | Dữ liệu đồng bộ Firestore realtime. Offline queue tự động sync khi có mạng                           |
 
 ---
 
@@ -104,20 +104,20 @@ components/
 
 ## 🛠️ Tech Stack
 
-| Layer | Công nghệ |
-|---|---|
-| Framework | React Native 0.86 + Expo SDK 57 (New Architecture) |
-| Routing | Expo Router v4 (file-based) |
-| State | Zustand v5 (sliced store) |
-| Database | Firebase Firestore v12 |
-| Auth | Firebase Auth v12 (AsyncStorage persistence on mobile) |
-| AI | Google Generative AI SDK — Gemini 2.5 Flash |
-| Validation | Zod v4 |
-| Audio | expo-audio + expo-speech |
-| Animation | react-native-reanimated v4 |
-| Styling | StyleSheet API + Design Tokens (`constants/theme.ts`) |
-| Testing | Vitest (unit tests cho domain + use cases) |
-| Linting | ESLint 9 + Prettier |
+| Layer      | Công nghệ                                              |
+| ---------- | ------------------------------------------------------ |
+| Framework  | React Native 0.86 + Expo SDK 57 (New Architecture)     |
+| Routing    | Expo Router v4 (file-based)                            |
+| State      | Zustand v5 (sliced store)                              |
+| Database   | Firebase Firestore v12                                 |
+| Auth       | Firebase Auth v12 (AsyncStorage persistence on mobile) |
+| AI         | Google Generative AI SDK — Gemini 2.5 Flash            |
+| Validation | Zod v4                                                 |
+| Audio      | expo-audio + expo-speech                               |
+| Animation  | react-native-reanimated v4                             |
+| Styling    | StyleSheet API + Design Tokens (`constants/theme.ts`)  |
+| Testing    | Vitest (unit tests cho domain + use cases)             |
+| Linting    | ESLint 9 + Prettier                                    |
 
 ---
 
@@ -169,11 +169,10 @@ npm run lint  # ESLint check toàn dự án
 
 ## 📋 Scripts
 
-| Script | Mô tả |
-|---|---|
-| `npm start` | Expo dev server |
-| `npm run ios` | Build & chạy iOS simulator |
+| Script            | Mô tả                         |
+| ----------------- | ----------------------------- |
+| `npm start`       | Expo dev server               |
+| `npm run ios`     | Build & chạy iOS simulator    |
 | `npm run android` | Build & chạy Android emulator |
-| `npm test` | Chạy Vitest unit tests |
-| `npm run lint` | ESLint check |
-
+| `npm test`        | Chạy Vitest unit tests        |
+| `npm run lint`    | ESLint check                  |
