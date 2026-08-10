@@ -1,14 +1,12 @@
-import { GeminiService, CardData } from "../../infrastructure/ai/geminiService";
+import { CardData, GeminiService } from "../../infrastructure/ai/geminiService.js";
+import { logger } from "../../ui/utils/logger.js";
 
 export class GenerateCardBatchUseCase {
-  private geminiService: GeminiService;
+  constructor(private readonly geminiService: GeminiService) {}
 
-  constructor(geminiService: GeminiService = new GeminiService()) {
-    this.geminiService = geminiService;
-  }
-
-  public async execute(words: string[]): Promise<(CardData | null)[]> {
-    if (!words || words.length === 0) return [];
-    return await this.geminiService.generateCardDataBatch(words);
+  async execute(words: string[]): Promise<CardData[]> {
+    logger.info(`Generating AI card batch for ${words.length} words`);
+    const promptText = words.join(", ");
+    return this.geminiService.generateCardsFromText(promptText, "deck_batch");
   }
 }

@@ -1,6 +1,6 @@
 /**
  * FSRS v5 Domain Types
- * Pure TypeScript types with zero runtime dependencies.
+ * Pure TypeScript types - ZERO runtime dependencies.
  */
 
 export enum Rating {
@@ -18,7 +18,7 @@ export enum State {
 }
 
 export interface FSRSParameters {
-  /** Target retrievability (default: 0.90 = 90% target retention) */
+  /** Target retrievability (default: 0.90 = 90% retention) */
   request_retention: number;
   /** Maximum interval in days (default: 36500) */
   maximum_interval: number;
@@ -33,13 +33,13 @@ export interface FSRSCardState {
   difficulty: number;
   /** Number of total reviews */
   reps: number;
-  /** Number of lapses (times rating was Again on a Review card) */
+  /** Number of lapses (times rated Again on a Review card) */
   lapses: number;
   /** Current memory state */
   state: State;
-  /** ISO Date string or Timestamp of last review */
+  /** ISO Date string of last review */
   last_review: string | null;
-  /** ISO Date string or Timestamp when card is due */
+  /** ISO Date string when card is due for review */
   due: string;
 }
 

@@ -1,57 +1,52 @@
-import { CardEntity } from "../../domain/card/cardEntity";
-import { ICardRepository } from "../../domain/card/cardRepository.i";
-import { FSRSEngine } from "../../domain/fsrs/fsrsEngine";
-import { GeminiService } from "../../infrastructure/ai/geminiService";
-import { GenerateAICardsPayloadSchema } from "../dto/cardSchemas";
-
-export interface GenerateAICardsInput {
-  topic: string;
-  deckId: string;
-  count?: number;
-  hskLevel?: number;
-}
+import { CardEntity } from "../../domain/card/cardEntity.js";
+import { ICardRepository } from "../../domain/card/cardRepository.i.js";
+import { IDeckRepository } from "../../domain/deck/deckRepository.i.js";
+import { FSRSEngine } from "../../domain/fsrs/fsrsEngine.js";
+import { parseTextWithGemini } from "../../infrastructure/ai/geminiService.js";
 
 export class GenerateAICardsUseCase {
-  private geminiService: GeminiService;
-  private cardRepository: ICardRepository;
-  private fsrsEngine: FSRSEngine;
-
   constructor(
-    geminiService: GeminiService,
-    cardRepository: ICardRepository,
-    fsrsEngine: FSRSEngine = new FSRSEngine(),
-  ) {
-    this.geminiService = geminiService;
-    this.cardRepository = cardRepository;
-    this.fsrsEngine = fsrsEngine;
-  }
+    private readonly cardRepo: ICardRepository,
+    private readonly deckRepo: IDeckRepository,
+    private readonly fsrsEngine: FSRSEngine
+  ) {}
 
-  public async execute(input: GenerateAICardsInput): Promise<CardEntity[]> {
-    // Input validation
-    const validated = GenerateAICardsPayloadSchema.parse({
-      topic: input.topic,
-      count: input.count ?? 5,
-      hskLevel: input.hskLevel,
-    });
+  async execute(
+    deckId: string,
+    inputText: string,
+    apiKey: string,
+    fetchFn?: typeof fetch
+  ): Promise<CardEntity[]> {
+    const deck = await this.deckRepo.getById(deckId);
+    if (!deck) {
+      throw new Error(`Deck with id ${deckId} not found`);
+    }
 
-    const result = await this.geminiService.generateCards(
-      validated.topic,
-      validated.count,
-      validated.hskLevel,
-    );
+    const rawCards = await parseTextWithGemini(inputText, apiKey, fetchFn);
+    const nowIso = new Date().toISOString();
 
-    const now = new Date();
-    const nowStr = now.toISOString();
-    const createdCards: CardEntity[] = result.cards.map((card, index) => ({
-      ...card,
-      id: `ai-card-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
-      deckId: input.deckId,
-      fsrs: this.fsrsEngine.createEmptyCard(now),
-      createdAt: nowStr,
-      updatedAt: nowStr,
+    const createdCards: CardEntity[] = rawCards.map((raw, idx) => ({
+      id: `card_ai_${Date.now()}_${idx}`,
+      deckId,
+      kanji: raw.kanji,
+      pinyin: raw.pinyin,
+      meaning: raw.meaning,
+      radicalAnalysis: raw.radical,
+      exampleSentence: raw.example,
+      hskLevel: raw.hskLevel || 1,
+      fsrsState: this.fsrsEngine.createNewCardState(),
+      createdAt: nowIso,
+      updatedAt: nowIso,
     }));
 
-    await this.cardRepository.saveCards(createdCards);
+    await this.cardRepo.saveBatch(createdCards);
+
+    // Update deck metadata
+    deck.cardCount += createdCards.length;
+    deck.newCardCount += createdCards.length;
+    deck.updatedAt = nowIso;
+    await this.deckRepo.save(deck);
+
     return createdCards;
   }
 }

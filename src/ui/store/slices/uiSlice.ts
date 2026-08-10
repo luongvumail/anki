@@ -1,14 +1,10 @@
-import { StateCreator } from "zustand";
+import { UISliceState } from "../types.js";
 
-export interface UISlice {
-  isAccountModalOpen: boolean;
-  openAccountModal: () => void;
-  closeAccountModal: () => void;
-}
+export const createUISlice = (
+  set: (fn: (state: UISliceState) => Partial<UISliceState>) => void
+): UISliceState => ({
+  isAIModalOpen: false,
 
-export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
-  isAccountModalOpen: false,
-
-  openAccountModal: () => set({ isAccountModalOpen: true }),
-  closeAccountModal: () => set({ isAccountModalOpen: false }),
+  openAIModal: () => set(() => ({ isAIModalOpen: true })),
+  closeAIModal: () => set(() => ({ isAIModalOpen: false })),
 });

@@ -1,52 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { Rating } from "../../fsrs/fsrsTypes";
-import { StreakCalculator, StreakState } from "../streakCalculator";
+import { calculateStreak } from "../streakCalculator.js";
 
-describe("StreakCalculator", () => {
-  const calculator = new StreakCalculator();
-
-  it("calculates XP based on ratings", () => {
-    expect(calculator.calculateXP(Rating.Again)).toBe(2);
-    expect(calculator.calculateXP(Rating.Hard)).toBe(5);
-    expect(calculator.calculateXP(Rating.Good)).toBe(10);
-    expect(calculator.calculateXP(Rating.Easy)).toBe(15);
+describe("streakCalculator", () => {
+  it("should return 0 for empty activity dates", () => {
+    expect(calculateStreak([])).toBe(0);
   });
 
-  it("starts streak at 1 on first study", () => {
-    const initial: StreakState = { currentStreak: 0, longestStreak: 0, lastStudyDate: null };
-    const today = new Date("2026-08-06T10:00:00Z");
-    const updated = calculator.updateStreak(initial, today);
+  it("should calculate streak correctly when user studied today and yesterday", () => {
+    const today = new Date().toISOString();
+    const yesterday = new Date(Date.now() - 86400000).toISOString();
+    const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString();
 
-    expect(updated.currentStreak).toBe(1);
-    expect(updated.longestStreak).toBe(1);
-    expect(updated.lastStudyDate).toBe("2026-08-06");
+    expect(calculateStreak([today, yesterday, twoDaysAgo])).toBe(3);
   });
 
-  it("increments streak when studying on consecutive days", () => {
-    const day1State: StreakState = {
-      currentStreak: 1,
-      longestStreak: 1,
-      lastStudyDate: "2026-08-05",
-    };
-    const day2 = new Date("2026-08-06T10:00:00Z");
-    const updated = calculator.updateStreak(day1State, day2);
-
-    expect(updated.currentStreak).toBe(2);
-    expect(updated.longestStreak).toBe(2);
-    expect(updated.lastStudyDate).toBe("2026-08-06");
+  it("should maintain streak if studied yesterday but not today yet", () => {
+    const yesterday = new Date(Date.now() - 86400000).toISOString();
+    expect(calculateStreak([yesterday])).toBe(1);
   });
 
-  it("resets streak to 1 if day missed", () => {
-    const day1State: StreakState = {
-      currentStreak: 5,
-      longestStreak: 5,
-      lastStudyDate: "2026-08-03",
-    };
-    const today = new Date("2026-08-06T10:00:00Z");
-    const updated = calculator.updateStreak(day1State, today);
-
-    expect(updated.currentStreak).toBe(1);
-    expect(updated.longestStreak).toBe(5);
-    expect(updated.lastStudyDate).toBe("2026-08-06");
+  it("should return 0 if missed yesterday and today", () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString();
+    expect(calculateStreak([threeDaysAgo])).toBe(0);
   });
 });

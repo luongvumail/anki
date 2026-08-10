@@ -1,59 +1,56 @@
-import { CardEntity, ExampleSentence } from "../../domain/card/cardEntity";
-import { ICardRepository } from "../../domain/card/cardRepository.i";
-import { FSRSEngine } from "../../domain/fsrs/fsrsEngine";
+import { CardEntity } from "../../domain/card/cardEntity.js";
+import { ICardRepository } from "../../domain/card/cardRepository.i.js";
+import { IDeckRepository } from "../../domain/deck/deckRepository.i.js";
+import { FSRSEngine } from "../../domain/fsrs/fsrsEngine.js";
 
 export interface AddCardInput {
   deckId: string;
-  character: string;
-  pinyin?: string;
-  traditional?: string;
-  hanviet?: string;
-  translation?: string;
-  examples?: ExampleSentence[];
-  radical?: string;
-  strokeCount?: number;
+  kanji: string;
+  pinyin: string;
+  meaning: string;
+  radicalAnalysis?: string;
+  exampleSentence?: string;
   hskLevel?: number;
-  tags?: string[];
-  fsrs?: CardEntity["fsrs"];
-}
-
-function generateId(prefix: string): string {
-  try {
-    if (typeof crypto !== "undefined" && crypto.randomUUID) {
-      return `${prefix}-${crypto.randomUUID()}`;
-    }
-  } catch {}
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
 export class AddCardUseCase {
-  private cardRepo: ICardRepository;
-  private fsrsEngine: FSRSEngine;
+  constructor(
+    private readonly cardRepo: ICardRepository,
+    private readonly deckRepo: IDeckRepository,
+    private readonly fsrsEngine: FSRSEngine
+  ) {}
 
-  constructor(cardRepo: ICardRepository, fsrsEngine: FSRSEngine = new FSRSEngine()) {
-    this.cardRepo = cardRepo;
-    this.fsrsEngine = fsrsEngine;
-  }
+  async execute(input: AddCardInput): Promise<CardEntity> {
+    const deck = await this.deckRepo.getById(input.deckId);
+    if (!deck) {
+      throw new Error(`Deck with id ${input.deckId} not found`);
+    }
 
-  public async execute(input: AddCardInput): Promise<CardEntity> {
-    const now = new Date();
-    const nowStr = now.toISOString();
-    const initialFSRS = input.fsrs ?? this.fsrsEngine.createEmptyCard(now);
+    const nowIso = new Date().toISOString();
+    const newCardState = this.fsrsEngine.createNewCardState();
 
-    const newCard: CardEntity = {
-      ...input,
-      id: generateId("card"),
-      character: input.character || "",
-      pinyin: input.pinyin || "",
-      translation: input.translation || "",
-      examples: input.examples || [],
-      tags: input.tags || [],
-      fsrs: initialFSRS,
-      createdAt: nowStr,
-      updatedAt: nowStr,
+    const card: CardEntity = {
+      id: `card_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      deckId: input.deckId,
+      kanji: input.kanji,
+      pinyin: input.pinyin,
+      meaning: input.meaning,
+      radicalAnalysis: input.radicalAnalysis,
+      exampleSentence: input.exampleSentence,
+      hskLevel: input.hskLevel,
+      fsrsState: newCardState,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
 
-    await this.cardRepo.saveCard(newCard);
-    return newCard;
+    await this.cardRepo.save(card);
+
+    // Update deck card count
+    deck.cardCount += 1;
+    deck.newCardCount += 1;
+    deck.updatedAt = nowIso;
+    await this.deckRepo.save(deck);
+
+    return card;
   }
 }

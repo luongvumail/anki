@@ -1,13 +1,23 @@
-import { ICardRepository } from "../../domain/card/cardRepository.i";
+import { ICardRepository } from "../../domain/card/cardRepository.i.js";
+import { IDeckRepository } from "../../domain/deck/deckRepository.i.js";
 
 export class DeleteCardUseCase {
-  private cardRepo: ICardRepository;
+  constructor(
+    private readonly cardRepo: ICardRepository,
+    private readonly deckRepo: IDeckRepository
+  ) {}
 
-  constructor(cardRepo: ICardRepository) {
-    this.cardRepo = cardRepo;
-  }
+  async execute(cardId: string): Promise<void> {
+    const card = await this.cardRepo.getById(cardId);
+    if (!card) return;
 
-  public async execute(cardId: string): Promise<void> {
-    await this.cardRepo.deleteCard(cardId);
+    await this.cardRepo.delete(cardId);
+
+    const deck = await this.deckRepo.getById(card.deckId);
+    if (deck) {
+      deck.cardCount = Math.max(0, deck.cardCount - 1);
+      deck.updatedAt = new Date().toISOString();
+      await this.deckRepo.save(deck);
+    }
   }
 }

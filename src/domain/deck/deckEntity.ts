@@ -1,12 +1,11 @@
 export interface DeckEntity {
   id: string;
-  name: string;
-  description?: string;
+  title: string;
+  description: string;
   color: string;
-  icon: string;
   cardCount: number;
-  newCount: number;
-  dueCount: number;
+  newCardCount: number;
+  reviewCardCount: number;
   createdAt: string;
   updatedAt: string;
 }

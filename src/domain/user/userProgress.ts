@@ -1,3 +1,41 @@
+import { Rating } from "../fsrs/fsrsTypes.js";
+
+export const XP_PER_RATING: Record<Rating, number> = {
+  [Rating.Again]: 5,
+  [Rating.Hard]: 10,
+  [Rating.Good]: 15,
+  [Rating.Easy]: 20,
+};
+
+export interface UserProgress {
+  totalXp: number;
+  level: number;
+  streakDays: number;
+  lastStudyDate: string | null;
+  badges: string[];
+  dailyGoal: number;
+  streakFreezeCount: number;
+}
+
+export const initialUserProgress: UserProgress = {
+  totalXp: 0,
+  level: 1,
+  streakDays: 1,
+  lastStudyDate: null,
+  badges: [],
+  dailyGoal: 10,
+  streakFreezeCount: 2,
+};
+
+export function calculateLevel(totalXp: number): number {
+  if (totalXp <= 0) return 1;
+  return Math.floor(totalXp / 100) + 1;
+}
+
+export function getXpForNextLevel(currentLevel: number): number {
+  return currentLevel * 100;
+}
+
 export interface Badge {
   id: string;
   title: string;
@@ -48,7 +86,7 @@ export const ALL_BADGES: Badge[] = [
     id: "streak_3",
     title: "Tia Lửa Đầu Tiên",
     description: "Duy trì chuỗi 3 ngày học liên tục",
-    icon: "flame",
+    icon: "zap",
     category: "streak",
     target: 3,
   },
@@ -56,7 +94,7 @@ export const ALL_BADGES: Badge[] = [
     id: "streak_7",
     title: "Rực Rỡ 7 Ngày",
     description: "Duy trì chuỗi 7 ngày học liên tục",
-    icon: "flame",
+    icon: "zap",
     category: "streak",
     target: 7,
   },
@@ -64,7 +102,7 @@ export const ALL_BADGES: Badge[] = [
     id: "streak_30",
     title: "Bền Bỉ 30 Ngày",
     description: "Duy trì chuỗi 30 ngày học liên tục",
-    icon: "flame",
+    icon: "zap",
     category: "streak",
     target: 30,
   },
@@ -93,3 +131,4 @@ export const ALL_BADGES: Badge[] = [
     target: 100,
   },
 ];
+

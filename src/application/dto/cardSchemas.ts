@@ -1,89 +1,40 @@
-import { z } from "zod";
-import { Rating, State } from "../../domain/fsrs/fsrsTypes";
+export interface CreateCardDTO {
+  deckId: string;
+  kanji: string;
+  pinyin: string;
+  meaning: string;
+  radicalAnalysis?: string;
+  exampleSentence?: string;
+  hskLevel?: number;
+}
 
-export const RatingSchema = z.nativeEnum(Rating);
-export const StateSchema = z.nativeEnum(State);
+export function validateCreateCardDTO(data: unknown): CreateCardDTO {
+  if (typeof data !== "object" || data === null) {
+    throw new Error("Invalid payload: must be an object");
+  }
 
-export const FSRSCardStateSchema = z.object({
-  stability: z.number().min(0),
-  difficulty: z.number().min(1).max(10),
-  reps: z.number().int().min(0),
-  lapses: z.number().int().min(0),
-  state: StateSchema,
-  last_review: z.string().nullable(),
-  due: z.string(),
-});
+  const obj = data as Record<string, unknown>;
 
-export const LegacySRSStateSchema = z.object({
-  repetitions: z.number().int(),
-  interval: z.number(),
-  easeFactor: z.number(),
-  dueDate: z.string(),
-});
+  if (typeof obj.deckId !== "string" || !obj.deckId) {
+    throw new Error("Invalid payload: deckId is required");
+  }
+  if (typeof obj.kanji !== "string" || !obj.kanji) {
+    throw new Error("Invalid payload: kanji is required");
+  }
+  if (typeof obj.pinyin !== "string" || !obj.pinyin) {
+    throw new Error("Invalid payload: pinyin is required");
+  }
+  if (typeof obj.meaning !== "string" || !obj.meaning) {
+    throw new Error("Invalid payload: meaning is required");
+  }
 
-export const ExampleSentenceSchema = z.object({
-  chinese: z.string().min(1),
-  pinyin: z.string().min(1),
-  vietnamese: z.string().min(1),
-});
-
-export const CardEntitySchema = z.object({
-  id: z.string().min(1),
-  deckId: z.string().min(1),
-  character: z.string().min(1),
-  traditional: z.string().optional(),
-  pinyin: z.string().min(1),
-  hanviet: z.string().optional(),
-  translation: z.string().min(1),
-  examples: z.array(ExampleSentenceSchema).default([]),
-  radical: z.string().optional(),
-  strokeCount: z.number().optional(),
-  hskLevel: z.number().optional(),
-  tags: z.array(z.string()).optional(),
-  fsrs: FSRSCardStateSchema.optional(),
-  srs: LegacySRSStateSchema.optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  lastReviewedAt: z.string().optional(),
-});
-
-export const GenerateAICardsPayloadSchema = z.object({
-  topic: z.string().min(1),
-  count: z.number().int().min(1).max(20).default(5),
-  hskLevel: z.number().int().min(1).max(6).optional(),
-});
-
-export const AICardResponseItemSchema = z.object({
-  character: z.string().min(1),
-  traditional: z.string().optional(),
-  pinyin: z.string().min(1),
-  hanviet: z.string().optional(),
-  translation: z.string().min(1),
-  examples: z.array(ExampleSentenceSchema).default([]),
-  radical: z.string().optional(),
-  strokeCount: z.number().optional(),
-  hskLevel: z.number().optional(),
-  tags: z.array(z.string()).optional(),
-});
-
-export const AICardListResponseSchema = z.array(AICardResponseItemSchema);
-
-export const ReviewLogSchema = z.object({
-  rating: RatingSchema,
-  state: StateSchema,
-  due: z.string(),
-  stability: z.number(),
-  difficulty: z.number(),
-  elapsed_days: z.number(),
-  scheduled_days: z.number(),
-  review: z.string(),
-});
-
-export const SyncOfflinePayloadSchema = z.object({
-  id: z.string().min(1),
-  cardId: z.string().min(1),
-  deckId: z.string().min(1),
-  card: CardEntitySchema,
-  reviewLog: ReviewLogSchema,
-  timestamp: z.string(),
-});
+  return {
+    deckId: obj.deckId,
+    kanji: obj.kanji,
+    pinyin: obj.pinyin,
+    meaning: obj.meaning,
+    radicalAnalysis: typeof obj.radicalAnalysis === "string" ? obj.radicalAnalysis : undefined,
+    exampleSentence: typeof obj.exampleSentence === "string" ? obj.exampleSentence : undefined,
+    hskLevel: typeof obj.hskLevel === "number" ? obj.hskLevel : undefined,
+  };
+}

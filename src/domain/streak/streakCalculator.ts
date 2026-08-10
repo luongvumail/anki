@@ -1,75 +1,48 @@
-import { Rating } from "../fsrs/fsrsTypes";
-
 export interface StreakState {
   currentStreak: number;
-  longestStreak: number;
-  lastStudyDate: string | null; // ISO YYYY-MM-DD
+  lastActiveDate: string;
+  isActiveToday: boolean;
 }
 
-export class StreakCalculator {
-  /**
-   * Calculates earned XP based on user rating.
-   */
-  public calculateXP(rating: Rating): number {
-    switch (rating) {
-      case Rating.Again:
-        return 2;
-      case Rating.Hard:
-        return 5;
-      case Rating.Good:
-        return 10;
-      case Rating.Easy:
-        return 15;
-      default:
-        return 5;
+/**
+ * Streak Calculator
+ * Pure domain logic for calculating consecutive study days.
+ */
+export function calculateStreak(activityDates: string[]): number {
+  if (!activityDates || activityDates.length === 0) return 0;
+
+  // Normalize dates to YYYY-MM-DD set (unique days)
+  const uniqueDays = new Set(
+    activityDates.map((dateStr) => {
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
+    })
+  );
+
+  const today = new Date();
+  const getFormatted = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+
+  let streak = 0;
+  let currentDate = new Date(today);
+
+  // If user hasn't studied today yet, check if studied yesterday to keep streak
+  if (!uniqueDays.has(getFormatted(currentDate))) {
+    currentDate.setDate(currentDate.getDate() - 1);
+    if (!uniqueDays.has(getFormatted(currentDate))) {
+      return 0; // Missed yesterday and today -> streak reset
     }
   }
 
-  /**
-   * Updates streak state given a review date.
-   */
-  public updateStreak(currentStreakState: StreakState, reviewDate: Date = new Date()): StreakState {
-    const reviewDateStr = this.toDateString(reviewDate);
-    const lastDateStr = currentStreakState.lastStudyDate;
-
-    if (lastDateStr === reviewDateStr) {
-      // Already studied today, maintain streak
-      return currentStreakState;
-    }
-
-    if (!lastDateStr) {
-      // First time studying
-      return {
-        currentStreak: 1,
-        longestStreak: Math.max(1, currentStreakState.longestStreak),
-        lastStudyDate: reviewDateStr,
-      };
-    }
-
-    const yesterdayStr = this.toDateString(new Date(reviewDate.getTime() - 24 * 3600 * 1000));
-
-    if (lastDateStr === yesterdayStr) {
-      // Consecutive day! Increment streak
-      const newStreak = currentStreakState.currentStreak + 1;
-      return {
-        currentStreak: newStreak,
-        longestStreak: Math.max(newStreak, currentStreakState.longestStreak),
-        lastStudyDate: reviewDateStr,
-      };
-    }
-
-    // Streak broken, reset to 1 day
-    return {
-      currentStreak: 1,
-      longestStreak: Math.max(1, currentStreakState.longestStreak),
-      lastStudyDate: reviewDateStr,
-    };
+  // Count backwards day by day
+  while (uniqueDays.has(getFormatted(currentDate))) {
+    streak += 1;
+    currentDate.setDate(currentDate.getDate() - 1);
   }
 
-  private toDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
+  return streak;
 }

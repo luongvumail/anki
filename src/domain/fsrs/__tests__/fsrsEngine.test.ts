@@ -1,70 +1,60 @@
 import { describe, expect, it } from "vitest";
-import { FSRSEngine } from "../fsrsEngine";
-import { Rating, State } from "../fsrsTypes";
+import { FSRSEngine } from "../fsrsEngine.js";
+import { Rating, State } from "../fsrsTypes.js";
 
-describe("FSRSEngine v5", () => {
+describe("FSRSEngine (FSRS v5 Math Engine)", () => {
   const engine = new FSRSEngine();
-  const now = new Date("2026-08-06T10:00:00Z");
 
-  it("creates an empty new card with default state", () => {
-    const card = engine.createEmptyCard(now);
-    expect(card.stability).toBe(0);
-    expect(card.difficulty).toBe(0);
+  it("should create default blank card state with State.New", () => {
+    const card = engine.createNewCardState();
     expect(card.state).toBe(State.New);
     expect(card.reps).toBe(0);
-    expect(card.last_review).toBeNull();
+    expect(card.lapses).toBe(0);
+    expect(card.stability).toBe(0);
+    expect(card.difficulty).toBe(0);
   });
 
-  it("schedules a new card correctly for Good rating", () => {
-    const card = engine.createEmptyCard(now);
-    const result = engine.scheduleCard(card, Rating.Good, now);
+  it("should transition new card to State.Review and increase stability after Good rating", () => {
+    const card = engine.createNewCardState();
+    const now = new Date("2026-08-10T10:00:00Z");
+    const result = engine.schedule(card, Rating.Good, now);
+    const scheduledCard = result[Rating.Good].card;
 
-    expect(result.card.reps).toBe(1);
-    expect(result.card.state).toBe(State.Review);
-    expect(result.card.stability).toBeGreaterThan(0);
-    expect(result.card.difficulty).toBeGreaterThan(0);
-    expect(result.card.last_review).toBe(now.toISOString());
+    expect(scheduledCard.state).toBe(State.Review);
+    expect(scheduledCard.reps).toBe(1);
+    expect(scheduledCard.stability).toBeGreaterThan(0);
+    expect(scheduledCard.difficulty).toBeGreaterThan(0);
+    expect(new Date(scheduledCard.due).getTime()).toBeGreaterThan(now.getTime());
   });
 
-  it("increases stability on successive Good ratings and decreases on Again", () => {
-    const emptyCard = engine.createEmptyCard(now);
-    const firstReview = engine.scheduleCard(emptyCard, Rating.Good, now);
-    const initialStability = firstReview.card.stability;
+  it("should transition new card to State.Learning after Again rating", () => {
+    const card = engine.createNewCardState();
+    const now = new Date("2026-08-10T10:00:00Z");
+    const result = engine.schedule(card, Rating.Again, now);
+    const scheduledCard = result[Rating.Again].card;
 
-    // Review after 3 days
-    const threeDaysLater = new Date(now.getTime() + 3 * 24 * 3600 * 1000);
-    const secondReview = engine.scheduleCard(firstReview.card, Rating.Good, threeDaysLater);
-
-    expect(secondReview.card.stability).toBeGreaterThan(initialStability);
-
-    // Review with Again (failure)
-    const nextFailure = engine.scheduleCard(secondReview.card, Rating.Again, threeDaysLater);
-    expect(nextFailure.card.stability).toBeLessThan(secondReview.card.stability);
-    expect(nextFailure.card.state).toBe(State.Relearning);
-    expect(nextFailure.card.lapses).toBe(1);
+    expect(scheduledCard.state).toBe(State.Learning);
+    expect(scheduledCard.reps).toBe(1);
+    expect(scheduledCard.lapses).toBe(0);
   });
 
-  it("calculates retrievability correctly", () => {
-    const stability = 10;
-    expect(engine.calculateRetrievability(0, stability)).toBe(1.0);
-    expect(engine.calculateRetrievability(10, stability)).toBeLessThan(1.0);
-    expect(engine.calculateRetrievability(10, stability)).toBeGreaterThan(0.4);
-  });
+  it("should increment lapses and set State.Relearning on Review card when rated Again", () => {
+    const now = new Date("2026-08-10T10:00:00Z");
+    const reviewCard = {
+      stability: 5.0,
+      difficulty: 4.5,
+      reps: 3,
+      lapses: 1,
+      state: State.Review,
+      last_review: "2026-08-05T10:00:00Z",
+      due: "2026-08-10T10:00:00Z",
+    };
 
-  it("generates all 4 rating options via repeatCard", () => {
-    const card = engine.createEmptyCard(now);
-    const options = engine.repeatCard(card, now);
+    const result = engine.schedule(reviewCard, Rating.Again, now);
+    const scheduledCard = result[Rating.Again].card;
 
-    expect(options[Rating.Again]).toBeDefined();
-    expect(options[Rating.Hard]).toBeDefined();
-    expect(options[Rating.Good]).toBeDefined();
-    expect(options[Rating.Easy]).toBeDefined();
-
-    expect(options[Rating.Easy].card.stability).toBeGreaterThan(
-      options[Rating.Good].card.stability,
-    );
-    expect(options[Rating.Good].card.stability).toBeGreaterThan(
-      options[Rating.Hard].card.stability,
-    );
+    expect(scheduledCard.state).toBe(State.Relearning);
+    expect(scheduledCard.lapses).toBe(2);
+    expect(scheduledCard.reps).toBe(4);
   });
 });

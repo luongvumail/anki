@@ -1,16 +1,28 @@
-import { CardEntity, ensureFSRSState } from "./cardEntity";
-import { State } from "../fsrs/fsrsTypes";
+import { CardEntity } from "./cardEntity.js";
+import { State } from "../fsrs/fsrsTypes.js";
 
-export function isDue(srs?: { due?: string; dueDate?: string }): boolean {
-  if (!srs) return true;
-  const dueStr = srs.due || srs.dueDate;
-  if (!dueStr) return true;
+/**
+ * Checks if a card is due for FSRS review at specified timestamp.
+ */
+export function isCardDue(card: CardEntity, now: Date = new Date()): boolean {
+  if (!card.fsrsState.due) return true;
+  return new Date(card.fsrsState.due).getTime() <= now.getTime();
+}
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(dueStr);
-  due.setHours(0, 0, 0, 0);
-  return due <= today;
+/**
+ * Filters array of cards returning only those due for review.
+ */
+export function getDueCards(cards: CardEntity[], now: Date = new Date()): CardEntity[] {
+  return cards.filter((card) => isCardDue(card, now));
+}
+
+/**
+ * Sorts cards by FSRS due date (earliest due first).
+ */
+export function sortByDue(cards: CardEntity[]): CardEntity[] {
+  return [...cards].sort(
+    (a, b) => new Date(a.fsrsState.due).getTime() - new Date(b.fsrsState.due).getTime()
+  );
 }
 
 /**
@@ -18,10 +30,7 @@ export function isDue(srs?: { due?: string; dueDate?: string }): boolean {
  */
 export function computeDueCount(cards: CardEntity[]): number {
   if (!cards || cards.length === 0) return 0;
-  return cards.filter((c) => {
-    const fsrs = ensureFSRSState(c);
-    return isDue({ due: fsrs.due });
-  }).length;
+  return cards.filter((c) => isCardDue(c)).length;
 }
 
 /**
@@ -29,10 +38,9 @@ export function computeDueCount(cards: CardEntity[]): number {
  */
 export function computeNewCount(cards: CardEntity[]): number {
   if (!cards || cards.length === 0) return 0;
-  return cards.filter((c) => {
-    const fsrs = ensureFSRSState(c);
-    return fsrs.state === State.New || fsrs.reps === 0;
-  }).length;
+  return cards.filter(
+    (c) => c.fsrsState.state === State.New || c.fsrsState.reps === 0
+  ).length;
 }
 
 /**
@@ -40,10 +48,7 @@ export function computeNewCount(cards: CardEntity[]): number {
  */
 export function computeReviewDueCount(cards: CardEntity[]): number {
   if (!cards || cards.length === 0) return 0;
-  return cards.filter((c) => {
-    const fsrs = ensureFSRSState(c);
-    return fsrs.reps > 0 && isDue({ due: fsrs.due });
-  }).length;
+  return cards.filter((c) => c.fsrsState.reps > 0 && isCardDue(c)).length;
 }
 
 /**
@@ -51,10 +56,7 @@ export function computeReviewDueCount(cards: CardEntity[]): number {
  */
 export function computeLearnedCount(cards: CardEntity[]): number {
   if (!cards || cards.length === 0) return 0;
-  return cards.filter((c) => {
-    const fsrs = ensureFSRSState(c);
-    return fsrs.reps > 0 && !isDue({ due: fsrs.due });
-  }).length;
+  return cards.filter((c) => c.fsrsState.reps > 0 && !isCardDue(c)).length;
 }
 
 /**
@@ -63,7 +65,7 @@ export function computeLearnedCount(cards: CardEntity[]): number {
 export function getDeckMasteryPct(
   cardCount: number,
   dueCount: number,
-  cards?: CardEntity[],
+  cards?: CardEntity[]
 ): number {
   if (cards && cards.length > 0) {
     const total = cards.length;
@@ -74,4 +76,57 @@ export function getDeckMasteryPct(
   if (cardCount <= 0) return 0;
   const learned = Math.max(0, cardCount - dueCount);
   return Math.round((learned / cardCount) * 100);
+}
+
+/**
+ * Calculates total due queue summary across ALL decks for the Smart Daily Queue on HomeScreen.
+ */
+export function getDailyDueSummary(cardsRecord: Record<string, CardEntity[]>): {
+  totalDue: number;
+  urgentDeckId: string | null;
+  urgentDeckDueCount: number;
+} {
+  let totalDue = 0;
+  let urgentDeckId: string | null = null;
+  let maxDue = 0;
+
+  Object.entries(cardsRecord).forEach(([deckId, deckCards]) => {
+    const due = computeDueCount(deckCards);
+    totalDue += due;
+    if (due > maxDue) {
+      maxDue = due;
+      urgentDeckId = deckId;
+    }
+  });
+
+  return {
+    totalDue,
+    urgentDeckId,
+    urgentDeckDueCount: maxDue,
+  };
+}
+
+/**
+ * Uses FSRS retrievability decay formula R(t) = e^(-t/S) to forecast how many learned cards
+ * will drop below 70% retention after specified days (default: 1 day ahead).
+ */
+export function computeForecastForgotten(
+  cardsRecord: Record<string, CardEntity[]>,
+  daysAhead = 1
+): number {
+  let countAtRisk = 0;
+
+  Object.values(cardsRecord).forEach((deckCards) => {
+    deckCards.forEach((c) => {
+      if (c.fsrsState.reps > 0 && c.fsrsState.stability > 0) {
+        const S = c.fsrsState.stability;
+        const R = Math.exp(-daysAhead / S);
+        if (R < 0.7) {
+          countAtRisk++;
+        }
+      }
+    });
+  });
+
+  return countAtRisk;
 }

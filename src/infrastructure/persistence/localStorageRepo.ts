@@ -1,101 +1,112 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CardEntity } from "../../domain/card/cardEntity";
-import { ReviewLog } from "../../domain/fsrs/fsrsTypes";
+import { CardEntity } from "../../domain/card/cardEntity.js";
+import { ICardRepository } from "../../domain/card/cardRepository.i.js";
+import { DeckEntity } from "../../domain/deck/deckEntity.js";
+import { IDeckRepository } from "../../domain/deck/deckRepository.i.js";
 
-export interface SyncOfflinePayload {
-  id: string;
-  cardId: string;
-  deckId: string;
-  card: CardEntity;
-  reviewLog: ReviewLog;
-  timestamp: string;
+const CARDS_STORAGE_KEY = "@anki_cards_v1";
+const DECKS_STORAGE_KEY = "@anki_decks_v1";
+
+function getItem<T>(key: string): T | null {
+  if (typeof localStorage !== "undefined") {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  }
+  return null;
 }
 
-const OFFLINE_QUEUE_KEY = "@anki_offline_review_queue_v1";
-const CARDS_CACHE_KEY = "@anki_cards_cache_v1";
+function setItem<T>(key: string, value: T): void {
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+}
 
-export class LocalStorageRepo {
-  /**
-   * Retrieves all pending review payloads from local storage queue.
-   */
-  public async getOfflineQueue(): Promise<SyncOfflinePayload[]> {
-    try {
-      const data = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
-      if (!data) return [];
-      return JSON.parse(data) as SyncOfflinePayload[];
-    } catch {
-      return [];
+export class LocalStorageCardRepository implements ICardRepository {
+  private cards: Map<string, CardEntity> = new Map();
+
+  constructor(initialCards: CardEntity[] = []) {
+    const persisted = getItem<CardEntity[]>(CARDS_STORAGE_KEY);
+    if (persisted && Array.isArray(persisted)) {
+      for (const card of persisted) {
+        this.cards.set(card.id, card);
+      }
+    } else {
+      for (const card of initialCards) {
+        this.cards.set(card.id, card);
+      }
+      this.persist();
     }
   }
 
-  /**
-   * Pushes a new offline review to local storage queue.
-   */
-  public async enqueueOfflineReview(payload: SyncOfflinePayload): Promise<void> {
-    const queue = await this.getOfflineQueue();
-    queue.push(payload);
-    await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+  private persist() {
+    setItem(CARDS_STORAGE_KEY, Array.from(this.cards.values()));
   }
 
-  /**
-   * Removes synced items from queue.
-   */
-  public async removeOfflineReviews(syncedIds: string[]): Promise<void> {
-    const queue = await this.getOfflineQueue();
-    const filtered = queue.filter((item) => !syncedIds.includes(item.id));
-    await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(filtered));
+  async getAll(): Promise<CardEntity[]> {
+    return Array.from(this.cards.values());
   }
 
-  /**
-   * Clears entire offline queue.
-   */
-  public async clearOfflineQueue(): Promise<void> {
-    await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+  async getByDeckId(deckId: string): Promise<CardEntity[]> {
+    return Array.from(this.cards.values()).filter((c) => c.deckId === deckId);
   }
 
-  /**
-   * Caches cards array locally for offline access.
-   */
-  public async saveCachedCards(cards: CardEntity[]): Promise<void> {
-    await AsyncStorage.setItem(CARDS_CACHE_KEY, JSON.stringify(cards));
+  async getById(id: string): Promise<CardEntity | null> {
+    return this.cards.get(id) ?? null;
   }
 
-  /**
-   * Retrieves locally cached cards.
-   */
-  public async getCachedCards(): Promise<CardEntity[]> {
-    try {
-      const data = await AsyncStorage.getItem(CARDS_CACHE_KEY);
-      if (!data) return [];
-      return JSON.parse(data) as CardEntity[];
-    } catch {
-      return [];
+  async save(card: CardEntity): Promise<void> {
+    this.cards.set(card.id, card);
+    this.persist();
+  }
+
+  async saveBatch(cards: CardEntity[]): Promise<void> {
+    for (const card of cards) {
+      this.cards.set(card.id, card);
+    }
+    this.persist();
+  }
+
+  async delete(id: string): Promise<void> {
+    this.cards.delete(id);
+    this.persist();
+  }
+}
+
+export class LocalStorageDeckRepository implements IDeckRepository {
+  private decks: Map<string, DeckEntity> = new Map();
+
+  constructor(initialDecks: DeckEntity[] = []) {
+    const persisted = getItem<DeckEntity[]>(DECKS_STORAGE_KEY);
+    if (persisted && Array.isArray(persisted)) {
+      for (const deck of persisted) {
+        this.decks.set(deck.id, deck);
+      }
+    } else {
+      for (const deck of initialDecks) {
+        this.decks.set(deck.id, deck);
+      }
+      this.persist();
     }
   }
 
-  /**
-   * Caches cards for a specific deck locally.
-   */
-  public async saveCachedCardsForDeck(deckId: string, cards: CardEntity[]): Promise<void> {
-    try {
-      const key = `@anki_deck_cards_cache_${deckId}`;
-      await AsyncStorage.setItem(key, JSON.stringify(cards));
-    } catch (err) {
-      console.warn("[LocalStorageRepo] Failed to cache cards for deck:", err);
-    }
+  private persist() {
+    setItem(DECKS_STORAGE_KEY, Array.from(this.decks.values()));
   }
 
-  /**
-   * Retrieves locally cached cards for a specific deck.
-   */
-  public async getCachedCardsForDeck(deckId: string): Promise<CardEntity[]> {
-    try {
-      const key = `@anki_deck_cards_cache_${deckId}`;
-      const data = await AsyncStorage.getItem(key);
-      if (!data) return [];
-      return JSON.parse(data) as CardEntity[];
-    } catch {
-      return [];
-    }
+  async getAll(): Promise<DeckEntity[]> {
+    return Array.from(this.decks.values());
+  }
+
+  async getById(id: string): Promise<DeckEntity | null> {
+    return this.decks.get(id) ?? null;
+  }
+
+  async save(deck: DeckEntity): Promise<void> {
+    this.decks.set(deck.id, deck);
+    this.persist();
+  }
+
+  async delete(id: string): Promise<void> {
+    this.decks.delete(id);
+    this.persist();
   }
 }

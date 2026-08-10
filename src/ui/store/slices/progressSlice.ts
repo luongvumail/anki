@@ -1,50 +1,40 @@
-import { StateCreator } from "zustand";
-import { StreakState } from "../../../domain/streak/streakCalculator";
-import { ReviewTrackerRepository } from "../../../infrastructure/persistence/reviewTrackerRepo";
+import { calculateLevel, initialUserProgress, UserProgress } from "../../../domain/user/userProgress.js";
+import { ProgressSliceState } from "../types.js";
 
-const reviewTrackerRepo = new ReviewTrackerRepository();
-
-export interface ProgressSlice {
-  streakState: StreakState;
-  xp: number;
-  unlockedBadgeIds: string[];
-  reviewHistory: Record<string, number>;
-  streakCount: number;
-
-  loadReviewHistory: () => Promise<void>;
-  checkAndUnlockBadges: (streak?: number, learnedCards?: number) => Promise<void>;
-}
-
-export const createProgressSlice: StateCreator<ProgressSlice, [], [], ProgressSlice> = (
-  set,
-  get,
-) => ({
-  streakState: { currentStreak: 0, longestStreak: 0, lastStudyDate: null },
-  xp: 0,
-  unlockedBadgeIds: [],
-  reviewHistory: {},
-  streakCount: 0,
-
-  loadReviewHistory: async () => {
-    const history = await reviewTrackerRepo.getReviewHistory();
-    const streak = await reviewTrackerRepo.getStreakCount();
-    set({ reviewHistory: history, streakCount: streak });
+export const createProgressSlice = (
+  set: (fn: (state: ProgressSliceState) => Partial<ProgressSliceState>) => void,
+  get: () => ProgressSliceState
+): ProgressSliceState => ({
+  userProgress: initialUserProgress,
+  streakState: {
+    currentStreak: 1,
+    lastActiveDate: new Date().toISOString(),
+    isActiveToday: true,
   },
 
-  checkAndUnlockBadges: async (streak?: number, learnedCards?: number) => {
-    const currentStreak = streak ?? get().streakCount;
-    const unlocked = new Set(get().unlockedBadgeIds);
+  addXp: (amount: number) => {
+    const current = get().userProgress;
+    const newTotalXp = current.totalXp + amount;
+    const newLevel = calculateLevel(newTotalXp);
 
-    if (currentStreak >= 3) unlocked.add("streak_3");
-    if (currentStreak >= 7) unlocked.add("streak_7");
-    if (currentStreak >= 30) unlocked.add("streak_30");
+    const updated: UserProgress = {
+      ...current,
+      totalXp: newTotalXp,
+      level: newLevel,
+      lastStudyDate: new Date().toISOString(),
+    };
 
-    if (learnedCards !== undefined) {
-      if (learnedCards >= 10) unlocked.add("vocab_10");
-      if (learnedCards >= 50) unlocked.add("vocab_50");
-      if (learnedCards >= 100) unlocked.add("vocab_100");
-    }
+    set(() => ({ userProgress: updated }));
+  },
 
-    set({ unlockedBadgeIds: Array.from(unlocked) });
+  updateStreak: (date: Date = new Date()) => {
+    const current = get().streakState;
+    set(() => ({
+      streakState: {
+        currentStreak: current.currentStreak + 1,
+        lastActiveDate: date.toISOString(),
+        isActiveToday: true,
+      },
+    }));
   },
 });

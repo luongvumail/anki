@@ -1,32 +1,22 @@
-// Pinyin Tone Soft Neon Color Mapping Helper for Anki
-// Tone 1: Electric Cyan (#22D3EE)
-// Tone 2: Emerald Green (#34D399)
-// Tone 3: Soft Purple (#C084FC)
-// Tone 4: Neon Coral (#FB7185)
-
-import { Colors } from "../../../constants/theme";
-
-const TONE1_REGEX = /[āēīōūǖ1]/i;
-const TONE2_REGEX = /[áéíóúǘ2]/i;
-const TONE3_REGEX = /[ǎěǐǒǔǚ3]/i;
-const TONE4_REGEX = /[àèìòùǜ4]/i;
-
-export function getPinyinToneColor(pinyin: string): string {
-  if (!pinyin) return Colors.neon.cyan;
-
-  if (TONE1_REGEX.test(pinyin)) return Colors.neon.cyan; // Tone 1 (Flat High) -> Electric Cyan
-  if (TONE2_REGEX.test(pinyin)) return Colors.neon.emerald; // Tone 2 (Rising) -> Emerald Green
-  if (TONE3_REGEX.test(pinyin)) return Colors.neon.purple; // Tone 3 (Falling-Rising) -> Soft Purple
-  if (TONE4_REGEX.test(pinyin)) return Colors.neon.coral; // Tone 4 (Falling) -> Neon Coral
-
-  return Colors.neon.cyan;
+export function parseTone(pinyin: string): number {
+  if (/[āēīōūǖ1]/.test(pinyin)) return 1;
+  if (/[áéíóúǘ2]/.test(pinyin)) return 2;
+  if (/[ǎěǐǒǔǚ3]/.test(pinyin)) return 3;
+  if (/[àèìòùǜ4]/.test(pinyin)) return 4;
+  return 0;
 }
 
-export function getToneLabel(pinyin: string): string {
-  if (!pinyin) return "Thanh 1";
-  if (TONE1_REGEX.test(pinyin)) return "Thanh 1 (Ngang)";
-  if (TONE2_REGEX.test(pinyin)) return "Thanh 2 (Sắc)";
-  if (TONE3_REGEX.test(pinyin)) return "Thanh 3 (Hỏi)";
-  if (TONE4_REGEX.test(pinyin)) return "Thanh 4 (Huyền / Nặng)";
-  return "Thanh nhẹ";
+export function getPinyinColor(tone: number): string {
+  switch (tone) {
+    case 1:
+      return "#3B82F6"; // Blue
+    case 2:
+      return "#10B981"; // Green
+    case 3:
+      return "#F59E0B"; // Orange
+    case 4:
+      return "#EF4444"; // Red
+    default:
+      return "#6B7280"; // Gray
+  }
 }

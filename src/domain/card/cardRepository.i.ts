@@ -1,9 +1,10 @@
-import { CardEntity } from "./cardEntity";
+import { CardEntity } from "./cardEntity.js";
 
 export interface ICardRepository {
-  getCards(deckId?: string): Promise<CardEntity[]>;
-  getCardById(cardId: string): Promise<CardEntity | null>;
-  saveCard(card: CardEntity): Promise<void>;
-  saveCards(cards: CardEntity[]): Promise<void>;
-  deleteCard(cardId: string): Promise<void>;
+  getAll(): Promise<CardEntity[]>;
+  getByDeckId(deckId: string): Promise<CardEntity[]>;
+  getById(id: string): Promise<CardEntity | null>;
+  save(card: CardEntity): Promise<void>;
+  saveBatch(cards: CardEntity[]): Promise<void>;
+  delete(id: string): Promise<void>;
 }

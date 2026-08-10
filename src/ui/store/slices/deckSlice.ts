@@ -1,86 +1,62 @@
-import { StateCreator } from "zustand";
-import { DeckEntity } from "../../../domain/deck/deckEntity";
-import { FirestoreDeckRepository } from "../../../infrastructure/persistence/firestoreRepo";
-import { AppStoreState } from "../types";
+import { DeckEntity } from "../../../domain/deck/deckEntity.js";
+import { container } from "../../../infrastructure/container.js";
+import { DeckSliceState } from "../types.js";
 
-const deckRepo = new FirestoreDeckRepository();
+const DEFAULT_HSK1_DECK: DeckEntity = {
+  id: "deck_hsk1",
+  title: "Tiếng Trung HSK 1 Core",
+  description: "150 từ vựng căn bản HSK 1 với ví dụ & Pinyin chuẩn",
+  color: "#059669",
+  cardCount: 10,
+  newCardCount: 8,
+  reviewCardCount: 2,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
 
-export interface DeckSlice {
-  decks: DeckEntity[];
-  isDeckLoading: boolean;
-  deckError: string | null;
-
-  fetchDecks: () => Promise<void>;
-  createDeck: (
-    deckData: Omit<
-      DeckEntity,
-      "id" | "cardCount" | "newCount" | "dueCount" | "createdAt" | "updatedAt"
-    >,
-  ) => Promise<string>;
-  deleteDeck: (deckId: string) => Promise<void>;
-}
-
-function generateId(prefix: string): string {
-  try {
-    if (typeof crypto !== "undefined" && crypto.randomUUID) {
-      return `${prefix}-${crypto.randomUUID()}`;
-    }
-  } catch {}
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
-
-export const createDeckSlice: StateCreator<AppStoreState, [], [], DeckSlice> = (set, get) => ({
-  decks: [],
+export const createDeckSlice = (
+  set: (fn: (state: DeckSliceState) => Partial<DeckSliceState>) => void
+): DeckSliceState => ({
+  decks: [DEFAULT_HSK1_DECK],
   isDeckLoading: false,
   deckError: null,
 
-  fetchDecks: async () => {
-    set({ isDeckLoading: true, deckError: null });
+  loadDecks: async () => {
+    set(() => ({ isDeckLoading: true, deckError: null }));
     try {
-      const fetchedDecks = await deckRepo.getDecks();
-      set({ decks: fetchedDecks, isDeckLoading: false });
-      const fetchCardsFn = get().fetchCards;
-      if (typeof fetchCardsFn === "function") {
-        Promise.all(fetchedDecks.map((d) => fetchCardsFn(d.id))).catch((err) =>
-          console.warn("[deckSlice] Card pre-fetch error:", err),
-        );
+      let fetched = await container.deckRepo.getAll();
+      if (fetched.length === 0) {
+        await container.deckRepo.save(DEFAULT_HSK1_DECK);
+        fetched = [DEFAULT_HSK1_DECK];
       }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch decks";
-      set({ deckError: errorMessage, isDeckLoading: false });
+      set(() => ({ decks: fetched, isDeckLoading: false }));
+      return fetched;
+    } catch (e: any) {
+      set(() => ({ isDeckLoading: false, deckError: e.message }));
+      return [DEFAULT_HSK1_DECK];
     }
   },
 
-  createDeck: async (deckData) => {
+  addDeck: async (title: string, description: string, color = "#059669") => {
     const newDeck: DeckEntity = {
-      id: generateId("deck"),
-      ...deckData,
+      id: `deck_${Date.now()}`,
+      title,
+      description,
+      color,
       cardCount: 0,
-      newCount: 0,
-      dueCount: 0,
+      newCardCount: 0,
+      reviewCardCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    set((s) => ({ decks: [...s.decks, newDeck] }));
-    try {
-      await deckRepo.saveDeck(newDeck);
-    } catch (err) {
-      console.warn("[deckSlice] Failed to save deck remotely:", err);
-    }
-    return newDeck.id;
+
+    await container.deckRepo.save(newDeck);
+    set((prev) => ({ decks: [...prev.decks, newDeck] }));
+    return newDeck;
   },
 
   deleteDeck: async (deckId: string) => {
-    set((s) => ({
-      decks: s.decks.filter((d) => d.id !== deckId),
-      cards: s.cards
-        ? Object.fromEntries(Object.entries(s.cards).filter(([k]) => k !== deckId))
-        : s.cards,
-    }));
-    try {
-      await deckRepo.deleteDeck(deckId);
-    } catch (err) {
-      console.warn("[deckSlice] Failed to delete deck remotely:", err);
-    }
+    await container.deckRepo.delete(deckId);
+    set((prev) => ({ decks: prev.decks.filter((d) => d.id !== deckId) }));
   },
 });

@@ -1,7 +1,8 @@
-import { DeckEntity } from "./deckEntity";
+import { DeckEntity } from "./deckEntity.js";
 
 export interface IDeckRepository {
-  getDecks(): Promise<DeckEntity[]>;
-  saveDeck(deck: DeckEntity): Promise<void>;
-  deleteDeck(deckId: string): Promise<void>;
+  getAll(): Promise<DeckEntity[]>;
+  getById(id: string): Promise<DeckEntity | null>;
+  save(deck: DeckEntity): Promise<void>;
+  delete(id: string): Promise<void>;
 }

@@ -1,54 +1,26 @@
-import { ICardRepository } from "../../domain/card/cardRepository.i";
-import {
-  LocalStorageRepo,
-  SyncOfflinePayload,
-} from "../../infrastructure/persistence/localStorageRepo";
-
-export interface SyncResult {
-  syncedCount: number;
-  failedCount: number;
-  errors: string[];
-}
+import { ICardRepository } from "../../domain/card/cardRepository.i.js";
+import { logger } from "../../ui/utils/logger.js";
 
 export class SyncOfflineQueueUseCase {
-  private localRepo: LocalStorageRepo;
-  private remoteRepo: ICardRepository;
+  constructor(
+    private readonly localRepo: ICardRepository,
+    private readonly cloudRepo: ICardRepository
+  ) {}
 
-  constructor(localRepo: LocalStorageRepo, remoteRepo: ICardRepository) {
-    this.localRepo = localRepo;
-    this.remoteRepo = remoteRepo;
-  }
-
-  public async execute(): Promise<SyncResult> {
-    const queue: SyncOfflinePayload[] = await this.localRepo.getOfflineQueue();
-    if (queue.length === 0) {
-      return { syncedCount: 0, failedCount: 0, errors: [] };
-    }
-
-    const syncedIds: string[] = [];
-    const errors: string[] = [];
+  async execute(): Promise<{ syncedCount: number }> {
+    const localCards = await this.localRepo.getAll();
     let syncedCount = 0;
-    let failedCount = 0;
 
-    for (const item of queue) {
+    for (const card of localCards) {
       try {
-        await this.remoteRepo.saveCard(item.card);
-        syncedIds.push(item.id);
+        await this.cloudRepo.save(card);
         syncedCount += 1;
-      } catch (err: any) {
-        failedCount += 1;
-        errors.push(`Card ${item.cardId} sync failed: ${err?.message || "Unknown error"}`);
+      } catch (e) {
+        logger.error("Failed to sync card to cloud", { cardId: card.id, cause: e });
       }
     }
 
-    if (syncedIds.length > 0) {
-      await this.localRepo.removeOfflineReviews(syncedIds);
-    }
-
-    return {
-      syncedCount,
-      failedCount,
-      errors,
-    };
+    logger.info(`Offline sync completed: ${syncedCount} cards synced`);
+    return { syncedCount };
   }
 }

@@ -1,4 +1,4 @@
-import { DEFAULT_FSRS_PARAMETERS } from "./fsrsConstants";
+import { DEFAULT_FSRS_PARAMETERS } from "./fsrsConstants.js";
 import {
   FSRSCardState,
   FSRSItemScheduling,
@@ -7,11 +7,11 @@ import {
   Rating,
   ReviewLog,
   State,
-} from "./fsrsTypes";
+} from "./fsrsTypes.js";
 
 /**
  * FSRS v5 Math & Scheduling Engine
- * Pure function implementations of Free Spaced Repetition Scheduler v5.
+ * Pure TypeScript implementation of Free Spaced Repetition Scheduler v5.
  */
 export class FSRSEngine {
   private params: FSRSParameters;
@@ -21,7 +21,7 @@ export class FSRSEngine {
   }
 
   /**
-   * Calculates Retrievability R(t, S) - predicted probability of recall after t days.
+   * Retrievability R(t, S) - predicted probability of recall after t days.
    */
   public calculateRetrievability(elapsedDays: number, stability: number): number {
     if (stability <= 0) return 0;
@@ -31,7 +31,7 @@ export class FSRSEngine {
   }
 
   /**
-   * Calculates next interval given target retrievability and stability.
+   * Next interval in days given stability.
    */
   public calculateNextInterval(stability: number): number {
     const rTarget = this.params.request_retention;
@@ -42,7 +42,7 @@ export class FSRSEngine {
   }
 
   /**
-   * Calculates initial stability for a brand new card.
+   * Initial stability for new card based on first rating.
    */
   private initInitialStability(rating: Rating): number {
     const w = this.params.w;
@@ -61,7 +61,7 @@ export class FSRSEngine {
   }
 
   /**
-   * Calculates initial difficulty for a brand new card.
+   * Initial difficulty for new card (scale 1-10).
    */
   private initInitialDifficulty(rating: Rating): number {
     const w = this.params.w;
@@ -70,7 +70,7 @@ export class FSRSEngine {
   }
 
   /**
-   * Updates difficulty value after review.
+   * Update difficulty after review.
    */
   private updateDifficulty(currentD: number, rating: Rating): number {
     const w = this.params.w;
@@ -81,7 +81,7 @@ export class FSRSEngine {
   }
 
   /**
-   * Updates stability after successful recall (Rating >= Good/Hard).
+   * Update stability after successful recall (Rating >= Hard).
    */
   private nextRecallStability(d: number, s: number, r: number, rating: Rating): number {
     const w = this.params.w;
@@ -99,13 +99,16 @@ export class FSRSEngine {
   }
 
   /**
-   * Updates stability after failure (Rating === Again).
+   * Update stability after forgetting (Rating = Again).
    */
   private nextForgetStability(d: number, s: number, r: number): number {
     const w = this.params.w;
-    const forgetStab =
-      w[13] * Math.pow(d, -w[14]) * (Math.pow(s + 1, w[15]) - 1) * Math.exp(w[16] * (1 - r));
-    return Math.max(0.1, forgetStab);
+    const forgetS =
+      w[13] *
+      Math.pow(d, -w[14]) *
+      (Math.pow(s + 1, w[15]) - 1) *
+      Math.exp(w[16] * (1 - r));
+    return Math.max(0.1, Math.min(s, forgetS));
   }
 
   private clampDifficulty(d: number): number {
@@ -113,9 +116,9 @@ export class FSRSEngine {
   }
 
   /**
-   * Generates initial card state for a brand new card.
+   * Creates initial blank card state for a brand new card.
    */
-  public createEmptyCard(now: Date = new Date()): FSRSCardState {
+  public createNewCardState(): FSRSCardState {
     return {
       stability: 0,
       difficulty: 0,
@@ -123,87 +126,86 @@ export class FSRSEngine {
       lapses: 0,
       state: State.New,
       last_review: null,
-      due: now.toISOString(),
+      due: new Date().toISOString(),
     };
   }
 
   /**
-   * Schedules a card for a specific user rating.
+   * Schedules a card review given rating and review date.
    */
-  public scheduleCard(
+  public schedule(
     card: FSRSCardState,
     rating: Rating,
-    now: Date = new Date(),
+    now: Date = new Date()
+  ): FSRSScheduleResult {
+    const ratings = [Rating.Again, Rating.Hard, Rating.Good, Rating.Easy];
+    const results = {} as FSRSScheduleResult;
+
+    for (const r of ratings) {
+      results[r] = this.scheduleForRating(card, r, now);
+    }
+
+    return results;
+  }
+
+  private scheduleForRating(
+    card: FSRSCardState,
+    rating: Rating,
+    now: Date
   ): FSRSItemScheduling {
-    const isNew = card.state === State.New || card.last_review === null;
-    const lastReviewDate = card.last_review ? new Date(card.last_review) : now;
-    const elapsedDays = isNew
-      ? 0
-      : Math.max(0, (now.getTime() - lastReviewDate.getTime()) / (1000 * 3600 * 24));
+    const nowIso = now.toISOString();
 
-    let nextStability: number;
-    let nextDifficulty: number;
-    let nextState: State;
-    let lapses = card.lapses;
+    let newS = 0;
+    let newD = 0;
+    let newState = State.Review;
+    let newLapses = card.lapses;
 
-    if (isNew) {
-      nextStability = this.initInitialStability(rating);
-      nextDifficulty = this.initInitialDifficulty(rating);
-      nextState = rating === Rating.Again ? State.Learning : State.Review;
-      if (rating === Rating.Again) lapses += 1;
+    const elapsedDays = card.last_review
+      ? Math.max(0, (now.getTime() - new Date(card.last_review).getTime()) / (1000 * 3600 * 24))
+      : 0;
+
+    if (card.state === State.New) {
+      newS = this.initInitialStability(rating);
+      newD = this.initInitialDifficulty(rating);
+      newState = rating === Rating.Again ? State.Learning : State.Review;
     } else {
       const currentR = this.calculateRetrievability(elapsedDays, card.stability);
-      nextDifficulty = this.updateDifficulty(card.difficulty, rating);
+      newD = this.updateDifficulty(card.difficulty, rating);
 
       if (rating === Rating.Again) {
-        nextStability = this.nextForgetStability(card.difficulty, card.stability, currentR);
-        nextState = State.Relearning;
-        lapses += 1;
+        newS = this.nextForgetStability(newD, card.stability, currentR);
+        newState = State.Relearning;
+        newLapses += 1;
       } else {
-        nextStability = this.nextRecallStability(card.difficulty, card.stability, currentR, rating);
-        nextState = State.Review;
+        newS = this.nextRecallStability(newD, card.stability, currentR, rating);
+        newState = State.Review;
       }
     }
 
-    const scheduledDays = rating === Rating.Again ? 0 : this.calculateNextInterval(nextStability);
+    const intervalDays = rating === Rating.Again ? 1 : this.calculateNextInterval(newS);
+    const dueDate = new Date(now.getTime() + intervalDays * 24 * 3600 * 1000);
 
-    const dueTime = new Date(
-      now.getTime() + (scheduledDays === 0 ? 10 * 60 * 1000 : scheduledDays * 24 * 3600 * 1000),
-    );
-
-    const nextCard: FSRSCardState = {
-      stability: Number(nextStability.toFixed(4)),
-      difficulty: Number(nextDifficulty.toFixed(4)),
+    const updatedCard: FSRSCardState = {
+      stability: Number(newS.toFixed(4)),
+      difficulty: Number(newD.toFixed(4)),
       reps: card.reps + 1,
-      lapses,
-      state: nextState,
-      last_review: now.toISOString(),
-      due: dueTime.toISOString(),
+      lapses: newLapses,
+      state: newState,
+      last_review: nowIso,
+      due: dueDate.toISOString(),
     };
 
     const reviewLog: ReviewLog = {
       rating,
       state: card.state,
       due: card.due,
-      stability: nextCard.stability,
-      difficulty: nextCard.difficulty,
-      elapsed_days: Number(elapsedDays.toFixed(2)),
-      scheduled_days: scheduledDays,
-      review: now.toISOString(),
+      stability: card.stability,
+      difficulty: card.difficulty,
+      elapsed_days: elapsedDays,
+      scheduled_days: intervalDays,
+      review: nowIso,
     };
 
-    return { card: nextCard, log: reviewLog };
-  }
-
-  /**
-   * Computes all 4 rating options (Again, Hard, Good, Easy) for a card preview/action buttons.
-   */
-  public repeatCard(card: FSRSCardState, now: Date = new Date()): FSRSScheduleResult {
-    return {
-      [Rating.Again]: this.scheduleCard(card, Rating.Again, now),
-      [Rating.Hard]: this.scheduleCard(card, Rating.Hard, now),
-      [Rating.Good]: this.scheduleCard(card, Rating.Good, now),
-      [Rating.Easy]: this.scheduleCard(card, Rating.Easy, now),
-    };
+    return { card: updatedCard, log: reviewLog };
   }
 }

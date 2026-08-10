@@ -1,283 +1,102 @@
-import { CardEntity, ensureFSRSState } from "../../domain/card/cardEntity";
+import { ICardRepository } from "../../domain/card/cardRepository.i.js";
 
-export type QuestionType = "meaning_choice" | "pinyin_choice" | "listening" | "cloze";
+export type QuizType =
+  | "KANJI_TO_MEANING"
+  | "KANJI_TO_PINYIN"
+  | "AUDIO_TO_KANJI"
+  | "FILL_IN_BLANK";
 
 export interface QuizQuestion {
-  card: CardEntity;
-  type: QuestionType;
-  prompt: string;
-  targetText?: string;
-  subText?: string;
-  audioText?: string;
-  clozeSentence?: string;
-  clozeTranslation?: string;
-  options: string[]; // 4 choices
+  id: string;
+  cardId: string;
+  type: QuizType;
+  questionText: string;
   correctAnswer: string;
-  weakTag?: "pinyin" | "character" | "meaning";
+  options: string[];
+  kanji: string;
+  pinyin: string;
+  meaning: string;
 }
 
-const FALLBACK_CHARACTERS = [
-  "好",
-  "你",
-  "学",
-  "中",
-  "国",
-  "人",
-  "爱",
-  "生",
-  "水",
-  "大",
-  "小",
-  "日",
-];
-const FALLBACK_PINYINS = ["hǎo", "nǐ", "xué", "zhōng", "guó", "rén", "ài", "shēng", "shuǐ", "dà"];
-const FALLBACK_TRANSLATIONS = [
-  "Xin chào",
-  "Tốt / Hảo",
-  "Học sinh",
-  "Cảm ơn",
-  "Nước uống",
-  "To lớn",
-  "Tạm biệt",
-  "Yêu thương",
-  "Bạn bè",
-  "Thức ăn",
-];
+const FALLBACK_DISTRACTORS: Record<QuizType, string[]> = {
+  KANJI_TO_MEANING: ["Quả táo", "Uống nước", "Cửa hàng", "Thầy giáo", "Học tập", "Cảm ơn"],
+  KANJI_TO_PINYIN: ["xué xí", "píng guǒ", "hē chá", "lǎo shī", "xīe xie", "zài jiàn"],
+  AUDIO_TO_KANJI: ["学习", "苹果", "喝茶", "老师", "谢谢", "再见"],
+  FILL_IN_BLANK: ["学习", "苹果", "喝茶", "老师", "谢谢", "再见"],
+};
 
-function shuffleArray<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
+export class GenerateQuizUseCase {
+  constructor(private readonly cardRepo: ICardRepository) {}
 
-function generateToneVariations(pinyin: string): string[] {
-  if (!pinyin) return [];
+  async execute(deckId: string, limit = 10): Promise<QuizQuestion[]> {
+    const deckCards = await this.cardRepo.getByDeckId(deckId);
+    if (deckCards.length === 0) return [];
 
-  const toneMap: Record<string, string[]> = {
-    a: ["ā", "á", "ǎ", "à"],
-    e: ["ē", "é", "ě", "è"],
-    i: ["ī", "í", "ǐ", "ì"],
-    o: ["ō", "ó", "ǒ", "ò"],
-    u: ["ū", "ú", "ǔ", "ù"],
-    ā: ["á", "ǎ", "à"],
-    á: ["ā", "ǎ", "à"],
-    ǎ: ["ā", "á", "à"],
-    à: ["ā", "á", "ǎ"],
-    ē: ["é", "ě", "è"],
-    é: ["ē", "ě", "è"],
-    ě: ["ē", "é", "è"],
-    è: ["ē", "é", "ě"],
-    ī: ["í", "ǐ", "ì"],
-    í: ["ī", "ǐ", "ì"],
-    ǐ: ["ī", "í", "ì"],
-    ì: ["ī", "í", "ǐ"],
-    ō: ["ó", "ǒ", "ò"],
-    ó: ["ō", "ǒ", "ò"],
-    ǒ: ["ō", "ó", "ò"],
-    ò: ["ō", "ó", "ǒ"],
-    ū: ["ú", "ǔ", "ù"],
-    ú: ["ū", "ǔ", "ù"],
-    ǔ: ["ū", "ú", "ù"],
-    ù: ["ū", "ú", "ǔ"],
-  };
+    const allMeanings = deckCards.map((c) => c.meaning);
+    const allPinyins = deckCards.map((c) => c.pinyin);
 
-  const variations: string[] = [];
-  for (const [vowel, altTones] of Object.entries(toneMap)) {
-    if (pinyin.includes(vowel)) {
-      for (const alt of altTones) {
-        const replaced = pinyin.replace(vowel, alt);
-        if (replaced !== pinyin && !variations.includes(replaced)) {
-          variations.push(replaced);
-        }
+    // Shuffle and pick cards up to limit
+    const selectedCards = [...deckCards].sort(() => 0.5 - Math.random()).slice(0, limit);
+
+    return selectedCards.map((card, index) => {
+      const types: QuizType[] = [
+        "KANJI_TO_MEANING",
+        "KANJI_TO_PINYIN",
+        "AUDIO_TO_KANJI",
+        "FILL_IN_BLANK",
+      ];
+      let type = types[index % types.length];
+
+      // If card doesn't have an example sentence, fallback to KANJI_TO_MEANING
+      if (type === "FILL_IN_BLANK" && !card.exampleSentence) {
+        type = "KANJI_TO_MEANING";
       }
-    }
-  }
-  return variations;
-}
 
-function getCharacterDistractors(card: CardEntity, allCards: CardEntity[]): string[] {
-  const target = card.character || "";
-  const uniquePool = Array.from(
-    new Set(allCards.map((c) => c.character).filter((ch) => ch && ch !== target)),
-  );
+      let questionText = "";
+      let correctAnswer = "";
+      let distractorPool: string[] = [];
 
-  for (const fallback of FALLBACK_CHARACTERS) {
-    if (uniquePool.length >= 10) break;
-    if (fallback !== target && !uniquePool.includes(fallback)) {
-      uniquePool.push(fallback);
-    }
-  }
-
-  const shuffled = shuffleArray(uniquePool);
-  return shuffled.slice(0, 3);
-}
-
-function getTranslationDistractors(card: CardEntity, allCards: CardEntity[]): string[] {
-  const target = card.translation || "";
-  const uniquePool = Array.from(
-    new Set(allCards.map((c) => c.translation).filter((tr) => tr && tr !== target)),
-  );
-
-  for (const fallback of FALLBACK_TRANSLATIONS) {
-    if (uniquePool.length >= 10) break;
-    if (fallback !== target && !uniquePool.includes(fallback)) {
-      uniquePool.push(fallback);
-    }
-  }
-
-  const shuffled = shuffleArray(uniquePool);
-  return shuffled.slice(0, 3);
-}
-
-function getPinyinDistractors(card: CardEntity, allCards: CardEntity[]): string[] {
-  const target = card.pinyin || "";
-  const distractors: string[] = [];
-
-  const toneVars = generateToneVariations(target);
-  for (const tv of shuffleArray(toneVars)) {
-    if (tv && tv !== target && !distractors.includes(tv)) {
-      distractors.push(tv);
-    }
-    if (distractors.length >= 3) break;
-  }
-
-  if (distractors.length < 3) {
-    const otherPinyins = Array.from(
-      new Set(
-        allCards
-          .map((c) => c.pinyin)
-          .filter((py) => py && py !== target && !distractors.includes(py)),
-      ),
-    );
-
-    for (const py of shuffleArray(otherPinyins)) {
-      distractors.push(py);
-      if (distractors.length >= 3) break;
-    }
-  }
-
-  if (distractors.length < 3) {
-    for (const fb of FALLBACK_PINYINS) {
-      if (fb !== target && !distractors.includes(fb)) {
-        distractors.push(fb);
-      }
-      if (distractors.length >= 3) break;
-    }
-  }
-
-  return distractors.slice(0, 3);
-}
-
-export function determineQuestionType(
-  card: CardEntity,
-  weakTag?: "pinyin" | "character" | "meaning",
-): QuestionType {
-  if (weakTag === "pinyin") return "pinyin_choice";
-  if (weakTag === "meaning") return "meaning_choice";
-  if (weakTag === "character") return "listening";
-
-  const fsrsState = ensureFSRSState(card);
-  const reps = fsrsState.reps;
-  const hasExamples = card.examples && card.examples.length > 0 && card.examples[0].chinese;
-
-  if (reps === 0) {
-    return "meaning_choice";
-  } else if (reps <= 2) {
-    return "pinyin_choice";
-  } else if (reps <= 4) {
-    return "listening";
-  } else if (hasExamples) {
-    return "cloze";
-  } else {
-    return "meaning_choice";
-  }
-}
-
-export function generateQuizQuestion(
-  card: CardEntity,
-  allCards: CardEntity[],
-  forcedType?: QuestionType,
-  weakTag?: "pinyin" | "character" | "meaning",
-): QuizQuestion {
-  const type = forcedType || determineQuestionType(card, weakTag);
-
-  if (type === "meaning_choice") {
-    const distractors = getTranslationDistractors(card, allCards);
-    const options = shuffleArray(Array.from(new Set([card.translation, ...distractors])));
-
-    return {
-      card,
-      type: "meaning_choice",
-      prompt: "Chọn nghĩa Tiếng Việt của từ Hán tự này:",
-      targetText: card.character,
-      subText: card.pinyin || undefined,
-      options,
-      correctAnswer: card.translation,
-    };
-  }
-
-  if (type === "cloze" && card.examples && card.examples.length > 0) {
-    const ex = card.examples[0];
-    if (ex.chinese) {
-      let targetToReplace = "";
-      if (ex.chinese.includes(card.character)) {
-        targetToReplace = card.character;
+      if (type === "FILL_IN_BLANK" && card.exampleSentence) {
+        questionText = card.exampleSentence.replace(card.kanji, " _____ ");
+        correctAnswer = card.kanji;
+        distractorPool = deckCards.map((c) => c.kanji).filter((k) => k !== card.kanji);
+      } else if (type === "KANJI_TO_MEANING") {
+        questionText = card.kanji;
+        correctAnswer = card.meaning;
+        distractorPool = allMeanings.filter((m) => m !== card.meaning);
+      } else if (type === "KANJI_TO_PINYIN") {
+        questionText = card.kanji;
+        correctAnswer = card.pinyin;
+        distractorPool = allPinyins.filter((p) => p !== card.pinyin);
       } else {
-        for (const char of card.character) {
-          if (char.trim() && ex.chinese.includes(char)) {
-            targetToReplace = char;
-            break;
-          }
-        }
+        questionText = card.pinyin;
+        correctAnswer = card.kanji;
+        distractorPool = deckCards.map((c) => c.kanji).filter((k) => k !== card.kanji);
       }
 
-      if (targetToReplace) {
-        const blankedChinese = ex.chinese.replaceAll(targetToReplace, " [ _____ ] ");
-        const distractors = getCharacterDistractors(card, allCards);
-        const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
-
-        return {
-          card,
-          type: "cloze",
-          prompt: "Điền từ thích hợp vào ô trống trong câu:",
-          clozeSentence: blankedChinese,
-          clozeTranslation: ex.vietnamese,
-          options,
-          correctAnswer: card.character,
-        };
+      // Add fallback distractors if pool is too small
+      if (distractorPool.length < 3) {
+        const fallbacks = FALLBACK_DISTRACTORS[type].filter((f) => f !== correctAnswer);
+        distractorPool = [...distractorPool, ...fallbacks];
       }
-    }
+
+      // Pick 3 random wrong options
+      const wrongOptions = [...distractorPool].sort(() => 0.5 - Math.random()).slice(0, 3);
+      const options = Array.from(new Set([correctAnswer, ...wrongOptions])).sort(
+        () => 0.5 - Math.random()
+      );
+
+      return {
+        id: `quiz_${card.id}_${index}`,
+        cardId: card.id,
+        type,
+        questionText,
+        correctAnswer,
+        options,
+        kanji: card.kanji,
+        pinyin: card.pinyin,
+        meaning: card.meaning,
+      };
+    });
   }
-
-  if (type === "listening") {
-    const distractors = getCharacterDistractors(card, allCards);
-    const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
-
-    return {
-      card,
-      type: "listening",
-      prompt: "Nghe phát âm và chọn Chữ Hán đúng:",
-      audioText: card.character,
-      subText: card.translation || undefined,
-      options,
-      correctAnswer: card.character,
-    };
-  }
-
-  // Default: Pinyin Choice
-  const distractors = getPinyinDistractors(card, allCards);
-  const options = shuffleArray(Array.from(new Set([card.pinyin, ...distractors])));
-
-  return {
-    card,
-    type: "pinyin_choice",
-    prompt: "Chọn Phiên âm Pinyin & Thanh điệu đúng:",
-    targetText: card.character,
-    subText: card.translation,
-    options,
-    correctAnswer: card.pinyin,
-  };
 }

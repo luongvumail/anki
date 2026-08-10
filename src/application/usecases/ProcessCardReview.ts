@@ -1,62 +1,66 @@
-import { CardEntity, ensureFSRSState } from "../../domain/card/cardEntity";
-import { FSRSEngine } from "../../domain/fsrs/fsrsEngine";
-import { Rating, ReviewLog } from "../../domain/fsrs/fsrsTypes";
-import { StreakCalculator, StreakState } from "../../domain/streak/streakCalculator";
+import { CardEntity } from "../../domain/card/cardEntity.js";
+import { ICardRepository } from "../../domain/card/cardRepository.i.js";
+import { IDeckRepository } from "../../domain/deck/deckRepository.i.js";
+import { FSRSEngine } from "../../domain/fsrs/fsrsEngine.js";
+import { Rating, State } from "../../domain/fsrs/fsrsTypes.js";
+import { XP_PER_RATING } from "../../domain/user/userProgress.js";
 
 export interface ProcessCardReviewInput {
-  card: CardEntity;
+  cardId: string;
   rating: Rating;
-  now?: Date;
-  currentStreak?: StreakState;
+  reviewDate?: Date;
 }
 
-export interface ProcessCardReviewOutput {
+export interface ProcessCardReviewResult {
   updatedCard: CardEntity;
-  reviewLog: ReviewLog;
-  earnedXP: number;
-  newStreak?: StreakState;
+  xpEarned: number;
+  isDueForReview: boolean;
 }
 
 export class ProcessCardReviewUseCase {
-  private engine: FSRSEngine;
-  private streakCalculator: StreakCalculator;
-
   constructor(
-    engine: FSRSEngine = new FSRSEngine(),
-    streakCalculator: StreakCalculator = new StreakCalculator(),
-  ) {
-    this.engine = engine;
-    this.streakCalculator = streakCalculator;
-  }
+    private readonly cardRepo: ICardRepository,
+    private readonly deckRepo: IDeckRepository,
+    private readonly fsrsEngine: FSRSEngine
+  ) {}
 
-  public execute(input: ProcessCardReviewInput): ProcessCardReviewOutput {
-    const { card, rating, now = new Date(), currentStreak } = input;
+  async execute(input: ProcessCardReviewInput): Promise<ProcessCardReviewResult> {
+    const card = await this.cardRepo.getById(input.cardId);
+    if (!card) {
+      throw new Error(`Card with id ${input.cardId} not found`);
+    }
 
-    // Ensure valid FSRS state
-    const currentFSRS = ensureFSRSState(card, now);
+    const now = input.reviewDate || new Date();
+    const previousState = card.fsrsState.state;
 
-    // Schedule using FSRS Engine
-    const { card: nextFSRSState, log } = this.engine.scheduleCard(currentFSRS, rating, now);
+    // Run FSRS Engine schedule
+    const scheduleResult = this.fsrsEngine.schedule(card.fsrsState, input.rating, now);
+    const scheduledState = scheduleResult[input.rating].card;
 
     const updatedCard: CardEntity = {
       ...card,
-      fsrs: nextFSRSState,
-      lastReviewedAt: now.toISOString(),
+      fsrsState: scheduledState,
       updatedAt: now.toISOString(),
     };
 
-    const earnedXP = this.streakCalculator.calculateXP(rating);
+    await this.cardRepo.save(updatedCard);
 
-    let newStreak: StreakState | undefined;
-    if (currentStreak) {
-      newStreak = this.streakCalculator.updateStreak(currentStreak, now);
+    // Update deck card counts if state changed
+    const deck = await this.deckRepo.getById(card.deckId);
+    if (deck) {
+      if (previousState === State.New && scheduledState.state !== State.New) {
+        deck.newCardCount = Math.max(0, deck.newCardCount - 1);
+      }
+      deck.updatedAt = now.toISOString();
+      await this.deckRepo.save(deck);
     }
+
+    const xpEarned = XP_PER_RATING[input.rating] || 10;
 
     return {
       updatedCard,
-      reviewLog: log,
-      earnedXP,
-      newStreak,
+      xpEarned,
+      isDueForReview: new Date(scheduledState.due).getTime() <= now.getTime(),
     };
   }
 }
