@@ -12,7 +12,7 @@ export interface QuizCardViewProps {
 
 export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [startTime] = useState<number>(Date.now());
+  const [startTime] = useState<number>(() => Date.now());
   const [timerSeconds, setTimerSeconds] = useState<number>(0);
   const [feedbackInfo, setFeedbackInfo] = useState<{
     isCorrect: boolean;
@@ -74,10 +74,7 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
         </View>
 
         <Text
-          style={[
-            styles.questionText,
-            question.type === "FILL_IN_BLANK" && styles.fillInBlankText,
-          ]}
+          style={[styles.questionText, question.type === "FILL_IN_BLANK" && styles.fillInBlankText]}
         >
           {question.questionText}
         </Text>
@@ -92,9 +89,7 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
               backgroundColor: feedbackInfo.isCorrect
                 ? theme.badges.learned.bg
                 : theme.badges.due.bg,
-              borderColor: feedbackInfo.isCorrect
-                ? theme.colors.primary
-                : theme.colors.danger,
+              borderColor: feedbackInfo.isCorrect ? theme.colors.primary : theme.colors.danger,
             },
           ]}
         >
@@ -106,9 +101,7 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
             style={[
               styles.feedbackText,
               {
-                color: feedbackInfo.isCorrect
-                  ? theme.colors.primary
-                  : theme.colors.danger,
+                color: feedbackInfo.isCorrect ? theme.colors.primary : theme.colors.danger,
               },
             ]}
           >
@@ -162,9 +155,7 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
                 },
               ]}
             >
-              {showFeedback && isCorrect && (
-                <Icon name="check" color={theme.colors.primary} />
-              )}
+              {showFeedback && isCorrect && <Icon name="check" color={theme.colors.primary} />}
               <Text style={[styles.optionText, { color: text }]}>{option}</Text>
             </Pressable>
           );

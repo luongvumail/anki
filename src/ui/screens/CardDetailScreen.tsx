@@ -35,6 +35,8 @@ export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deck
     };
   }, [cardId, deckId]);
 
+  const [nowMs] = useState<number>(() => Date.now());
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -74,7 +76,7 @@ export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deck
       const radicalInfo = await geminiService.generateRadical(card.kanji);
       await appStore.updateCard(card.id, deckId, { radicalAnalysis: radicalInfo });
       setCard((prev) => (prev ? { ...prev, radicalAnalysis: radicalInfo } : null));
-    } catch (e) {
+    } catch {
       Alert.alert("Lỗi", "Không thể phân tích bộ thủ lúc này. Vui lòng thử lại!");
     } finally {
       setAnalyzingRadical(false);
@@ -104,7 +106,7 @@ export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deck
     due: new Date().toISOString(),
   };
 
-  const isDueNow = new Date(fsrs.due).getTime() <= Date.now();
+  const isDueNow = new Date(fsrs.due).getTime() <= nowMs;
   const getStatusBadgeInfo = (): { variant: BadgeVariant; text: string } => {
     if (isDueNow) {
       return { variant: "due", text: "CẦN ÔN NGAY" };
@@ -142,7 +144,11 @@ export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deck
                   },
                 ]}
               >
-                <Icon name="audio" size={20} color={speaking ? theme.colors.white : theme.colors.textPrimary} />
+                <Icon
+                  name="audio"
+                  size={20}
+                  color={speaking ? theme.colors.white : theme.colors.textPrimary}
+                />
               </Pressable>
             </View>
 

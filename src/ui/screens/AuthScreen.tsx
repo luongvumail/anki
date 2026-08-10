@@ -60,7 +60,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         await authService.register(email.trim(), password);
       }
       onAuthSuccess();
-    } catch (e) {
+    } catch {
       setErrorMessage("Không thể kết nối dịch vụ xác thực. Thử lại sau!");
     } finally {
       setLoading(false);
@@ -189,10 +189,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                 loading
                   ? "ĐANG XỬ LÝ..."
                   : authMode === "FORGOT_PASSWORD"
-                  ? "GỬI LINK KHÔI PHỤC MẬT KHẨU"
-                  : authMode === "LOGIN"
-                  ? "ĐĂNG NHẬP NGAY"
-                  : "TẠO TÀI KHOẢN MỚI"
+                    ? "GỬI LINK KHÔI PHỤC MẬT KHẨU"
+                    : authMode === "LOGIN"
+                      ? "ĐĂNG NHẬP NGAY"
+                      : "TẠO TÀI KHOẢN MỚI"
               }
               variant="primary"
               disabled={loading}

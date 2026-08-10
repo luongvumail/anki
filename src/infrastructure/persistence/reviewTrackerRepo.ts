@@ -30,7 +30,7 @@ export class ReviewTrackerRepository {
   async logReview(dateStr: string, xp: number): Promise<void> {
     const d = new Date(dateStr);
     const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-      d.getDate()
+      d.getDate(),
     ).padStart(2, "0")}`;
 
     const existing = this.logs.get(dateKey) || { date: dateKey, count: 0, xpEarned: 0 };
@@ -49,7 +49,7 @@ export class ReviewTrackerRepository {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-        d.getDate()
+        d.getDate(),
       ).padStart(2, "0")}`;
 
       const log = this.logs.get(dateKey) || { date: dateKey, count: 0, xpEarned: 0 };

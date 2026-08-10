@@ -17,7 +17,7 @@ export class AddCardUseCase {
   constructor(
     private readonly cardRepo: ICardRepository,
     private readonly deckRepo: IDeckRepository,
-    private readonly fsrsEngine: FSRSEngine
+    private readonly fsrsEngine: FSRSEngine,
   ) {}
 
   async execute(input: AddCardInput): Promise<CardEntity> {

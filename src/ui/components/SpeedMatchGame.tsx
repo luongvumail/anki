@@ -137,10 +137,12 @@ export const SpeedMatchGame: React.FC<SpeedMatchGameProps> = ({ deckId, onFinish
                   backgroundColor: isMatched
                     ? theme.colors.cardBorder
                     : isSelected
-                    ? theme.colors.secondary
-                    : theme.colors.white,
+                      ? theme.colors.secondary
+                      : theme.colors.white,
                   borderColor: isSelected ? theme.colors.secondaryShadow : theme.colors.cardBorder,
-                  borderBottomColor: isSelected ? theme.colors.secondaryShadow : theme.colors.cardBorder,
+                  borderBottomColor: isSelected
+                    ? theme.colors.secondaryShadow
+                    : theme.colors.cardBorder,
                   opacity: isMatched ? 0.5 : 1,
                 },
               ]}
@@ -152,8 +154,8 @@ export const SpeedMatchGame: React.FC<SpeedMatchGameProps> = ({ deckId, onFinish
                     color: isMatched
                       ? theme.colors.textLight
                       : isSelected
-                      ? theme.colors.white
-                      : theme.colors.textPrimary,
+                        ? theme.colors.white
+                        : theme.colors.textPrimary,
                     fontSize: tile.type === "KANJI" ? theme.fontSize.xxl : theme.fontSize.base,
                   },
                 ]}

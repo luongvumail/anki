@@ -104,10 +104,7 @@ export class FSRSEngine {
   private nextForgetStability(d: number, s: number, r: number): number {
     const w = this.params.w;
     const forgetS =
-      w[13] *
-      Math.pow(d, -w[14]) *
-      (Math.pow(s + 1, w[15]) - 1) *
-      Math.exp(w[16] * (1 - r));
+      w[13] * Math.pow(d, -w[14]) * (Math.pow(s + 1, w[15]) - 1) * Math.exp(w[16] * (1 - r));
     return Math.max(0.1, Math.min(s, forgetS));
   }
 
@@ -133,11 +130,7 @@ export class FSRSEngine {
   /**
    * Schedules a card review given rating and review date.
    */
-  public schedule(
-    card: FSRSCardState,
-    rating: Rating,
-    now: Date = new Date()
-  ): FSRSScheduleResult {
+  public schedule(card: FSRSCardState, rating: Rating, now: Date = new Date()): FSRSScheduleResult {
     const ratings = [Rating.Again, Rating.Hard, Rating.Good, Rating.Easy];
     const results = {} as FSRSScheduleResult;
 
@@ -148,11 +141,7 @@ export class FSRSEngine {
     return results;
   }
 
-  private scheduleForRating(
-    card: FSRSCardState,
-    rating: Rating,
-    now: Date
-  ): FSRSItemScheduling {
+  private scheduleForRating(card: FSRSCardState, rating: Rating, now: Date): FSRSItemScheduling {
     const nowIso = now.toISOString();
 
     let newS = 0;

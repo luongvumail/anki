@@ -131,4 +131,3 @@ export const ALL_BADGES: Badge[] = [
     target: 100,
   },
 ];
-

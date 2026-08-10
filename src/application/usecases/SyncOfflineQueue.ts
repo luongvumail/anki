@@ -4,7 +4,7 @@ import { logger } from "../../ui/utils/logger.js";
 export class SyncOfflineQueueUseCase {
   constructor(
     private readonly localRepo: ICardRepository,
-    private readonly cloudRepo: ICardRepository
+    private readonly cloudRepo: ICardRepository,
   ) {}
 
   async execute(): Promise<{ syncedCount: number }> {

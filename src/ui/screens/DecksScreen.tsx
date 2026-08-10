@@ -52,7 +52,7 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
       [
         { text: "Hủy", style: "cancel" },
         { text: "Xóa", style: "destructive", onPress: () => appStore.deleteDeck(deckId) },
-      ]
+      ],
     );
   };
 
@@ -62,15 +62,20 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
     const matchesSearch =
       deck.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       deck.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (!matchesSearch) return false;
 
     if (selectedHskFilter === null) return true;
     const titleLower = deck.title.toLowerCase();
     if (selectedHskFilter === 4) {
-      return titleLower.includes("hsk 4") || titleLower.includes("hsk 5") || titleLower.includes("hsk 6");
+      return (
+        titleLower.includes("hsk 4") || titleLower.includes("hsk 5") || titleLower.includes("hsk 6")
+      );
     }
-    return titleLower.includes(`hsk ${selectedHskFilter}`) || titleLower.includes(`hsk${selectedHskFilter}`);
+    return (
+      titleLower.includes(`hsk ${selectedHskFilter}`) ||
+      titleLower.includes(`hsk${selectedHskFilter}`)
+    );
   });
 
   return (
@@ -107,10 +112,7 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
             <Pressable
               key={tab.label}
               onPress={() => setSelectedHskFilter(tab.value)}
-              style={[
-                styles.hskTab,
-                selectedHskFilter === tab.value && styles.hskTabActive,
-              ]}
+              style={[styles.hskTab, selectedHskFilter === tab.value && styles.hskTabActive]}
             >
               <Text
                 style={[
@@ -183,7 +185,7 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalBox}>
               <Text style={styles.modalTitle}>Tạo Bộ Thẻ Mới</Text>
-              
+
               <View style={styles.inputGroup}>
                 <Text style={styles.formLabel}>Tên bộ thẻ *</Text>
                 <TextInput
@@ -212,11 +214,7 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
                   variant="secondary"
                   onPress={() => setShowCreateModal(false)}
                 />
-                <DuolingoButton
-                  title="TẠO BỘ THẺ"
-                  variant="primary"
-                  onPress={handleCreateDeck}
-                />
+                <DuolingoButton title="TẠO BỘ THẺ" variant="primary" onPress={handleCreateDeck} />
               </View>
             </View>
           </View>

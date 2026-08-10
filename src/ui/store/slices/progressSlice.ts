@@ -1,9 +1,13 @@
-import { calculateLevel, initialUserProgress, UserProgress } from "../../../domain/user/userProgress.js";
+import {
+  calculateLevel,
+  initialUserProgress,
+  UserProgress,
+} from "../../../domain/user/userProgress.js";
 import { ProgressSliceState } from "../types.js";
 
 export const createProgressSlice = (
   set: (fn: (state: ProgressSliceState) => Partial<ProgressSliceState>) => void,
-  get: () => ProgressSliceState
+  get: () => ProgressSliceState,
 ): ProgressSliceState => ({
   userProgress: initialUserProgress,
   streakState: {

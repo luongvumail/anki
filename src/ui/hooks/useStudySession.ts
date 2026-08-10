@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ProcessCardReviewResult } from "../../application/usecases/ProcessCardReview.js";
 import { QuizQuestion } from "../../application/usecases/GenerateQuiz.js";
 import { CardEntity } from "../../domain/card/cardEntity.js";
@@ -31,7 +31,7 @@ export interface StudySessionState {
 }
 
 export function useStudySession(deckId: string) {
-  const [state, setState] = useState<StudySessionState>({
+  const [state, setState] = useState<StudySessionState>(() => ({
     phase: "PREVIEW",
     cards: [],
     quizQuestions: [],
@@ -43,9 +43,9 @@ export function useStudySession(deckId: string) {
     incorrectCount: 0,
     questionStartTimeMs: Date.now(),
     answeredLog: [],
-  });
+  }));
 
-  const startSession = async () => {
+  const startSession = useCallback(async () => {
     const deckCards = await container.cardRepo.getByDeckId(deckId);
     const questions = await container.generateQuiz.execute(deckId, 10);
 
@@ -62,7 +62,7 @@ export function useStudySession(deckId: string) {
       questionStartTimeMs: Date.now(),
       answeredLog: [],
     });
-  };
+  }, [deckId]);
 
   const nextPreviewCard = () => {
     setState((prev) => {
@@ -81,7 +81,7 @@ export function useStudySession(deckId: string) {
 
   const submitQuizAnswer = async (
     answer: string,
-    elapsedMs?: number
+    elapsedMs?: number,
   ): Promise<{ isCorrect: boolean; rating: Rating; reviewResult?: ProcessCardReviewResult }> => {
     const currentQ = state.quizQuestions[state.currentIndex];
     if (!currentQ) return { isCorrect: false, rating: Rating.Again };

@@ -8,14 +8,14 @@ export class GenerateAICardsUseCase {
   constructor(
     private readonly cardRepo: ICardRepository,
     private readonly deckRepo: IDeckRepository,
-    private readonly fsrsEngine: FSRSEngine
+    private readonly fsrsEngine: FSRSEngine,
   ) {}
 
   async execute(
     deckId: string,
     inputText: string,
     apiKey: string,
-    fetchFn?: typeof fetch
+    fetchFn?: typeof fetch,
   ): Promise<CardEntity[]> {
     const deck = await this.deckRepo.getById(deckId);
     if (!deck) {

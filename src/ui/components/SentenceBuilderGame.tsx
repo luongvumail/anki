@@ -206,7 +206,11 @@ export const SentenceBuilderGame: React.FC<SentenceBuilderGameProps> = ({ onFini
             },
           ]}
         >
-          <Icon name={isCorrect ? "check" : "wrench"} size={20} color={isCorrect ? theme.colors.primary : theme.colors.danger} />
+          <Icon
+            name={isCorrect ? "check" : "wrench"}
+            size={20}
+            color={isCorrect ? theme.colors.primary : theme.colors.danger}
+          />
           <Text
             style={[
               styles.feedbackText,
@@ -219,7 +223,13 @@ export const SentenceBuilderGame: React.FC<SentenceBuilderGameProps> = ({ onFini
       )}
 
       <DuolingoButton
-        title={isChecked ? (currentIndex + 1 < exercises.length ? "CÂU TIẾP THEO" : "XEM KẾT QUẢ") : "KIỂM TRA"}
+        title={
+          isChecked
+            ? currentIndex + 1 < exercises.length
+              ? "CÂU TIẾP THEO"
+              : "XEM KẾT QUẢ"
+            : "KIỂM TRA"
+        }
         variant={isChecked ? (isCorrect ? "primary" : "secondary") : "info"}
         disabled={!isChecked && selectedChips.length === 0}
         onPress={handleCheckAnswer}

@@ -49,9 +49,7 @@ export const SessionDoneScreen: React.FC<SessionDoneScreenProps> = ({
           </View>
 
           <View style={styles.statCol}>
-            <Text style={[styles.statNum, { color: theme.colors.primary }]}>
-              {correctCount}
-            </Text>
+            <Text style={[styles.statNum, { color: theme.colors.primary }]}>{correctCount}</Text>
             <View style={styles.labelRow}>
               <Icon name="check" size={14} color={theme.colors.primary} />
               <Text style={styles.statLabel}>ĐÚNG</Text>
@@ -59,9 +57,7 @@ export const SessionDoneScreen: React.FC<SessionDoneScreenProps> = ({
           </View>
 
           <View style={styles.statCol}>
-            <Text style={[styles.statNum, { color: theme.colors.danger }]}>
-              {incorrectCount}
-            </Text>
+            <Text style={[styles.statNum, { color: theme.colors.danger }]}>{incorrectCount}</Text>
             <View style={styles.labelRow}>
               <Icon name="wrench" size={14} color={theme.colors.danger} />
               <Text style={styles.statLabel}>SAI</Text>
@@ -74,7 +70,7 @@ export const SessionDoneScreen: React.FC<SessionDoneScreenProps> = ({
       {answeredLog.length > 0 && (
         <View style={styles.breakdownSection}>
           <Text style={styles.breakdownTitle}>CHI TIẾT TỪ VỰNG ĐÃ HỌC</Text>
-          
+
           {/* Tab buttons */}
           <View style={styles.tabRow}>
             <Pressable

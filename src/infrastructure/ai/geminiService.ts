@@ -40,9 +40,18 @@ function validateAICardsArray(data: unknown): RawAICardOutput[] {
         kanji: (item as Record<string, unknown>).kanji as string,
         pinyin: (item as Record<string, unknown>).pinyin as string,
         meaning: (item as Record<string, unknown>).meaning as string,
-        radical: typeof (item as Record<string, unknown>).radical === "string" ? ((item as Record<string, unknown>).radical as string) : undefined,
-        example: typeof (item as Record<string, unknown>).example === "string" ? ((item as Record<string, unknown>).example as string) : undefined,
-        hskLevel: typeof (item as Record<string, unknown>).hskLevel === "number" ? ((item as Record<string, unknown>).hskLevel as number) : undefined,
+        radical:
+          typeof (item as Record<string, unknown>).radical === "string"
+            ? ((item as Record<string, unknown>).radical as string)
+            : undefined,
+        example:
+          typeof (item as Record<string, unknown>).example === "string"
+            ? ((item as Record<string, unknown>).example as string)
+            : undefined,
+        hskLevel:
+          typeof (item as Record<string, unknown>).hskLevel === "number"
+            ? ((item as Record<string, unknown>).hskLevel as number)
+            : undefined,
       });
     }
   }
@@ -76,7 +85,7 @@ export async function callWithRetry<T>(fn: () => Promise<T>, maxRetries = 3): Pr
 export async function parseTextWithGemini(
   text: string,
   apiKey: string,
-  fetchFn?: typeof fetch
+  fetchFn?: typeof fetch,
 ): Promise<RawAICardOutput[]> {
   if (!apiKey) {
     throw new AppError("AI_PARSE_ERROR", "Chưa cấu hình GEMINI_API_KEY", false);
@@ -87,11 +96,9 @@ export async function parseTextWithGemini(
   const payload = {
     contents: [
       {
-        parts: [
-          { text: `${systemPrompt}\n\nText to analyze:\n${text}` }
-        ]
-      }
-    ]
+        parts: [{ text: `${systemPrompt}\n\nText to analyze:\n${text}` }],
+      },
+    ],
   };
 
   return callWithRetry(async () => {
@@ -102,19 +109,15 @@ export async function parseTextWithGemini(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      }
+      },
     );
 
     if (!response.ok) {
-      throw new AppError(
-        "AI_PARSE_ERROR",
-        `Lỗi khi kết nối Gemini API (${response.status})`,
-        true
-      );
+      throw new AppError("AI_PARSE_ERROR", `Lỗi khi kết nối Gemini API (${response.status})`, true);
     }
 
     const jsonResult = (await response.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
     };
 
     const rawText = jsonResult.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
@@ -132,7 +135,8 @@ export async function parseTextWithGemini(
 
 export class GeminiService {
   async generateCardsFromText(text: string, _deckId: string): Promise<CardData[]> {
-    const apiKey = typeof process !== "undefined" ? process.env.GEMINI_API_KEY || "dummy_key" : "dummy_key";
+    const apiKey =
+      typeof process !== "undefined" ? process.env.GEMINI_API_KEY || "dummy_key" : "dummy_key";
     try {
       const raw = await parseTextWithGemini(text, apiKey);
       return raw.map((r) => ({
@@ -142,7 +146,7 @@ export class GeminiService {
         radicalAnalysis: r.radical,
         exampleSentence: r.example,
       }));
-    } catch (e) {
+    } catch {
       // Mock fallback if offline or no key
       return text.split(/[,，\n]/).map((w) => ({
         kanji: w.trim() || "学习",
@@ -164,4 +168,3 @@ export class GeminiService {
 }
 
 export const geminiService = new GeminiService();
-

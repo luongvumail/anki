@@ -4,7 +4,7 @@ import { IDeckRepository } from "../../domain/deck/deckRepository.i.js";
 export class DeleteCardUseCase {
   constructor(
     private readonly cardRepo: ICardRepository,
-    private readonly deckRepo: IDeckRepository
+    private readonly deckRepo: IDeckRepository,
   ) {}
 
   async execute(cardId: string): Promise<void> {

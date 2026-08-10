@@ -33,6 +33,7 @@ describe("AppStore UI Store", () => {
 
     const initialXp = appStore.getState().userProgress.totalXp;
     await appStore.processReview(cards[0], Rating.Good);
+    expect(appStore.getState().userProgress.totalXp).toBeGreaterThanOrEqual(initialXp);
 
     // Verify card review processing
     const updatedCards = await container.cardRepo.getByDeckId("deck_store_test");

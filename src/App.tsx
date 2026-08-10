@@ -14,14 +14,7 @@ import { StudyScreen } from "./ui/screens/StudyScreen.js";
 import { theme } from "./ui/theme/theme.js";
 
 export type ScreenTab =
-  | "HOME"
-  | "DECKS"
-  | "DECK_DETAIL"
-  | "CARD_DETAIL"
-  | "PRACTICE"
-  | "STATS"
-  | "STUDY"
-  | "AUTH";
+  "HOME" | "DECKS" | "DECK_DETAIL" | "CARD_DETAIL" | "PRACTICE" | "STATS" | "STUDY" | "AUTH";
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<ScreenTab>("HOME");
@@ -52,9 +45,7 @@ export const App: React.FC = () => {
       <View style={styles.appContainer}>
         {/* Dynamic Screen Content */}
         <View style={styles.mainContent}>
-          {currentTab === "AUTH" && (
-            <AuthScreen onAuthSuccess={() => setCurrentTab("HOME")} />
-          )}
+          {currentTab === "AUTH" && <AuthScreen onAuthSuccess={() => setCurrentTab("HOME")} />}
           {currentTab === "HOME" && <HomeScreen onStartStudy={startStudy} />}
           {currentTab === "DECKS" && <DecksScreen onSelectDeck={openDeckDetail} />}
           {currentTab === "DECK_DETAIL" && (
@@ -73,9 +64,7 @@ export const App: React.FC = () => {
             />
           )}
           {currentTab === "PRACTICE" && <PracticeScreen />}
-          {currentTab === "STATS" && (
-            <StatsScreen onLogout={() => setCurrentTab("AUTH")} />
-          )}
+          {currentTab === "STATS" && <StatsScreen onLogout={() => setCurrentTab("AUTH")} />}
           {currentTab === "STUDY" && (
             <StudyScreen deckId={activeDeckId} onFinish={() => setCurrentTab("HOME")} />
           )}
@@ -87,74 +76,44 @@ export const App: React.FC = () => {
           currentTab !== "CARD_DETAIL" &&
           currentTab !== "AUTH" && (
             <View accessibilityLabel="Điều hướng chính" style={styles.bottomNav}>
-              <Pressable
-                onPress={() => setCurrentTab("HOME")}
-                style={styles.navItem}
-              >
+              <Pressable onPress={() => setCurrentTab("HOME")} style={styles.navItem}>
                 <Icon
                   name="home"
                   color={currentTab === "HOME" ? theme.colors.primary : theme.colors.textSecondary}
                 />
-                <Text
-                  style={[
-                    styles.navLabel,
-                    currentTab === "HOME" && styles.navLabelActive,
-                  ]}
-                >
+                <Text style={[styles.navLabel, currentTab === "HOME" && styles.navLabelActive]}>
                   Trang Chủ
                 </Text>
               </Pressable>
 
-              <Pressable
-                onPress={() => setCurrentTab("DECKS")}
-                style={styles.navItem}
-              >
+              <Pressable onPress={() => setCurrentTab("DECKS")} style={styles.navItem}>
                 <Icon
                   name="decks"
                   color={currentTab === "DECKS" ? theme.colors.primary : theme.colors.textSecondary}
                 />
-                <Text
-                  style={[
-                    styles.navLabel,
-                    currentTab === "DECKS" && styles.navLabelActive,
-                  ]}
-                >
+                <Text style={[styles.navLabel, currentTab === "DECKS" && styles.navLabelActive]}>
                   Bộ Thẻ
                 </Text>
               </Pressable>
 
-              <Pressable
-                onPress={() => setCurrentTab("PRACTICE")}
-                style={styles.navItem}
-              >
+              <Pressable onPress={() => setCurrentTab("PRACTICE")} style={styles.navItem}>
                 <Icon
                   name="gamepad"
-                  color={currentTab === "PRACTICE" ? theme.colors.primary : theme.colors.textSecondary}
+                  color={
+                    currentTab === "PRACTICE" ? theme.colors.primary : theme.colors.textSecondary
+                  }
                 />
-                <Text
-                  style={[
-                    styles.navLabel,
-                    currentTab === "PRACTICE" && styles.navLabelActive,
-                  ]}
-                >
+                <Text style={[styles.navLabel, currentTab === "PRACTICE" && styles.navLabelActive]}>
                   Luyện Tập
                 </Text>
               </Pressable>
 
-              <Pressable
-                onPress={() => setCurrentTab("STATS")}
-                style={styles.navItem}
-              >
+              <Pressable onPress={() => setCurrentTab("STATS")} style={styles.navItem}>
                 <Icon
                   name="stats"
                   color={currentTab === "STATS" ? theme.colors.primary : theme.colors.textSecondary}
                 />
-                <Text
-                  style={[
-                    styles.navLabel,
-                    currentTab === "STATS" && styles.navLabelActive,
-                  ]}
-                >
+                <Text style={[styles.navLabel, currentTab === "STATS" && styles.navLabelActive]}>
                   Thống Kê
                 </Text>
               </Pressable>

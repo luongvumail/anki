@@ -13,7 +13,10 @@ export interface CardSliceState {
   updateCard: (cardId: string, deckId: string, updates: Partial<CardEntity>) => Promise<void>;
   deleteCard: (cardId: string, deckId: string) => Promise<void>;
   resetDeckProgress: (deckId: string) => Promise<void>;
-  processReview: (card: CardEntity, rating: Rating) => Promise<{ updatedCard: CardEntity; log: ReviewLog }>;
+  processReview: (
+    card: CardEntity,
+    rating: Rating,
+  ) => Promise<{ updatedCard: CardEntity; log: ReviewLog }>;
 }
 
 export interface DeckSliceState {

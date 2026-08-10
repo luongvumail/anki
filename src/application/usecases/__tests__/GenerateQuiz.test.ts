@@ -30,10 +30,25 @@ describe("GenerateQuizUseCase", () => {
     };
     await deckRepo.save(mockDeck);
 
-    await addCardUseCase.execute({ deckId: "deck_test", kanji: "水", pinyin: "shuǐ", meaning: "Nước" });
-    await addCardUseCase.execute({ deckId: "deck_test", kanji: "火", pinyin: "huǒ", meaning: "Lửa" });
+    await addCardUseCase.execute({
+      deckId: "deck_test",
+      kanji: "水",
+      pinyin: "shuǐ",
+      meaning: "Nước",
+    });
+    await addCardUseCase.execute({
+      deckId: "deck_test",
+      kanji: "火",
+      pinyin: "huǒ",
+      meaning: "Lửa",
+    });
     await addCardUseCase.execute({ deckId: "deck_test", kanji: "木", pinyin: "mù", meaning: "Gỗ" });
-    await addCardUseCase.execute({ deckId: "deck_test", kanji: "金", pinyin: "jīn", meaning: "Vàng" });
+    await addCardUseCase.execute({
+      deckId: "deck_test",
+      kanji: "金",
+      pinyin: "jīn",
+      meaning: "Vàng",
+    });
 
     const questions = await generateQuizUseCase.execute("deck_test", 4);
 

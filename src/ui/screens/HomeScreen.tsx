@@ -56,9 +56,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartStudy }) => {
         <View style={styles.header}>
           <View style={styles.statBox}>
             <Icon name="flame" color={theme.colors.secondary} />
-            <Text style={styles.streakText}>
-              {userProgress.streakDays} Ngày Streak
-            </Text>
+            <Text style={styles.streakText}>{userProgress.streakDays} Ngày Streak</Text>
           </View>
           <View style={styles.statBox}>
             <Icon name="zap" color={theme.colors.primary} />
@@ -103,7 +101,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartStudy }) => {
                 <View style={styles.forecastTextCol}>
                   <Text style={styles.forecastTitle}>DỰ BÁO TRÍ NHỚ (24H TỚI)</Text>
                   <Text style={styles.forecastSubtitle}>
-                    Thuật toán FSRS v5 dự báo có khoảng <Text style={styles.forecastHighlight}>{forecastForgottenCount} từ vựng</Text> có nguy cơ rơi khỏi bộ nhớ nếu không ôn tập.
+                    Thuật toán FSRS v5 dự báo có khoảng{" "}
+                    <Text style={styles.forecastHighlight}>{forecastForgottenCount} từ vựng</Text>{" "}
+                    có nguy cơ rơi khỏi bộ nhớ nếu không ôn tập.
                   </Text>
                 </View>
                 <StatusBadge variant="warning" label={`~${forecastForgottenCount} TỪ`} size="sm" />

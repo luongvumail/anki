@@ -21,7 +21,7 @@ export const StudyScreen: React.FC<StudyScreenProps> = ({ deckId, onFinish }) =>
 
   useEffect(() => {
     startSession();
-  }, [deckId]);
+  }, [startSession]);
 
   const {
     phase,

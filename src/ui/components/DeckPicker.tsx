@@ -9,11 +9,7 @@ export interface DeckPickerProps {
   onSelectDeck: (deckId: string) => void;
 }
 
-export const DeckPicker: React.FC<DeckPickerProps> = ({
-  decks,
-  selectedDeckId,
-  onSelectDeck,
-}) => {
+export const DeckPicker: React.FC<DeckPickerProps> = ({ decks, selectedDeckId, onSelectDeck }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>CHỌN BỘ THẺ MỤC TIÊU</Text>
@@ -24,10 +20,7 @@ export const DeckPicker: React.FC<DeckPickerProps> = ({
             <Pressable
               key={deck.id}
               onPress={() => onSelectDeck(deck.id)}
-              style={[
-                styles.optionBtn,
-                isSelected && styles.optionBtnSelected,
-              ]}
+              style={[styles.optionBtn, isSelected && styles.optionBtnSelected]}
             >
               <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                 {deck.title} ({deck.cardCount} từ)

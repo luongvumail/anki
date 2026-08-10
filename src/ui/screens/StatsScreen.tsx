@@ -1,10 +1,29 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-import { computeDueCount, computeLearnedCount, computeNewCount } from "../../domain/card/cardUtils.js";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import {
+  computeDueCount,
+  computeLearnedCount,
+  computeNewCount,
+} from "../../domain/card/cardUtils.js";
 import { getLevelInfo } from "../../domain/user/userProgress.js";
 import { authService, UserProfile } from "../../infrastructure/auth/authService.js";
-import { notificationService, NotificationSettings } from "../../infrastructure/notifications/notificationService.js";
-import { DailyReviewLog, reviewTrackerRepo } from "../../infrastructure/persistence/reviewTrackerRepo.js";
+import {
+  notificationService,
+  NotificationSettings,
+} from "../../infrastructure/notifications/notificationService.js";
+import {
+  DailyReviewLog,
+  reviewTrackerRepo,
+} from "../../infrastructure/persistence/reviewTrackerRepo.js";
 import { BadgesGallery } from "../components/BadgesGallery.js";
 import { DuolingoButton } from "../components/DuolingoButton.js";
 import { DuolingoCard } from "../components/DuolingoCard.js";
@@ -22,7 +41,9 @@ export const StatsScreen: React.FC<StatsScreenProps> = ({ onLogout }) => {
   const [logs, setLogs] = useState<DailyReviewLog[]>([]);
   const [storeState, setStoreState] = useState(appStore.getState());
   const [currentUser, setCurrentUser] = useState<UserProfile>(authService.getCurrentUser());
-  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(notificationService.getSettings());
+  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(
+    notificationService.getSettings(),
+  );
 
   useEffect(() => {
     reviewTrackerRepo.getRecentLogs(7).then(setLogs);
@@ -144,10 +165,7 @@ export const StatsScreen: React.FC<StatsScreenProps> = ({ onLogout }) => {
             />
 
             {!currentUser.isGuest && (
-              <Pressable
-                onPress={() => setShowChangePassModal(true)}
-                style={styles.changePassBtn}
-              >
+              <Pressable onPress={() => setShowChangePassModal(true)} style={styles.changePassBtn}>
                 <Text style={styles.changePassText}>ĐỔI MẬT KHẢU TÀI KHOẢN</Text>
               </Pressable>
             )}
@@ -291,7 +309,8 @@ export const StatsScreen: React.FC<StatsScreenProps> = ({ onLogout }) => {
                         styles.barFill,
                         {
                           height: `${Math.max(8, heightPercent)}%`,
-                          backgroundColor: log.count > 0 ? theme.colors.primary : theme.colors.cardBorder,
+                          backgroundColor:
+                            log.count > 0 ? theme.colors.primary : theme.colors.cardBorder,
                         },
                       ]}
                     />

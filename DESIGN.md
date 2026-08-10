@@ -32,9 +32,11 @@ theme:
 # DESIGN.md — 汉字 Anki (Duolingo 3D Design Tokens)
 
 ## Visual Identity
+
 Ứng dụng học Hán tự phong cách Duolingo 3D với viền nổi có bóng đổ (border-bottom 4px), màu sắc rực rỡ, cảm giác nẩy chân thực khi tương tác.
 
 ## Token Mapping
+
 - **Primary Green (`#059669`)**: Dùng cho nút chính, hoàn thành bài học, chuỗi Streak.
 - **Amber Secondary (`#D97706`)**: Dùng cho nút Thử thách, XP, Huy hiệu.
 - **Red Danger (`#DC2626`)**: Dùng cho câu trả lời sai, xóa bộ thẻ.

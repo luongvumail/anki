@@ -16,16 +16,17 @@ export function calculateStreak(activityDates: string[]): number {
     activityDates.map((dateStr) => {
       const d = new Date(dateStr);
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-        d.getDate()
+        d.getDate(),
       ).padStart(2, "0")}`;
-    })
+    }),
   );
 
   const today = new Date();
   const getFormatted = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-      d.getDate()
-    ).padStart(2, "0")}`;
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(
+      2,
+      "0",
+    )}`;
 
   let streak = 0;
   let currentDate = new Date(today);

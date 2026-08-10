@@ -6,7 +6,7 @@ import { CardSliceState } from "../types.js";
 
 export const createCardSlice = (
   set: (fn: (state: CardSliceState) => Partial<CardSliceState>) => void,
-  get: () => CardSliceState
+  get: () => CardSliceState,
 ): CardSliceState => ({
   cards: {},
   isCardLoading: false,

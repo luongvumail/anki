@@ -21,7 +21,7 @@ export class ProcessCardReviewUseCase {
   constructor(
     private readonly cardRepo: ICardRepository,
     private readonly deckRepo: IDeckRepository,
-    private readonly fsrsEngine: FSRSEngine
+    private readonly fsrsEngine: FSRSEngine,
   ) {}
 
   async execute(input: ProcessCardReviewInput): Promise<ProcessCardReviewResult> {

@@ -6,7 +6,7 @@ export class ResetDeckProgressUseCase {
   constructor(
     private readonly cardRepo: ICardRepository,
     private readonly deckRepo: IDeckRepository,
-    private readonly fsrsEngine: FSRSEngine
+    private readonly fsrsEngine: FSRSEngine,
   ) {}
 
   async execute(deckId: string): Promise<void> {

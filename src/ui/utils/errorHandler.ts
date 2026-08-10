@@ -11,7 +11,7 @@ export class AppError extends Error {
     public readonly code: ErrorCode,
     public readonly userMessage: string,
     public readonly retryable: boolean,
-    public readonly cause?: unknown
+    public readonly cause?: unknown,
   ) {
     super(userMessage);
     this.name = "AppError";
@@ -29,6 +29,6 @@ export function mapToAppError(error: unknown): AppError {
     "UNKNOWN_ERROR",
     "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",
     false,
-    error
+    error,
   );
 }

@@ -1,12 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { CardEntity } from "../../domain/card/cardEntity.js";
 import { computeLearnedCount } from "../../domain/card/cardUtils.js";
 import { DeckEntity } from "../../domain/deck/deckEntity.js";
@@ -34,18 +27,19 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
   onOpenCardDetail,
 }) => {
   const [cards, setCards] = useState<CardEntity[]>([]);
-  const [deck, setDeck] = useState<DeckEntity | null>(null);
+  const [deck, setDeck] = useState<DeckEntity | null>(
+    () => appStore.getState().decks.find((d) => d.id === deckId) || null,
+  );
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isAIModalOpen, setIsAIModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     appStore.fetchCards(deckId).then(setCards);
-    const found = appStore.getState().decks.find((d) => d.id === deckId);
-    if (found) setDeck(found);
-
     const unsubscribe = appStore.subscribe(() => {
       const updatedCards = appStore.getState().cards[deckId] || [];
+      const updatedDeck = appStore.getState().decks.find((d) => d.id === deckId);
       setCards(updatedCards);
+      if (updatedDeck) setDeck(updatedDeck);
     });
     return unsubscribe;
   }, [deckId]);
@@ -57,7 +51,7 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
       (c) =>
         c.kanji.toLowerCase().includes(q) ||
         c.pinyin.toLowerCase().includes(q) ||
-        c.meaning.toLowerCase().includes(q)
+        c.meaning.toLowerCase().includes(q),
     );
   }, [cards, searchQuery]);
 
@@ -68,9 +62,7 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
   }, [cards.length, learnedCount]);
 
   const weakCards = useMemo(() => {
-    return cards.filter(
-      (c) => c.fsrsState && c.fsrsState.difficulty > 7.0 && c.fsrsState.reps > 0
-    );
+    return cards.filter((c) => c.fsrsState && c.fsrsState.difficulty > 7.0 && c.fsrsState.reps > 0);
   }, [cards]);
 
   const handleDeleteCard = (e: any, cardId: string) => {
@@ -87,8 +79,12 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
       `Bạn có chắc muốn đặt lại tiến độ học của tất cả ${cards.length} từ vựng về trạng thái từ mới?`,
       [
         { text: "Hủy", style: "cancel" },
-        { text: "Đặt lại", style: "destructive", onPress: () => appStore.resetDeckProgress(deckId) },
-      ]
+        {
+          text: "Đặt lại",
+          style: "destructive",
+          onPress: () => appStore.resetDeckProgress(deckId),
+        },
+      ],
     );
   };
 
@@ -115,9 +111,7 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
         {deck && (
           <DuolingoCard accessibilityLabel={`Chi tiết bộ thẻ ${deck.title}`}>
             <Text style={styles.deckTitle}>{deck.title}</Text>
-            <Text style={styles.deckDesc}>
-              {deck.description || `${cards.length} thẻ từ vựng`}
-            </Text>
+            <Text style={styles.deckDesc}>{deck.description || `${cards.length} thẻ từ vựng`}</Text>
 
             {/* Mastery Bar */}
             <View style={styles.masterySection}>

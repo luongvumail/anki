@@ -1,10 +1,6 @@
 import { ICardRepository } from "../../domain/card/cardRepository.i.js";
 
-export type QuizType =
-  | "KANJI_TO_MEANING"
-  | "KANJI_TO_PINYIN"
-  | "AUDIO_TO_KANJI"
-  | "FILL_IN_BLANK";
+export type QuizType = "KANJI_TO_MEANING" | "KANJI_TO_PINYIN" | "AUDIO_TO_KANJI" | "FILL_IN_BLANK";
 
 export interface QuizQuestion {
   id: string;
@@ -83,7 +79,7 @@ export class GenerateQuizUseCase {
       // Pick 3 random wrong options
       const wrongOptions = [...distractorPool].sort(() => 0.5 - Math.random()).slice(0, 3);
       const options = Array.from(new Set([correctAnswer, ...wrongOptions])).sort(
-        () => 0.5 - Math.random()
+        () => 0.5 - Math.random(),
       );
 
       return {

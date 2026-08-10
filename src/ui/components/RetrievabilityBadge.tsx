@@ -13,8 +13,8 @@ export const RetrievabilityBadge: React.FC<RetrievabilityBadgeProps> = ({ retrie
     percentage >= 80
       ? theme.badges.learned
       : percentage >= 50
-      ? theme.badges.warning
-      : theme.badges.due;
+        ? theme.badges.warning
+        : theme.badges.due;
 
   return (
     <View

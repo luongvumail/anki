@@ -42,6 +42,8 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
     }
   };
 
+  const [nowMs] = useState<number>(() => Date.now());
+
   const handleFlip = () => {
     setIsFlipped((prev) => !prev);
   };
@@ -51,7 +53,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
     const lastTime = card.fsrsState.last_review
       ? new Date(card.fsrsState.last_review).getTime()
       : new Date(card.createdAt).getTime();
-    const elapsedDays = Math.max(0, (Date.now() - lastTime) / (1000 * 60 * 60 * 24));
+    const elapsedDays = Math.max(0, (nowMs - lastTime) / (1000 * 60 * 60 * 24));
     return Math.max(0.1, Math.min(1.0, Math.exp(-elapsedDays / card.fsrsState.stability)));
   };
 
@@ -70,7 +72,11 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
           accessibilityLabel={`Phát âm từ ${card.kanji}`}
           style={styles.audioBtn}
         >
-          <Icon name="sparkles" size={24} color={isPlayingAudio ? theme.colors.secondary : theme.colors.primary} />
+          <Icon
+            name="sparkles"
+            size={24}
+            color={isPlayingAudio ? theme.colors.secondary : theme.colors.primary}
+          />
         </Pressable>
       </View>
 

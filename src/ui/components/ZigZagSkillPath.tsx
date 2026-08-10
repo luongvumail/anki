@@ -53,10 +53,7 @@ export const ZigZagSkillPath: React.FC<ZigZagSkillPathProps> = ({
 
             {/* Circular Node Button */}
             <View
-              style={[
-                styles.circleNode,
-                { backgroundColor: deck.color || theme.colors.primary },
-              ]}
+              style={[styles.circleNode, { backgroundColor: deck.color || theme.colors.primary }]}
             >
               <Icon name="book" size={32} color={theme.colors.white} />
             </View>

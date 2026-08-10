@@ -20,8 +20,8 @@ export const PracticeScreen: React.FC = () => {
     const unsub = appStore.subscribe(() => {
       const d = appStore.getState().decks;
       setDecks(d);
-      if (d.length > 0 && !selectedDeckId) {
-        setSelectedDeckId(d[0].id);
+      if (d.length > 0) {
+        setSelectedDeckId((prev) => prev || d[0].id);
       }
     });
     return unsub;
@@ -84,9 +84,7 @@ export const PracticeScreen: React.FC = () => {
             <View style={styles.gameInfo}>
               <Icon name="zap" size={32} color={theme.colors.secondary} />
               <Text style={styles.gameTitle}>Ghép Từ Nhanh 60s</Text>
-              <Text style={styles.gameDesc}>
-                Nối chữ Hán với nghĩa đúng trước khi hết giờ!
-              </Text>
+              <Text style={styles.gameDesc}>Nối chữ Hán với nghĩa đúng trước khi hết giờ!</Text>
             </View>
             <DuolingoButton
               title="CHƠI NGAY"

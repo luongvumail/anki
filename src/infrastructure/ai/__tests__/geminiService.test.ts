@@ -13,8 +13,20 @@ describe("geminiService", () => {
                 parts: [
                   {
                     text: JSON.stringify([
-                      { kanji: "学习", pinyin: "xué xí", meaning: "Học tập", radical: "子", hskLevel: 1 },
-                      { kanji: "汉字", pinyin: "hàn zì", meaning: "Chữ Hán", radical: "宀", hskLevel: 2 },
+                      {
+                        kanji: "学习",
+                        pinyin: "xué xí",
+                        meaning: "Học tập",
+                        radical: "子",
+                        hskLevel: 1,
+                      },
+                      {
+                        kanji: "汉字",
+                        pinyin: "hàn zì",
+                        meaning: "Chữ Hán",
+                        radical: "宀",
+                        hskLevel: 2,
+                      },
                     ]),
                   },
                 ],
@@ -22,7 +34,7 @@ describe("geminiService", () => {
             },
           ],
         }),
-      } as Response);
+      }) as Response;
 
     const cards = await parseTextWithGemini("学习汉字", "mock_key", mockFetch as typeof fetch);
 

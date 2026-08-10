@@ -45,12 +45,8 @@ export const BadgesGallery: React.FC<BadgesGalleryProps> = ({
               style={[
                 styles.badgeBox,
                 {
-                  backgroundColor: isUnlocked
-                    ? theme.badges.learned.bg
-                    : theme.badges.neutral.bg,
-                  borderColor: isUnlocked
-                    ? theme.colors.primary
-                    : theme.colors.cardBorder,
+                  backgroundColor: isUnlocked ? theme.badges.learned.bg : theme.badges.neutral.bg,
+                  borderColor: isUnlocked ? theme.colors.primary : theme.colors.cardBorder,
                   opacity: isUnlocked ? 1 : 0.7,
                 },
               ]}

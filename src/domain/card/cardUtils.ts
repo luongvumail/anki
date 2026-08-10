@@ -21,7 +21,7 @@ export function getDueCards(cards: CardEntity[], now: Date = new Date()): CardEn
  */
 export function sortByDue(cards: CardEntity[]): CardEntity[] {
   return [...cards].sort(
-    (a, b) => new Date(a.fsrsState.due).getTime() - new Date(b.fsrsState.due).getTime()
+    (a, b) => new Date(a.fsrsState.due).getTime() - new Date(b.fsrsState.due).getTime(),
   );
 }
 
@@ -38,9 +38,7 @@ export function computeDueCount(cards: CardEntity[]): number {
  */
 export function computeNewCount(cards: CardEntity[]): number {
   if (!cards || cards.length === 0) return 0;
-  return cards.filter(
-    (c) => c.fsrsState.state === State.New || c.fsrsState.reps === 0
-  ).length;
+  return cards.filter((c) => c.fsrsState.state === State.New || c.fsrsState.reps === 0).length;
 }
 
 /**
@@ -65,7 +63,7 @@ export function computeLearnedCount(cards: CardEntity[]): number {
 export function getDeckMasteryPct(
   cardCount: number,
   dueCount: number,
-  cards?: CardEntity[]
+  cards?: CardEntity[],
 ): number {
   if (cards && cards.length > 0) {
     const total = cards.length;
@@ -112,7 +110,7 @@ export function getDailyDueSummary(cardsRecord: Record<string, CardEntity[]>): {
  */
 export function computeForecastForgotten(
   cardsRecord: Record<string, CardEntity[]>,
-  daysAhead = 1
+  daysAhead = 1,
 ): number {
   let countAtRisk = 0;
 

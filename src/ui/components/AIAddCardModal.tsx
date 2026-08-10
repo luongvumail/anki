@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Modal,
@@ -27,13 +27,12 @@ export interface AIAddCardModalProps {
 
 const geminiService = new GeminiService();
 const MAX_WORDS = 10;
-const HISTORY_KEY = "@gemini_history";
 
 export interface WordItem {
   word: string;
   status: "loading" | "done" | "error";
   data: CardData | null;
-  saved: boolean;
+  saved?: boolean;
   errorMsg?: string;
 }
 
@@ -54,20 +53,13 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
 }) => {
   const { decks, cards } = appStore.getState();
   const [selectedDeckId, setSelectedDeckId] = useState<string>(
-    initialDeckId || defaultDeckId || decks[0]?.id || "deck_hsk1"
+    () => initialDeckId || defaultDeckId || decks[0]?.id || "deck_hsk1",
   );
   const [inputWords, setInputWords] = useState<string>("");
   const [wordItems, setWordItems] = useState<WordItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [notice, setNotice] = useState<string | null>(null);
-
-  useEffect(() => {
-    const targetDeckId = initialDeckId || defaultDeckId;
-    if (targetDeckId && decks.some((d) => d.id === targetDeckId)) {
-      setSelectedDeckId(targetDeckId);
-    }
-  }, [initialDeckId, defaultDeckId, decks]);
 
   if (!visible) return null;
 
@@ -100,15 +92,12 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
     }
 
     try {
-      const generatedCards = await geminiService.generateCardsFromText(
-        parsed.join(", "),
-        ""
-      );
+      const generatedCards = await geminiService.generateCardsFromText(parsed.join(", "), "");
 
       setWordItems((prevItems) =>
         prevItems.map((item) => {
           const matched = generatedCards.find(
-            (g) => g.kanji.trim() === item.word || g.kanji.includes(item.word)
+            (g) => g.kanji.trim() === item.word || g.kanji.includes(item.word),
           );
           if (matched) {
             return { ...item, status: "done", data: matched };
@@ -123,15 +112,15 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
               exampleSentence: `Ví dụ sử dụng từ ${item.word}`,
             },
           };
-        })
+        }),
       );
-    } catch (e: any) {
+    } catch {
       setWordItems((prevItems) =>
         prevItems.map((item) => ({
           ...item,
           status: "error",
           errorMsg: "Không thể tải từ AI",
-        }))
+        })),
       );
     } finally {
       setIsLoading(false);
@@ -161,7 +150,7 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
       Alert.alert("Thành công", `Đã lưu ${validItems.length} thẻ mới vào bộ học!`);
       handleReset();
       onClose();
-    } catch (e) {
+    } catch {
       Alert.alert("Lỗi", "Không thể lưu thẻ lúc này. Vui lòng thử lại.");
     } finally {
       setIsSaving(false);
@@ -195,7 +184,9 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.label}>NHẬP CÁC TỪ VỰNG HÁN TỰ (Phân cách bởi dấu phẩy hoặc xuống dòng)</Text>
+              <Text style={styles.label}>
+                NHẬP CÁC TỪ VỰNG HÁN TỰ (Phân cách bởi dấu phẩy hoặc xuống dòng)
+              </Text>
               <TextInput
                 multiline
                 numberOfLines={3}
@@ -228,9 +219,7 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
                     {item.data ? (
                       <CardPreview
                         cardData={item.data}
-                        onRemove={() =>
-                          setWordItems((prev) => prev.filter((_, i) => i !== idx))
-                        }
+                        onRemove={() => setWordItems((prev) => prev.filter((_, i) => i !== idx))}
                       />
                     ) : (
                       <DuolingoCard accessibilityLabel={`Đang xử lý ${item.word}`}>

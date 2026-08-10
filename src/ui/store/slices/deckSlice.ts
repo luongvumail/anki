@@ -15,7 +15,7 @@ const DEFAULT_HSK1_DECK: DeckEntity = {
 };
 
 export const createDeckSlice = (
-  set: (fn: (state: DeckSliceState) => Partial<DeckSliceState>) => void
+  set: (fn: (state: DeckSliceState) => Partial<DeckSliceState>) => void,
 ): DeckSliceState => ({
   decks: [DEFAULT_HSK1_DECK],
   isDeckLoading: false,
