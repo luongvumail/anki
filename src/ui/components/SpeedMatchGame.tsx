@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { container } from "../../infrastructure/container.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { DuolingoButton } from "./DuolingoButton.js";
 import { Icon } from "./Icon.js";
 
@@ -18,6 +19,7 @@ export interface MatchTile {
 }
 
 export const SpeedMatchGame: React.FC<SpeedMatchGameProps> = ({ deckId, onFinish }) => {
+  const { theme: activeTheme } = useTheme();
   const [tiles, setTiles] = useState<MatchTile[]>([]);
   const [selectedTile, setSelectedTile] = useState<MatchTile | null>(null);
   const [matchedCardIds, setMatchedCardIds] = useState<Set<string>>(new Set());
@@ -107,6 +109,17 @@ export const SpeedMatchGame: React.FC<SpeedMatchGameProps> = ({ deckId, onFinish
     <View style={styles.container}>
       {/* Header bar */}
       <View style={styles.header}>
+        <Pressable
+          onPress={() => onFinish(score)}
+          style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 4 }}
+          accessibilityLabel="Thoát trò chơi ghép từ"
+        >
+          <Icon name="back" size={20} color={activeTheme.colors.textPrimary} />
+          <Text style={{ fontSize: 13, fontWeight: "700", color: activeTheme.colors.textPrimary }}>
+            Thoát
+          </Text>
+        </Pressable>
+
         <View style={styles.statBox}>
           <Icon name="timer" color={theme.colors.danger} />
           <Text style={styles.timerText}>{timeLeft}s</Text>
@@ -135,15 +148,12 @@ export const SpeedMatchGame: React.FC<SpeedMatchGameProps> = ({ deckId, onFinish
                 styles.tile,
                 {
                   backgroundColor: isMatched
-                    ? theme.colors.cardBorder
+                    ? activeTheme.colors.cardBg
                     : isSelected
-                      ? theme.colors.secondary
-                      : theme.colors.white,
-                  borderColor: isSelected ? theme.colors.secondaryShadow : theme.colors.cardBorder,
-                  borderBottomColor: isSelected
-                    ? theme.colors.secondaryShadow
-                    : theme.colors.cardBorder,
-                  opacity: isMatched ? 0.5 : 1,
+                      ? activeTheme.colors.secondary
+                      : activeTheme.colors.cardBg,
+                  borderColor: isSelected ? activeTheme.colors.secondaryShadow : activeTheme.colors.cardBorder,
+                  opacity: isMatched ? 0.35 : 1,
                 },
               ]}
             >
@@ -152,10 +162,10 @@ export const SpeedMatchGame: React.FC<SpeedMatchGameProps> = ({ deckId, onFinish
                   styles.tileText,
                   {
                     color: isMatched
-                      ? theme.colors.textLight
+                      ? activeTheme.colors.textLight
                       : isSelected
-                        ? theme.colors.white
-                        : theme.colors.textPrimary,
+                        ? activeTheme.colors.white
+                        : activeTheme.colors.textPrimary,
                     fontSize: tile.type === "KANJI" ? theme.fontSize.xxl : theme.fontSize.base,
                   },
                 ]}

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Modal,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,12 +11,15 @@ import {
   View,
 } from "react-native";
 import { computeDueCount, getDeckMasteryPct } from "../../domain/card/cardUtils.js";
+import { AIAddCardModal } from "../components/AIAddCardModal.js";
 import { DuolingoButton } from "../components/DuolingoButton.js";
 import { DuolingoCard } from "../components/DuolingoCard.js";
+import { FloatingAddButton } from "../components/FloatingAddButton.js";
 import { Icon } from "../components/Icon.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { SearchBar } from "../components/SearchBar.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { appStore } from "../store/useAppStore.js";
 
 export interface DecksScreenProps {
@@ -23,9 +27,11 @@ export interface DecksScreenProps {
 }
 
 export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
+  const { theme } = useTheme();
   const [storeState, setStoreState] = useState(appStore.getState());
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
@@ -56,80 +62,35 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
     );
   };
 
-  const [selectedHskFilter, setSelectedHskFilter] = useState<number | null>(null);
-
-  const filteredDecks = storeState.decks.filter((deck) => {
-    const matchesSearch =
-      deck.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deck.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (!matchesSearch) return false;
-
-    if (selectedHskFilter === null) return true;
-    const titleLower = deck.title.toLowerCase();
-    if (selectedHskFilter === 4) {
-      return (
-        titleLower.includes("hsk 4") || titleLower.includes("hsk 5") || titleLower.includes("hsk 6")
-      );
-    }
-    return (
-      titleLower.includes(`hsk ${selectedHskFilter}`) ||
-      titleLower.includes(`hsk${selectedHskFilter}`)
-    );
-  });
+  const decks = storeState.decks;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.pageTitle}>Danh Sách Bộ Thẻ</Text>
-          <DuolingoButton
-            title="+ TẠO BỘ THẺ"
-            variant="primary"
+          <View style={styles.headerTitleRow}>
+            <Icon name="decks" size={26} color={theme.colors.primary} />
+            <Text style={[styles.pageTitle, { color: theme.colors.textPrimary }]}>
+              Bộ Thẻ Của Tôi
+            </Text>
+          </View>
+          <Pressable
             onPress={() => setShowCreateModal(true)}
+            style={[styles.createBtnCompact, { backgroundColor: theme.colors.primary }]}
             accessibilityLabel="Tạo bộ thẻ mới"
-          />
+          >
+            <Icon name="plus" size={16} color="#FFFFFF" />
+            <Text style={styles.createBtnText}>Tạo Bộ Thẻ</Text>
+          </Pressable>
         </View>
-
-        {/* Search Input Component */}
-        <View style={styles.searchWrapper}>
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Tìm kiếm bộ thẻ..."
-          />
-        </View>
-
-        {/* HSK Level Filter Tabs */}
-        <View style={styles.hskFilterRow}>
-          {[
-            { label: "Tất cả", value: null },
-            { label: "HSK 1", value: 1 },
-            { label: "HSK 2", value: 2 },
-            { label: "HSK 3", value: 3 },
-            { label: "HSK 4+", value: 4 },
-          ].map((tab) => (
-            <Pressable
-              key={tab.label}
-              onPress={() => setSelectedHskFilter(tab.value)}
-              style={[styles.hskTab, selectedHskFilter === tab.value && styles.hskTabActive]}
-            >
-              <Text
-                style={[
-                  styles.hskTabText,
-                  selectedHskFilter === tab.value && styles.hskTabTextActive,
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+          Quản lý và ôn tập các bộ từ vựng Hán ngữ của bạn.
+        </Text>
 
         {/* Decks List */}
-        <View>
-          {filteredDecks.length > 0 ? (
-            filteredDecks.map((deck) => {
+        <View style={styles.deckListMargin}>
+          {decks.length > 0 ? (
+            decks.map((deck) => {
               const deckCards = storeState.cards[deck.id] || [];
               const totalCount = deckCards.length || deck.cardCount || 0;
               const dueCount = computeDueCount(deckCards);
@@ -139,11 +100,13 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
                 <DuolingoCard key={deck.id} accessibilityLabel={`Bộ thẻ: ${deck.title}`}>
                   <View style={styles.cardHeader}>
                     <View style={styles.deckInfo}>
-                      <Text style={styles.deckTitle}>{deck.title}</Text>
-                      <Text style={styles.deckDesc}>
+                      <Text style={[styles.deckTitle, { color: theme.colors.textPrimary }]}>
+                        {deck.title}
+                      </Text>
+                      <Text style={[styles.deckDesc, { color: theme.colors.textSecondary }]}>
                         {deck.description || "Bộ thẻ từ vựng Hán tự"}
                       </Text>
-                      <Text style={styles.deckStats}>
+                      <Text style={[styles.deckStats, { color: theme.colors.textSecondary }]}>
                         {totalCount} từ vựng {dueCount > 0 ? ` · ${dueCount} thẻ cần ôn` : ""}
                       </Text>
                     </View>
@@ -161,7 +124,9 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
                     <View style={styles.progressFlex}>
                       <ProgressBar progress={masteryPct} color={theme.colors.primary} />
                     </View>
-                    <Text style={styles.masteryText}>{masteryPct}% Thuộc</Text>
+                    <Text style={[styles.masteryText, { color: theme.colors.primary }]}>
+                      {masteryPct}% Thuộc
+                    </Text>
                   </View>
 
                   <DuolingoButton
@@ -174,22 +139,74 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
               );
             })
           ) : (
-            <Text style={styles.emptyText}>Không tìm thấy bộ thẻ nào phù hợp.</Text>
+            <DuolingoCard accessibilityLabel="Chưa có bộ thẻ nào">
+              <View style={{ alignItems: "center", paddingVertical: 12 }}>
+                <Icon name="decks" size={36} color={theme.colors.primary} />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "800",
+                    color: theme.colors.textPrimary,
+                    marginTop: 8,
+                    marginBottom: 4,
+                    textAlign: "center",
+                  }}
+                >
+                  BẠN CHƯA CÓ BỘ THẺ NÀO
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: theme.colors.textSecondary,
+                    textAlign: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  Hãy bấm nút bên dưới để tạo bộ thẻ từ vựng đầu tiên của bạn!
+                </Text>
+                <View style={{ width: "100%" }}>
+                  <DuolingoButton
+                    title="+ TẠO BỘ THẺ MỚI"
+                    variant="primary"
+                    onPress={() => setShowCreateModal(true)}
+                  />
+                </View>
+              </View>
+            </DuolingoCard>
           )}
         </View>
       </ScrollView>
 
       {/* Modal Create Deck */}
       {showCreateModal && (
-        <Modal visible={showCreateModal} animationType="fade" transparent>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalTitle}>Tạo Bộ Thẻ Mới</Text>
+        <Modal visible={showCreateModal} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowCreateModal(false)}>
+          <SafeAreaView style={[styles.fullModalContainer, { backgroundColor: theme.colors.bg }]}>
+            <View style={styles.fullModalHeader}>
+              <Pressable
+                onPress={() => setShowCreateModal(false)}
+                style={styles.closeBtn}
+                accessibilityLabel="Đóng modal tạo bộ thẻ"
+              >
+                <Icon name="close" size={24} color={theme.colors.textPrimary} />
+              </Pressable>
+              <Text style={[styles.fullModalTitle, { color: theme.colors.textPrimary }]}>
+                Tạo Bộ Thẻ Mới
+              </Text>
+            </View>
 
+            <ScrollView contentContainerStyle={styles.fullModalBody}>
               <View style={styles.inputGroup}>
-                <Text style={styles.formLabel}>Tên bộ thẻ *</Text>
+                <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>
+                  Tên bộ thẻ *
+                </Text>
                 <TextInput
-                  style={styles.inputText}
+                  style={[
+                    styles.inputText,
+                    {
+                      backgroundColor: theme.colors.cardBg,
+                      color: theme.colors.textPrimary,
+                    },
+                  ]}
                   placeholder="Ví dụ: HSK 2 Căn Bản"
                   placeholderTextColor={theme.colors.textLight}
                   value={newTitle}
@@ -198,9 +215,17 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.formLabel}>Mô tả</Text>
+                <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>
+                  Mô tả
+                </Text>
                 <TextInput
-                  style={styles.inputText}
+                  style={[
+                    styles.inputText,
+                    {
+                      backgroundColor: theme.colors.cardBg,
+                      color: theme.colors.textPrimary,
+                    },
+                  ]}
                   placeholder="Ví dụ: 150 từ vựng chủ đề giao tiếp"
                   placeholderTextColor={theme.colors.textLight}
                   value={newDesc}
@@ -216,10 +241,16 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
                 />
                 <DuolingoButton title="TẠO BỘ THẺ" variant="primary" onPress={handleCreateDeck} />
               </View>
-            </View>
-          </View>
+            </ScrollView>
+          </SafeAreaView>
         </Modal>
       )}
+
+      {/* Floating Add Card Button */}
+      <FloatingAddButton onPress={() => setIsAIModalOpen(true)} />
+
+      {/* AI Add Card Modal */}
+      <AIAddCardModal visible={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} />
     </View>
   );
 };
@@ -237,65 +268,58 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.lg,
+    marginBottom: 4,
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   pageTitle: {
-    fontSize: theme.fontSize.title,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary,
+    fontSize: 22,
+    fontWeight: "800",
   },
-  searchWrapper: {
-    marginBottom: theme.spacing.md,
+  subtitle: {
+    fontSize: 13,
+    marginBottom: 12,
   },
-  hskFilterRow: {
+  createBtnCompact: {
     flexDirection: "row",
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.lg,
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  hskTab: {
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.cardBg,
-    borderWidth: 1,
-    borderColor: theme.colors.cardBorder,
+  createBtnText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
   },
-  hskTabActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  hskTabText: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textSecondary,
-  },
-  hskTabTextActive: {
-    color: theme.colors.white,
+  deckListMargin: {
+    marginTop: 8,
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   deckInfo: {
     flex: 1,
   },
   deckTitle: {
-    fontSize: theme.fontSize.xl,
+    fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.xs / 2,
   },
   deckDesc: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.xs,
+    marginTop: 2,
   },
   deckStats: {
     fontSize: theme.fontSize.xs,
+    marginTop: 4,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
   },
   deleteBtn: {
     padding: theme.spacing.xs,
@@ -319,26 +343,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: theme.fontSize.sm,
   },
-  modalOverlay: {
+  fullModalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
+  },
+  fullModalHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    padding: theme.spacing.lg,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    gap: 12,
   },
-  modalBox: {
-    backgroundColor: theme.colors.bg,
-    borderRadius: theme.radius.xl,
-    padding: theme.spacing.xl,
-    width: "100%",
-    maxWidth: 450,
-    ...theme.shadows.lg,
+  closeBtn: {
+    padding: 6,
   },
-  modalTitle: {
-    fontSize: theme.fontSize.title,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.lg,
+  fullModalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  fullModalBody: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   inputGroup: {
     marginBottom: theme.spacing.md,
@@ -351,12 +376,9 @@ const styles = StyleSheet.create({
   },
   inputText: {
     backgroundColor: theme.colors.cardBg,
-    borderColor: theme.colors.cardBorder,
-    borderWidth: 2,
     borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     fontSize: theme.fontSize.base,
-    color: theme.colors.textPrimary,
   },
   modalBtnRow: {
     flexDirection: "row",

@@ -1,6 +1,6 @@
 export interface StreakState {
   currentStreak: number;
-  lastActiveDate: string;
+  lastActiveDate: string | null;
   isActiveToday: boolean;
 }
 

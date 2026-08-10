@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import * as Speech from "expo-speech";
 import { CardEntity } from "../../domain/card/cardEntity.js";
 import { geminiService } from "../../infrastructure/ai/geminiService.js";
 import { DuolingoButton } from "../components/DuolingoButton.js";
@@ -7,6 +8,7 @@ import { DuolingoCard } from "../components/DuolingoCard.js";
 import { Icon } from "../components/Icon.js";
 import { BadgeVariant, StatusBadge } from "../components/StatusBadge.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { appStore } from "../store/useAppStore.js";
 
 export interface CardDetailScreenProps {
@@ -16,10 +18,43 @@ export interface CardDetailScreenProps {
 }
 
 export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deckId, onBack }) => {
+  const { theme: activeTheme } = useTheme();
   const [card, setCard] = useState<CardEntity | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [speaking, setSpeaking] = useState<boolean>(false);
   const [analyzingRadical, setAnalyzingRadical] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editKanji, setEditKanji] = useState<string>("");
+  const [editPinyin, setEditPinyin] = useState<string>("");
+  const [editMeaning, setEditMeaning] = useState<string>("");
+  const [editExample, setEditExample] = useState<string>("");
+
+  const handleOpenEdit = () => {
+    if (!card) return;
+    setEditKanji(card.kanji);
+    setEditPinyin(card.pinyin);
+    setEditMeaning(card.meaning);
+    setEditExample(card.exampleSentence || "");
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!card || !editKanji.trim()) return;
+    try {
+      const updates = {
+        kanji: editKanji.trim(),
+        pinyin: editPinyin.trim(),
+        meaning: editMeaning.trim(),
+        exampleSentence: editExample.trim(),
+      };
+      await appStore.updateCard(card.id, deckId, updates);
+      setCard((prev) => (prev ? { ...prev, ...updates } : null));
+      setShowEditModal(false);
+      Alert.alert("Thành công", "Đã cập nhật thông tin thẻ!");
+    } catch {
+      Alert.alert("Lỗi", "Không thể lưu thay đổi lúc này.");
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -58,16 +93,15 @@ export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deck
   }
 
   const speakHanzi = () => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(card.kanji);
-      utterance.lang = "zh-CN";
-      utterance.rate = 0.8;
-      utterance.onstart = () => setSpeaking(true);
-      utterance.onend = () => setSpeaking(false);
-      utterance.onerror = () => setSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    }
+    if (!card) return;
+    Speech.stop();
+    setSpeaking(true);
+    Speech.speak(card.kanji, {
+      language: "zh-CN",
+      rate: 0.8,
+      onDone: () => setSpeaking(false),
+      onError: () => setSpeaking(false),
+    });
   };
 
   const handleGenerateRadical = async () => {
@@ -131,32 +165,40 @@ export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deck
         {/* Hero Card */}
         <DuolingoCard accessibilityLabel={`Chi tiết thẻ ${card.kanji}`}>
           <View style={styles.heroBox}>
-            <Text style={styles.heroKanji}>{card.kanji}</Text>
+            <Text style={[styles.heroKanji, { color: activeTheme.colors.textPrimary }]}>
+              {card.kanji}
+            </Text>
 
             <View style={styles.audioRow}>
-              <Text style={styles.pinyinText}>{card.pinyin}</Text>
+              <Text style={[styles.pinyinText, { color: activeTheme.colors.primary }]}>
+                {card.pinyin}
+              </Text>
               <Pressable
                 onPress={speakHanzi}
                 style={[
                   styles.audioBtn,
                   {
-                    backgroundColor: speaking ? theme.colors.primary : theme.badges.neutral.bg,
+                    backgroundColor: speaking ? activeTheme.colors.primary : activeTheme.badges.neutral.bg,
                   },
                 ]}
               >
                 <Icon
                   name="audio"
                   size={20}
-                  color={speaking ? theme.colors.white : theme.colors.textPrimary}
+                  color={speaking ? activeTheme.colors.white : activeTheme.colors.textPrimary}
                 />
               </Pressable>
             </View>
 
-            <Text style={styles.meaningText}>{card.meaning}</Text>
+            <Text style={[styles.meaningText, { color: activeTheme.colors.textSecondary }]}>
+              {card.meaning}
+            </Text>
 
             {card.exampleSentence && (
-              <View style={styles.exampleBox}>
-                <Text style={styles.exampleText}>"{card.exampleSentence}"</Text>
+              <View style={[styles.exampleBox, { backgroundColor: activeTheme.colors.bg }]}>
+                <Text style={[styles.exampleText, { color: activeTheme.colors.textSecondary }]}>
+                  "{card.exampleSentence}"
+                </Text>
               </View>
             )}
           </View>
@@ -166,15 +208,19 @@ export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deck
         <View style={styles.sectionMargin}>
           <DuolingoCard accessibilityLabel="Cấu tạo bộ thủ">
             <View style={styles.sectionHeader}>
-              <Icon name="layers" size={20} color={theme.colors.secondary} />
-              <Text style={styles.sectionTitle}>CẤU TẠO BỘ THỦ & CHIẾT TỰ</Text>
+              <Icon name="layers" size={20} color={activeTheme.colors.secondary} />
+              <Text style={[styles.sectionTitle, { color: activeTheme.colors.textPrimary }]}>
+                CẤU TẠO BỘ THỦ & CHIẾT TỰ
+              </Text>
             </View>
 
             {card.radicalAnalysis ? (
-              <Text style={styles.radicalText}>{card.radicalAnalysis}</Text>
+              <Text style={[styles.radicalText, { color: activeTheme.colors.textSecondary }]}>
+                {card.radicalAnalysis}
+              </Text>
             ) : (
               <View>
-                <Text style={styles.emptyText}>
+                <Text style={[styles.emptyText, { color: activeTheme.colors.textSecondary }]}>
                   Thẻ này chưa có phân tích bộ thủ. Nhấn bên dưới để AI chiết tự ngay!
                 </Text>
                 <DuolingoButton
@@ -193,55 +239,190 @@ export const CardDetailScreen: React.FC<CardDetailScreenProps> = ({ cardId, deck
           <DuolingoCard accessibilityLabel="Trạng thái trí nhớ FSRS v5">
             <View style={styles.fsrsHeader}>
               <View style={styles.sectionHeader}>
-                <Icon name="brain" size={20} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>TRẠNG THÁI TRÍ NHỚ (FSRS v5)</Text>
+                <Icon name="brain" size={20} color={activeTheme.colors.primary} />
+                <Text style={[styles.sectionTitle, { color: activeTheme.colors.textPrimary }]}>
+                  TRẠNG THÁI TRÍ NHỚ (FSRS v5)
+                </Text>
               </View>
               <StatusBadge variant={badgeInfo.variant} label={badgeInfo.text} />
             </View>
 
             <View style={styles.grid2}>
-              <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Độ bền trí nhớ (Stability):</Text>
-                <Text style={styles.statValue}>
+              <View style={[styles.statBox, { backgroundColor: activeTheme.colors.bg }]}>
+                <Text style={[styles.statLabel, { color: activeTheme.colors.textSecondary }]}>
+                  Độ bền trí nhớ (Stability):
+                </Text>
+                <Text style={[styles.statValue, { color: activeTheme.colors.textPrimary }]}>
                   {fsrs.stability ? `${fsrs.stability.toFixed(1)} ngày` : "Mới"}
                 </Text>
               </View>
 
-              <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Độ khó (Difficulty):</Text>
-                <Text style={styles.statValue}>
+              <View style={[styles.statBox, { backgroundColor: activeTheme.colors.bg }]}>
+                <Text style={[styles.statLabel, { color: activeTheme.colors.textSecondary }]}>
+                  Độ khó (Difficulty):
+                </Text>
+                <Text style={[styles.statValue, { color: activeTheme.colors.textPrimary }]}>
                   {fsrs.difficulty ? fsrs.difficulty.toFixed(1) : "5.0"} / 10
                 </Text>
               </View>
 
-              <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Số lần lặp (Reps):</Text>
-                <Text style={styles.statValue}>{fsrs.reps} lần</Text>
+              <View style={[styles.statBox, { backgroundColor: activeTheme.colors.bg }]}>
+                <Text style={[styles.statLabel, { color: activeTheme.colors.textSecondary }]}>
+                  Số lần lặp (Reps):
+                </Text>
+                <Text style={[styles.statValue, { color: activeTheme.colors.textPrimary }]}>
+                  {fsrs.reps} lần
+                </Text>
               </View>
 
-              <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Lần quên (Lapses):</Text>
-                <Text style={[styles.statValue, { color: theme.colors.danger }]}>
+              <View style={[styles.statBox, { backgroundColor: activeTheme.colors.bg }]}>
+                <Text style={[styles.statLabel, { color: activeTheme.colors.textSecondary }]}>
+                  Lần quên (Lapses):
+                </Text>
+                <Text style={[styles.statValue, { color: activeTheme.colors.danger }]}>
                   {fsrs.lapses} lần
                 </Text>
               </View>
             </View>
 
-            <View style={styles.dueRow}>
-              <Text style={styles.dueLabel}>Ngày đến hạn ôn tập:</Text>
-              <Text style={styles.dueValue}>{new Date(fsrs.due).toLocaleDateString("vi-VN")}</Text>
+            <View style={[styles.dueRow, { borderTopColor: activeTheme.colors.cardBorder }]}>
+              <Text style={[styles.dueLabel, { color: activeTheme.colors.textSecondary }]}>
+                Ngày đến hạn ôn tập:
+              </Text>
+              <Text style={[styles.dueValue, { color: activeTheme.colors.textPrimary }]}>
+                {new Date(fsrs.due).toLocaleDateString("vi-VN")}
+              </Text>
             </View>
           </DuolingoCard>
         </View>
 
-        {/* Delete Card Button */}
-        <View style={styles.deleteSection}>
+        {/* Action Buttons: Edit & Delete */}
+        <View style={styles.actionRow}>
+          <Pressable style={styles.editOutlineBtn} onPress={handleOpenEdit}>
+            <Icon name="wrench" size={18} color={theme.colors.primary} />
+            <Text style={styles.editOutlineText}>CHỈNH SỬA THẺ</Text>
+          </Pressable>
+
           <Pressable style={styles.deleteOutlineBtn} onPress={handleDeleteCard}>
             <Icon name="trash" size={18} color={theme.colors.danger} />
-            <Text style={styles.deleteOutlineText}>XÓA THẺ VỰNG NÀY</Text>
+            <Text style={styles.deleteOutlineText}>XÓA THẺ</Text>
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* Edit Card Modal */}
+      {showEditModal && (
+        <Modal
+          visible={showEditModal}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          onRequestClose={() => setShowEditModal(false)}
+        >
+          <View style={[styles.fullModalContainer, { backgroundColor: activeTheme.colors.bg }]}>
+            <View style={styles.fullModalHeader}>
+              <Pressable
+                onPress={() => setShowEditModal(false)}
+                style={styles.closeBtn}
+                accessibilityLabel="Đóng chỉnh sửa"
+              >
+                <Icon name="close" size={24} color={activeTheme.colors.textPrimary} />
+              </Pressable>
+              <Text style={[styles.fullModalTitle, { color: activeTheme.colors.textPrimary }]}>
+                Chỉnh Sửa Từ Vựng
+              </Text>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.fullModalBody}>
+              <View style={styles.inputGroup}>
+                <Text style={[styles.formLabel, { color: activeTheme.colors.textSecondary }]}>
+                  Hán tự *
+                </Text>
+                <TextInput
+                  style={[
+                    styles.inputText,
+                    {
+                      backgroundColor: activeTheme.colors.cardBg,
+                      color: activeTheme.colors.textPrimary,
+                    },
+                  ]}
+                  value={editKanji}
+                  onChangeText={setEditKanji}
+                  placeholder="Ví dụ: 学习"
+                  placeholderTextColor={activeTheme.colors.textLight}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.formLabel, { color: activeTheme.colors.textSecondary }]}>
+                  Pinyin *
+                </Text>
+                <TextInput
+                  style={[
+                    styles.inputText,
+                    {
+                      backgroundColor: activeTheme.colors.cardBg,
+                      color: activeTheme.colors.textPrimary,
+                    },
+                  ]}
+                  value={editPinyin}
+                  onChangeText={setEditPinyin}
+                  placeholder="Ví dụ: xué xí"
+                  placeholderTextColor={activeTheme.colors.textLight}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.formLabel, { color: activeTheme.colors.textSecondary }]}>
+                  Nghĩa tiếng Việt *
+                </Text>
+                <TextInput
+                  style={[
+                    styles.inputText,
+                    {
+                      backgroundColor: activeTheme.colors.cardBg,
+                      color: activeTheme.colors.textPrimary,
+                    },
+                  ]}
+                  value={editMeaning}
+                  onChangeText={setEditMeaning}
+                  placeholder="Ví dụ: Học tập"
+                  placeholderTextColor={activeTheme.colors.textLight}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.formLabel, { color: activeTheme.colors.textSecondary }]}>
+                  Câu ví dụ
+                </Text>
+                <TextInput
+                  style={[
+                    styles.inputText,
+                    {
+                      backgroundColor: activeTheme.colors.cardBg,
+                      color: activeTheme.colors.textPrimary,
+                      minHeight: 80,
+                    },
+                  ]}
+                  multiline
+                  value={editExample}
+                  onChangeText={setEditExample}
+                  placeholder="Ví dụ câu..."
+                  placeholderTextColor={activeTheme.colors.textLight}
+                />
+              </View>
+
+              <View style={styles.modalBtnRow}>
+                <DuolingoButton
+                  title="HỦY"
+                  variant="secondary"
+                  onPress={() => setShowEditModal(false)}
+                />
+                <DuolingoButton title="LƯU THAY ĐỔI" variant="primary" onPress={handleSaveEdit} />
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -398,8 +579,26 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.textPrimary,
   },
-  deleteSection: {
+  actionRow: {
     marginTop: theme.spacing.xl,
+    gap: theme.spacing.md,
+  },
+  editOutlineBtn: {
+    width: "100%",
+    backgroundColor: theme.colors.cardBg,
+    borderColor: theme.colors.primary,
+    borderWidth: 2,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+  },
+  editOutlineText: {
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.bold,
+    fontSize: theme.fontSize.base,
   },
   deleteOutlineBtn: {
     width: "100%",
@@ -417,5 +616,44 @@ const styles = StyleSheet.create({
     color: theme.colors.danger,
     fontWeight: theme.fontWeight.bold,
     fontSize: theme.fontSize.base,
+  },
+  fullModalContainer: {
+    flex: 1,
+  },
+  fullModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  fullModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  fullModalBody: {
+    padding: 16,
+  },
+  inputGroup: {
+    marginBottom: theme.spacing.md,
+  },
+  formLabel: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.bold,
+    marginBottom: theme.spacing.xs,
+  },
+  inputText: {
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    fontSize: theme.fontSize.base,
+  },
+  modalBtnRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+    justifyContent: "flex-end",
+    marginTop: theme.spacing.md,
   },
 });

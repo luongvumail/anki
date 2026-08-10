@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ProcessCardReviewResult } from "../../application/usecases/ProcessCardReview.js";
 import { QuizQuestion } from "../../application/usecases/GenerateQuiz.js";
 import { CardEntity } from "../../domain/card/cardEntity.js";
 import { Rating } from "../../domain/fsrs/fsrsTypes.js";
 import { container } from "../../infrastructure/container.js";
+import { appStore } from "../store/useAppStore.js";
 
 export type SessionPhase = "PREVIEW" | "QUIZ" | "REPAIR" | "DONE";
 
@@ -45,6 +46,11 @@ export function useStudySession(deckId: string) {
     answeredLog: [],
   }));
 
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   const startSession = useCallback(async () => {
     const deckCards = await container.cardRepo.getByDeckId(deckId);
     const questions = await container.generateQuiz.execute(deckId, 10);
@@ -83,10 +89,11 @@ export function useStudySession(deckId: string) {
     answer: string,
     elapsedMs?: number,
   ): Promise<{ isCorrect: boolean; rating: Rating; reviewResult?: ProcessCardReviewResult }> => {
-    const currentQ = state.quizQuestions[state.currentIndex];
+    const currentState = stateRef.current;
+    const currentQ = currentState.quizQuestions[currentState.currentIndex];
     if (!currentQ) return { isCorrect: false, rating: Rating.Again };
 
-    const timeSpent = elapsedMs ?? Math.max(100, Date.now() - state.questionStartTimeMs);
+    const timeSpent = elapsedMs ?? Math.max(100, Date.now() - currentState.questionStartTimeMs);
     const isCorrect = answer === currentQ.correctAnswer;
 
     // Objective FSRS Rating Assignment:
@@ -99,6 +106,9 @@ export function useStudySession(deckId: string) {
       cardId: currentQ.cardId,
       rating,
     });
+
+    appStore.addXp(reviewResult.xpEarned);
+    appStore.updateStreak();
 
     setState((prev) => {
       const newXp = prev.totalXpEarned + reviewResult.xpEarned;

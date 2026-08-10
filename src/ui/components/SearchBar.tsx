@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
-import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { Icon } from "./Icon.js";
 
 export interface SearchBarProps {
@@ -14,15 +14,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onChange,
   placeholder = "Tìm kiếm từ vựng...",
 }) => {
+  const { theme } = useTheme();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.cardBg }]}>
       <Icon name="search" size={20} color={theme.colors.textSecondary} />
       <TextInput
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
         placeholderTextColor={theme.colors.textLight}
-        style={styles.input}
+        style={[styles.input, { color: theme.colors.textPrimary }]}
         accessibilityLabel={placeholder}
       />
       {value.length > 0 && (
@@ -31,7 +33,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           accessibilityLabel="Xóa từ khóa tìm kiếm"
           style={styles.clearBtn}
         >
-          <Icon name="trash" size={16} color={theme.colors.textSecondary} />
+          <Icon name="close" size={16} color={theme.colors.textSecondary} />
         </Pressable>
       )}
     </View>
@@ -42,21 +44,22 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: theme.colors.cardBg,
-    borderColor: theme.colors.cardBorder,
-    borderWidth: 2,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.md,
+    borderRadius: 14,
+    paddingHorizontal: 14,
     height: 48,
-    gap: theme.spacing.sm,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   input: {
     flex: 1,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.textPrimary,
-    paddingVertical: theme.spacing.xs,
+    fontSize: 15,
+    paddingVertical: 4,
   },
   clearBtn: {
-    padding: theme.spacing.xs,
+    padding: 4,
   },
 });

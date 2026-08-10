@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { DeckEntity } from "../../domain/deck/deckEntity.js";
-import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { Icon } from "./Icon.js";
 import { StatusBadge } from "./StatusBadge.js";
 
@@ -16,14 +16,17 @@ export const ZigZagSkillPath: React.FC<ZigZagSkillPathProps> = ({
   urgentDeckId,
   onSelectDeck,
 }) => {
-  const offsets = [0, 40, 60, 30, -30, -60, -40];
+  const { theme } = useTheme();
+  const offsets = [0, 36, 54, 24, -24, -54, -36];
 
   return (
     <View style={styles.container}>
       {/* Header Banner */}
-      <View style={styles.banner}>
-        <Text style={styles.bannerTitle}>KHO BỘ THẺ TIẾNG TRUNG</Text>
-        <Text style={styles.bannerSubtitle}>
+      <View style={[styles.banner, { backgroundColor: theme.colors.cardBg }]}>
+        <Text style={[styles.bannerTitle, { color: theme.colors.textPrimary }]}>
+          KHO BỘ THẺ TIẾNG TRUNG
+        </Text>
+        <Text style={[styles.bannerSubtitle, { color: theme.colors.textSecondary }]}>
           Chọn bộ thẻ bên dưới để bắt đầu lật thẻ Flashcard & làm bài tập SRS!
         </Text>
       </View>
@@ -55,12 +58,16 @@ export const ZigZagSkillPath: React.FC<ZigZagSkillPathProps> = ({
             <View
               style={[styles.circleNode, { backgroundColor: deck.color || theme.colors.primary }]}
             >
-              <Icon name="book" size={32} color={theme.colors.white} />
+              <Icon name="book" size={32} color="#FFFFFF" />
             </View>
 
             {/* Label */}
-            <Text style={styles.nodeTitle}>{deck.title}</Text>
-            <Text style={styles.nodeSubtitle}>{deck.cardCount} từ vựng</Text>
+            <Text style={[styles.nodeTitle, { color: theme.colors.textPrimary }]}>
+              {deck.title}
+            </Text>
+            <Text style={[styles.nodeSubtitle, { color: theme.colors.textSecondary }]}>
+              {deck.cardCount} từ vựng
+            </Text>
           </Pressable>
         );
       })}
@@ -71,53 +78,54 @@ export const ZigZagSkillPath: React.FC<ZigZagSkillPathProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    paddingVertical: theme.spacing.xl,
+    paddingVertical: 16,
   },
   banner: {
     width: "100%",
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: theme.colors.cardBorder,
-    marginBottom: theme.spacing.xl,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   bannerTitle: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 4,
   },
   bannerSubtitle: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
   },
   nodeWrapper: {
-    marginVertical: theme.spacing.md,
+    marginVertical: 12,
     alignItems: "center",
   },
   badgeWrapper: {
-    marginBottom: theme.spacing.xs,
+    marginBottom: 6,
   },
   circleNode: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    borderBottomWidth: 6,
+    borderBottomWidth: 5,
     borderBottomColor: "rgba(0,0,0,0.2)",
     alignItems: "center",
     justifyContent: "center",
-    ...theme.shadows.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
   },
   nodeTitle: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginTop: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: "800",
+    marginTop: 6,
   },
   nodeSubtitle: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
+    fontSize: 12,
   },
 });

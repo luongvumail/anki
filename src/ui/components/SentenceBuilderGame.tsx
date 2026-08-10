@@ -6,8 +6,12 @@ import { DuolingoCard } from "./DuolingoCard.js";
 import { Icon } from "./Icon.js";
 import { ProgressBar } from "./ProgressBar.js";
 import { StatusBadge } from "./StatusBadge.js";
+import { appStore } from "../store/useAppStore.js";
+
+import { useTheme } from "../theme/ThemeContext.js";
 
 export interface SentenceBuilderGameProps {
+  deckId?: string;
   onFinish: (score: number) => void;
 }
 
@@ -18,30 +22,6 @@ interface SentenceExercise {
   fullChinese: string;
   tokens: string[];
 }
-
-const SAMPLE_EXERCISES: SentenceExercise[] = [
-  {
-    id: "ex_1",
-    vietnamese: "Tôi rất thích học Hán ngữ.",
-    pinyin: "Wǒ hěn xǐhuān xuéxí Hànyǔ.",
-    fullChinese: "我,很,喜欢,学习,汉语",
-    tokens: ["我", "很", "喜欢", "学习", "汉语", "苹果", "喝", "茶"],
-  },
-  {
-    id: "ex_2",
-    vietnamese: "Hôm nay thời tiết rất đẹp.",
-    pinyin: "Jīntiān tiānqì hěn hǎo.",
-    fullChinese: "今天,天气,很好",
-    tokens: ["今天", "天气", "很好", "昨天", "高兴", "看书"],
-  },
-  {
-    id: "ex_3",
-    vietnamese: "Bạn muốn uống cà phê không?",
-    pinyin: "Nǐ xiǎng hē kāfēi ma?",
-    fullChinese: "你,想,喝,咖啡,吗",
-    tokens: ["你", "想", "喝", "咖啡", "吗", "吃", "米饭", "去"],
-  },
-];
 
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
@@ -54,19 +34,112 @@ function shuffleArray<T>(array: T[]): T[] {
 
 function splitChineseSentence(sentence: string): string[] {
   if (sentence.includes(",")) {
-    return sentence.split(",").map((s) => s.trim());
+    return sentence.split(",").map((s) => s.trim()).filter(Boolean);
   }
-  return Array.from(sentence);
+  return Array.from(sentence).filter((ch) => ch.trim().length > 0);
 }
 
-export const SentenceBuilderGame: React.FC<SentenceBuilderGameProps> = ({ onFinish }) => {
-  const [exercises] = useState<SentenceExercise[]>(SAMPLE_EXERCISES);
+export const SentenceBuilderGame: React.FC<SentenceBuilderGameProps> = ({ deckId, onFinish }) => {
+  const { theme: activeTheme } = useTheme();
+  const [exercises, setExercises] = useState<SentenceExercise[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
   const [selectedChips, setSelectedChips] = useState<{ id: number; text: string }[]>([]);
   const [isChecked, setIsChecked] = useState<boolean>(false);
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [isDone, setIsDone] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    if (!deckId) {
+      setExercises([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const cards = appStore.getState().cards[deckId] || [];
+    if (cards.length === 0) {
+      setExercises([]);
+      setIsLoading(false);
+      return;
+    }
+
+    // Collect all kanji from the deck for distractors
+    const allDeckKanji = Array.from(new Set(cards.map((c) => c.kanji)));
+
+    const built: SentenceExercise[] = cards.slice(0, 10).map((card, idx) => {
+      const fullText = card.exampleSentence && card.exampleSentence.trim().length > 0
+        ? card.exampleSentence
+        : card.kanji;
+      const primaryTokens = splitChineseSentence(fullText);
+
+      // Grab distractors from other cards in the deck
+      const distractors = allDeckKanji.filter((k) => !primaryTokens.includes(k)).slice(0, 3);
+      const allTokens = Array.from(new Set([...primaryTokens, ...distractors]));
+
+      return {
+        id: `ex_${idx}`,
+        vietnamese: card.meaning,
+        pinyin: card.pinyin,
+        fullChinese: fullText,
+        tokens: allTokens,
+      };
+    });
+
+    setExercises(built);
+    setIsLoading(false);
+  }, [deckId]);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <Text style={{ color: activeTheme.colors.textSecondary }}>Đang tải bài tập...</Text>
+      </View>
+    );
+  }
+
+  if (exercises.length === 0) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", padding: 16 }]}>
+        <DuolingoCard accessibilityLabel="Chưa có từ vựng">
+          <View style={{ alignItems: "center", paddingVertical: 16 }}>
+            <Icon name="puzzle" size={48} color={theme.colors.info} />
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "800",
+                color: activeTheme.colors.textPrimary,
+                marginTop: 12,
+                marginBottom: 6,
+                textAlign: "center",
+              }}
+            >
+              BỘ THẺ NÀY CHƯA CÓ TỪ VỰNG
+            </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                color: activeTheme.colors.textSecondary,
+                textAlign: "center",
+                marginBottom: 16,
+              }}
+            >
+              Vui lòng thêm từ vựng vào bộ thẻ để bắt đầu chơi mini-game xếp từ thành câu!
+            </Text>
+            <View style={{ width: "100%" }}>
+              <DuolingoButton
+                title="QUAY LẠI"
+                variant="primary"
+                onPress={() => onFinish(0)}
+              />
+            </View>
+          </View>
+        </DuolingoCard>
+      </View>
+    );
+  }
 
   const currentEx = exercises[currentIndex];
 
@@ -135,6 +208,22 @@ export const SentenceBuilderGame: React.FC<SentenceBuilderGameProps> = ({ onFini
 
   return (
     <View style={styles.container}>
+      <View style={styles.topGameHeader}>
+        <Pressable
+          onPress={() => onFinish(score)}
+          style={styles.backBtn}
+          accessibilityLabel="Thoát trò chơi ghép câu"
+        >
+          <Icon name="back" size={22} color={activeTheme.colors.textPrimary} />
+          <Text style={[styles.backBtnText, { color: activeTheme.colors.textPrimary }]}>
+            Thoát game
+          </Text>
+        </Pressable>
+        <Text style={[styles.gameHeaderTitle, { color: activeTheme.colors.textSecondary }]}>
+          XẾP TỪ THÀNH CÂU
+        </Text>
+      </View>
+
       <View style={styles.progressWrapper}>
         <ProgressBar progress={progressPct} color={theme.colors.info} />
       </View>
@@ -342,5 +431,28 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.bold,
     flex: 1,
+  },
+  topGameHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 6,
+    paddingRight: 10,
+  },
+  backBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  gameHeaderTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });

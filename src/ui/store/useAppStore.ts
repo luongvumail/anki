@@ -82,6 +82,14 @@ class AppStore {
     return this.state.deleteDeck(deckId);
   }
 
+  public addXp(amount: number) {
+    return this.state.addXp(amount);
+  }
+
+  public updateStreak(date?: Date) {
+    return this.state.updateStreak(date);
+  }
+
   private notify() {
     this.listeners.forEach((l) => l());
   }

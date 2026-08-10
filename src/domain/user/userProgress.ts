@@ -20,7 +20,7 @@ export interface UserProgress {
 export const initialUserProgress: UserProgress = {
   totalXp: 0,
   level: 1,
-  streakDays: 1,
+  streakDays: 0,
   lastStudyDate: null,
   badges: [],
   dailyGoal: 10,

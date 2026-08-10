@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { ALL_BADGES } from "../../domain/user/userProgress.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { DuolingoCard } from "./DuolingoCard.js";
 import { Icon } from "./Icon.js";
 import { StatusBadge } from "./StatusBadge.js";
@@ -15,11 +16,15 @@ export const BadgesGallery: React.FC<BadgesGalleryProps> = ({
   streakCount = 0,
   learnedCards = 0,
 }) => {
+  const { theme: currentTheme } = useTheme();
+
   return (
     <DuolingoCard accessibilityLabel="Bộ sưu tập huy hiệu thành tích">
       <View style={styles.header}>
-        <Icon name="trophy" color={theme.colors.secondary} />
-        <Text style={styles.headerTitle}>Bộ Sưu Tập Huy Hiệu Thành Tích</Text>
+        <Icon name="trophy" color={currentTheme.colors.secondary} />
+        <Text style={[styles.headerTitle, { color: currentTheme.colors.textPrimary }]}>
+          Bộ Sưu Tập Huy Hiệu Thành Tích
+        </Text>
       </View>
 
       <View style={styles.grid}>
@@ -45,8 +50,12 @@ export const BadgesGallery: React.FC<BadgesGalleryProps> = ({
               style={[
                 styles.badgeBox,
                 {
-                  backgroundColor: isUnlocked ? theme.badges.learned.bg : theme.badges.neutral.bg,
-                  borderColor: isUnlocked ? theme.colors.primary : theme.colors.cardBorder,
+                  backgroundColor: isUnlocked
+                    ? currentTheme.badges.learned.bg
+                    : currentTheme.badges.neutral.bg,
+                  borderColor: isUnlocked
+                    ? currentTheme.colors.primary
+                    : currentTheme.colors.cardBorder,
                   opacity: isUnlocked ? 1 : 0.7,
                 },
               ]}
@@ -55,18 +64,24 @@ export const BadgesGallery: React.FC<BadgesGalleryProps> = ({
                 <Icon
                   name={badge.icon as any}
                   size={28}
-                  color={isUnlocked ? theme.colors.secondary : theme.colors.textLight}
+                  color={isUnlocked ? currentTheme.colors.secondary : currentTheme.colors.textLight}
                 />
               </View>
               <Text
                 style={[
                   styles.badgeTitle,
-                  { color: isUnlocked ? theme.colors.textPrimary : theme.colors.textSecondary },
+                  {
+                    color: isUnlocked
+                      ? currentTheme.colors.textPrimary
+                      : currentTheme.colors.textSecondary,
+                  },
                 ]}
               >
                 {badge.title}
               </Text>
-              <Text style={styles.badgeDesc}>{badge.description}</Text>
+              <Text style={[styles.badgeDesc, { color: currentTheme.colors.textSecondary }]}>
+                {badge.description}
+              </Text>
               <StatusBadge
                 variant={isUnlocked ? "learned" : "neutral"}
                 label={isUnlocked ? "ĐÃ MỞ KHÓA" : progressText}

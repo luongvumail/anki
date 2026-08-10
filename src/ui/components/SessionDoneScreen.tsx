@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AnsweredItem } from "../hooks/useStudySession.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { DuolingoButton } from "./DuolingoButton.js";
 import { DuolingoCard } from "./DuolingoCard.js";
 import { Icon } from "./Icon.js";
@@ -22,6 +23,7 @@ export const SessionDoneScreen: React.FC<SessionDoneScreenProps> = ({
   answeredLog = [],
   onFinish,
 }) => {
+  const { theme: activeTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<"ALL" | "CORRECT" | "INCORRECT">("ALL");
 
   const filteredItems = answeredLog.filter((item) => {
@@ -31,36 +33,50 @@ export const SessionDoneScreen: React.FC<SessionDoneScreenProps> = ({
   });
 
   return (
-    <View style={styles.container}>
-      <Icon name="celebrate" size={80} color={theme.colors.primary} />
-      <Text style={styles.title}>HOÀN THÀNH PHIÊN HỌC!</Text>
-      <Text style={styles.subtitle}>Bạn đã học rất xuất sắc!</Text>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.bg }]}>
+      <Icon name="celebrate" size={80} color={activeTheme.colors.primary} />
+      <Text style={[styles.title, { color: activeTheme.colors.primary }]}>
+        HOÀN THÀNH PHIÊN HỌC!
+      </Text>
+      <Text style={[styles.subtitle, { color: activeTheme.colors.textSecondary }]}>
+        Bạn đã học rất xuất sắc!
+      </Text>
 
       <DuolingoCard accessibilityLabel="Kết quả phiên học">
         <View style={styles.statsRow}>
           <View style={styles.statCol}>
-            <Text style={[styles.statNum, { color: theme.colors.secondary }]}>
+            <Text style={[styles.statNum, { color: activeTheme.colors.secondary }]}>
               +{totalXpEarned}
             </Text>
             <View style={styles.labelRow}>
-              <Icon name="zap" size={14} color={theme.colors.secondary} />
-              <Text style={styles.statLabel}>XP TÍCH LŨY</Text>
+              <Icon name="zap" size={14} color={activeTheme.colors.secondary} />
+              <Text style={[styles.statLabel, { color: activeTheme.colors.textSecondary }]}>
+                XP TÍCH LŨY
+              </Text>
             </View>
           </View>
 
           <View style={styles.statCol}>
-            <Text style={[styles.statNum, { color: theme.colors.primary }]}>{correctCount}</Text>
+            <Text style={[styles.statNum, { color: activeTheme.colors.primary }]}>
+              {correctCount}
+            </Text>
             <View style={styles.labelRow}>
-              <Icon name="check" size={14} color={theme.colors.primary} />
-              <Text style={styles.statLabel}>ĐÚNG</Text>
+              <Icon name="check" size={14} color={activeTheme.colors.primary} />
+              <Text style={[styles.statLabel, { color: activeTheme.colors.textSecondary }]}>
+                ĐÚNG
+              </Text>
             </View>
           </View>
 
           <View style={styles.statCol}>
-            <Text style={[styles.statNum, { color: theme.colors.danger }]}>{incorrectCount}</Text>
+            <Text style={[styles.statNum, { color: activeTheme.colors.danger }]}>
+              {incorrectCount}
+            </Text>
             <View style={styles.labelRow}>
-              <Icon name="wrench" size={14} color={theme.colors.danger} />
-              <Text style={styles.statLabel}>SAI</Text>
+              <Icon name="wrench" size={14} color={activeTheme.colors.danger} />
+              <Text style={[styles.statLabel, { color: activeTheme.colors.textSecondary }]}>
+                SAI
+              </Text>
             </View>
           </View>
         </View>
@@ -69,33 +85,62 @@ export const SessionDoneScreen: React.FC<SessionDoneScreenProps> = ({
       {/* Answer Breakdown Log */}
       {answeredLog.length > 0 && (
         <View style={styles.breakdownSection}>
-          <Text style={styles.breakdownTitle}>CHI TIẾT TỪ VỰNG ĐÃ HỌC</Text>
+          <Text style={[styles.breakdownTitle, { color: activeTheme.colors.textPrimary }]}>
+            CHI TIẾT TỪ VỰNG ĐÃ HỌC
+          </Text>
 
           {/* Tab buttons */}
           <View style={styles.tabRow}>
             <Pressable
               onPress={() => setActiveTab("ALL")}
-              style={[styles.tabBtn, activeTab === "ALL" && styles.tabBtnActive]}
+              style={[
+                styles.tabBtn,
+                { backgroundColor: activeTheme.colors.cardBg, borderColor: activeTheme.colors.cardBorder },
+                activeTab === "ALL" && { backgroundColor: activeTheme.colors.primary, borderColor: activeTheme.colors.primary },
+              ]}
             >
-              <Text style={[styles.tabText, activeTab === "ALL" && styles.tabTextActive]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: activeTab === "ALL" ? activeTheme.colors.white : activeTheme.colors.textSecondary },
+                ]}
+              >
                 Tất cả ({answeredLog.length})
               </Text>
             </Pressable>
 
             <Pressable
               onPress={() => setActiveTab("CORRECT")}
-              style={[styles.tabBtn, activeTab === "CORRECT" && styles.tabBtnActive]}
+              style={[
+                styles.tabBtn,
+                { backgroundColor: activeTheme.colors.cardBg, borderColor: activeTheme.colors.cardBorder },
+                activeTab === "CORRECT" && { backgroundColor: activeTheme.colors.primary, borderColor: activeTheme.colors.primary },
+              ]}
             >
-              <Text style={[styles.tabText, activeTab === "CORRECT" && styles.tabTextActive]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: activeTab === "CORRECT" ? activeTheme.colors.white : activeTheme.colors.textSecondary },
+                ]}
+              >
                 Đúng ({correctCount})
               </Text>
             </Pressable>
 
             <Pressable
               onPress={() => setActiveTab("INCORRECT")}
-              style={[styles.tabBtn, activeTab === "INCORRECT" && styles.tabBtnActive]}
+              style={[
+                styles.tabBtn,
+                { backgroundColor: activeTheme.colors.cardBg, borderColor: activeTheme.colors.cardBorder },
+                activeTab === "INCORRECT" && { backgroundColor: activeTheme.colors.primary, borderColor: activeTheme.colors.primary },
+              ]}
             >
-              <Text style={[styles.tabText, activeTab === "INCORRECT" && styles.tabTextActive]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: activeTab === "INCORRECT" ? activeTheme.colors.white : activeTheme.colors.textSecondary },
+                ]}
+              >
                 Sai ({incorrectCount})
               </Text>
             </Pressable>
@@ -104,11 +149,23 @@ export const SessionDoneScreen: React.FC<SessionDoneScreenProps> = ({
           {/* List items */}
           <View style={styles.itemList}>
             {filteredItems.map((item, idx) => (
-              <View key={idx} style={styles.itemRow}>
+              <View
+                key={idx}
+                style={[
+                  styles.itemRow,
+                  { backgroundColor: activeTheme.colors.cardBg, borderColor: activeTheme.colors.cardBorder },
+                ]}
+              >
                 <View style={styles.itemLeft}>
-                  <Text style={styles.itemKanji}>{item.kanji}</Text>
-                  <Text style={styles.itemPinyin}>{item.pinyin}</Text>
-                  <Text style={styles.itemMeaning}>{item.meaning}</Text>
+                  <Text style={[styles.itemKanji, { color: activeTheme.colors.textPrimary }]}>
+                    {item.kanji}
+                  </Text>
+                  <Text style={[styles.itemPinyin, { color: activeTheme.colors.primary }]}>
+                    {item.pinyin}
+                  </Text>
+                  <Text style={[styles.itemMeaning, { color: activeTheme.colors.textSecondary }]}>
+                    {item.meaning}
+                  </Text>
                 </View>
                 <StatusBadge
                   variant={item.isCorrect ? "learned" : "due"}

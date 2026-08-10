@@ -51,7 +51,9 @@ export const DuolingoButton: React.FC<DuolingoButtonProps> = ({
         },
       ]}
     >
-      <Text style={styles.text}>{title}</Text>
+      <Text style={styles.text} numberOfLines={1}>
+        {title}
+      </Text>
     </Pressable>
   );
 };

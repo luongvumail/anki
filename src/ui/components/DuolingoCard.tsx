@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 
 export interface DuolingoCardProps {
   children: React.ReactNode;
@@ -11,19 +11,20 @@ export interface DuolingoCardProps {
 
 export const DuolingoCard: React.FC<DuolingoCardProps> = ({
   children,
-  borderColor = theme.colors.cardBorder,
-  backgroundColor = theme.colors.cardBg,
+  backgroundColor,
   accessibilityLabel,
 }) => {
+  const { theme } = useTheme();
+  const bg = backgroundColor || theme.colors.cardBg;
+
   return (
     <View
       accessibilityLabel={accessibilityLabel}
       style={[
         styles.card,
         {
-          backgroundColor,
-          borderColor,
-          borderBottomColor: borderColor,
+          backgroundColor: bg,
+          shadowColor: theme.isDark ? "#000000" : "#000000",
         },
       ]}
     >
@@ -34,11 +35,13 @@ export const DuolingoCard: React.FC<DuolingoCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: theme.radius.lg,
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    padding: theme.spacing.xl,
-    marginBottom: theme.spacing.lg,
-    ...theme.shadows.sm,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
 });
+

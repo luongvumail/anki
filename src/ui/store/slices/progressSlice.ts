@@ -11,9 +11,9 @@ export const createProgressSlice = (
 ): ProgressSliceState => ({
   userProgress: initialUserProgress,
   streakState: {
-    currentStreak: 1,
-    lastActiveDate: new Date().toISOString(),
-    isActiveToday: true,
+    currentStreak: 0,
+    lastActiveDate: null,
+    isActiveToday: false,
   },
 
   addXp: (amount: number) => {
@@ -32,13 +32,57 @@ export const createProgressSlice = (
   },
 
   updateStreak: (date: Date = new Date()) => {
-    const current = get().streakState;
-    set(() => ({
-      streakState: {
-        currentStreak: current.currentStreak + 1,
-        lastActiveDate: date.toISOString(),
-        isActiveToday: true,
-      },
-    }));
+    const state = get();
+    const current = state.streakState;
+    const todayStr = date.toISOString().split("T")[0];
+
+    if (current.lastActiveDate) {
+      const lastDateStr = current.lastActiveDate.split("T")[0];
+      if (lastDateStr === todayStr) {
+        set(() => ({
+          streakState: { ...current, isActiveToday: true },
+        }));
+        return;
+      }
+
+      const lastD = new Date(lastDateStr);
+      const todayD = new Date(todayStr);
+      const diffTime = Math.abs(todayD.getTime() - lastD.getTime());
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+      let newStreak = 1;
+      if (diffDays === 1) {
+        newStreak = current.currentStreak + 1;
+      }
+
+      const newProgress: UserProgress = {
+        ...state.userProgress,
+        streakDays: newStreak,
+        lastStudyDate: date.toISOString(),
+      };
+
+      set(() => ({
+        userProgress: newProgress,
+        streakState: {
+          currentStreak: newStreak,
+          lastActiveDate: date.toISOString(),
+          isActiveToday: true,
+        },
+      }));
+    } else {
+      const newProgress: UserProgress = {
+        ...state.userProgress,
+        streakDays: 1,
+        lastStudyDate: date.toISOString(),
+      };
+      set(() => ({
+        userProgress: newProgress,
+        streakState: {
+          currentStreak: 1,
+          lastActiveDate: date.toISOString(),
+          isActiveToday: true,
+        },
+      }));
+    }
   },
 });

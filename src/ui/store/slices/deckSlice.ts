@@ -17,23 +17,19 @@ const DEFAULT_HSK1_DECK: DeckEntity = {
 export const createDeckSlice = (
   set: (fn: (state: DeckSliceState) => Partial<DeckSliceState>) => void,
 ): DeckSliceState => ({
-  decks: [DEFAULT_HSK1_DECK],
+  decks: [],
   isDeckLoading: false,
   deckError: null,
 
   loadDecks: async () => {
     set(() => ({ isDeckLoading: true, deckError: null }));
     try {
-      let fetched = await container.deckRepo.getAll();
-      if (fetched.length === 0) {
-        await container.deckRepo.save(DEFAULT_HSK1_DECK);
-        fetched = [DEFAULT_HSK1_DECK];
-      }
+      const fetched = await container.deckRepo.getAll();
       set(() => ({ decks: fetched, isDeckLoading: false }));
       return fetched;
     } catch (e: any) {
       set(() => ({ isDeckLoading: false, deckError: e.message }));
-      return [DEFAULT_HSK1_DECK];
+      return [];
     }
   },
 

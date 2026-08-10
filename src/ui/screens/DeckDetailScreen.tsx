@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import * as Speech from "expo-speech";
 import { CardEntity } from "../../domain/card/cardEntity.js";
 import { computeLearnedCount } from "../../domain/card/cardUtils.js";
 import { DeckEntity } from "../../domain/deck/deckEntity.js";
@@ -11,6 +12,7 @@ import { Icon } from "../components/Icon.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { SearchBar } from "../components/SearchBar.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { appStore } from "../store/useAppStore.js";
 
 export interface DeckDetailScreenProps {
@@ -26,6 +28,7 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
   onStartStudy,
   onOpenCardDetail,
 }) => {
+  const { theme: activeTheme } = useTheme();
   const [cards, setCards] = useState<CardEntity[]>([]);
   const [deck, setDeck] = useState<DeckEntity | null>(
     () => appStore.getState().decks.find((d) => d.id === deckId) || null,
@@ -90,34 +93,37 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
 
   const speakHanzi = (e: any, kanji: string) => {
     e.stopPropagation();
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(kanji);
-      utterance.lang = "zh-CN";
-      utterance.rate = 0.8;
-      window.speechSynthesis.speak(utterance);
-    }
+    Speech.stop();
+    Speech.speak(kanji, { language: "zh-CN", rate: 0.8 });
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.bg }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Back button */}
         <Pressable style={styles.backBtn} onPress={onBack}>
-          <Icon name="decks" size={18} color={theme.colors.primary} />
-          <Text style={styles.backBtnText}>Quay lại danh sách bộ thẻ</Text>
+          <Icon name="decks" size={18} color={activeTheme.colors.primary} />
+          <Text style={[styles.backBtnText, { color: activeTheme.colors.primary }]}>
+            Quay lại danh sách bộ thẻ
+          </Text>
         </Pressable>
 
         {deck && (
           <DuolingoCard accessibilityLabel={`Chi tiết bộ thẻ ${deck.title}`}>
-            <Text style={styles.deckTitle}>{deck.title}</Text>
-            <Text style={styles.deckDesc}>{deck.description || `${cards.length} thẻ từ vựng`}</Text>
+            <Text style={[styles.deckTitle, { color: activeTheme.colors.textPrimary }]}>
+              {deck.title}
+            </Text>
+            <Text style={[styles.deckDesc, { color: activeTheme.colors.textSecondary }]}>
+              {deck.description || `${cards.length} thẻ từ vựng`}
+            </Text>
 
             {/* Mastery Bar */}
             <View style={styles.masterySection}>
               <View style={styles.masteryHeader}>
-                <Text style={styles.masteryTitle}>Mức độ thành thạo</Text>
-                <Text style={styles.masterySubtitle}>
+                <Text style={[styles.masteryTitle, { color: activeTheme.colors.textPrimary }]}>
+                  Mức độ thành thạo
+                </Text>
+                <Text style={[styles.masterySubtitle, { color: activeTheme.colors.primary }]}>
                   {masteryPct}% Thuộc ({learnedCount}/{cards.length})
                 </Text>
               </View>
@@ -147,10 +153,12 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
           <View style={styles.warningSection}>
             <DuolingoCard accessibilityLabel="Cảnh báo từ dễ quên">
               <View style={styles.warningHeader}>
-                <Icon name="wrench" color={theme.colors.secondary} />
-                <Text style={styles.warningTitle}>CẦN CHÚ Ý: {weakCards.length} TỪ DỄ QUÊN!</Text>
+                <Icon name="wrench" color={activeTheme.colors.secondary} />
+                <Text style={[styles.warningTitle, { color: activeTheme.colors.secondary }]}>
+                  CẦN CHÚ Ý: {weakCards.length} TỪ DỄ QUÊN!
+                </Text>
               </View>
-              <Text style={styles.warningText}>
+              <Text style={[styles.warningText, { color: activeTheme.colors.textSecondary }]}>
                 Các từ này có độ khó cao. Hãy học tập trung hoặc ôn luyện thêm.
               </Text>
             </DuolingoCard>
@@ -168,7 +176,7 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
           </View>
         )}
 
-        <Text style={styles.sectionHeader}>
+        <Text style={[styles.sectionHeader, { color: activeTheme.colors.textPrimary }]}>
           DANH SÁCH THẺ TỪ VỰNG ({filteredCards.length}/{cards.length})
         </Text>
 
@@ -176,7 +184,7 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
         <View style={styles.cardList}>
           {filteredCards.length === 0 ? (
             <DuolingoCard accessibilityLabel="Không tìm thấy từ vựng">
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: activeTheme.colors.textSecondary }]}>
                 {searchQuery
                   ? `Không tìm thấy từ vựng khớp với "${searchQuery}"`
                   : "Bộ thẻ này chưa có từ vựng nào."}
@@ -193,10 +201,16 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
                   <View style={styles.cardRow}>
                     <View style={styles.cardLeft}>
                       <View style={styles.wordHeader}>
-                        <Text style={styles.kanjiText}>{card.kanji}</Text>
-                        <Text style={styles.pinyinText}>{card.pinyin}</Text>
+                        <Text style={[styles.kanjiText, { color: activeTheme.colors.textPrimary }]}>
+                          {card.kanji}
+                        </Text>
+                        <Text style={[styles.pinyinText, { color: activeTheme.colors.primary }]}>
+                          {card.pinyin}
+                        </Text>
                       </View>
-                      <Text style={styles.meaningText}>{card.meaning}</Text>
+                      <Text style={[styles.meaningText, { color: activeTheme.colors.textSecondary }]}>
+                        {card.meaning}
+                      </Text>
                     </View>
 
                     <View style={styles.cardActions}>
@@ -205,7 +219,7 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
                         accessibilityLabel="Phát âm"
                         style={styles.iconCircle}
                       >
-                        <Icon name="audio" size={18} color={theme.colors.textPrimary} />
+                        <Icon name="audio" size={18} color={activeTheme.colors.textPrimary} />
                       </Pressable>
 
                       <Pressable
@@ -213,7 +227,7 @@ export const DeckDetailScreen: React.FC<DeckDetailScreenProps> = ({
                         accessibilityLabel="Xóa thẻ"
                         style={styles.deleteIconBtn}
                       >
-                        <Icon name="trash" size={18} color={theme.colors.danger} />
+                        <Icon name="trash" size={18} color={activeTheme.colors.danger} />
                       </Pressable>
                     </View>
                   </View>

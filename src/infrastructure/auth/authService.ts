@@ -20,38 +20,30 @@ class AuthService {
       const raw = localStorage.getItem(AUTH_STORAGE_KEY);
       if (raw) {
         try {
-          this.currentUser = JSON.parse(raw);
+          const parsed = JSON.parse(raw);
+          if (parsed && !parsed.isGuest) {
+            this.currentUser = parsed;
+          } else {
+            this.currentUser = null;
+          }
         } catch {
           this.currentUser = null;
         }
       }
     }
-    // Default to Guest if no session exists yet
-    if (!this.currentUser) {
-      this.currentUser = {
-        uid: "guest_user",
-        email: "guest@anki.app",
-        displayName: "Học Viên Khách",
-        isGuest: true,
-      };
-    }
   }
 
   private persistUser() {
-    if (typeof localStorage !== "undefined" && this.currentUser) {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(this.currentUser));
+    if (typeof localStorage !== "undefined") {
+      if (this.currentUser) {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(this.currentUser));
+      } else {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
     }
   }
 
-  public getCurrentUser(): UserProfile {
-    if (!this.currentUser) {
-      this.currentUser = {
-        uid: "guest_user",
-        email: "guest@anki.app",
-        displayName: "Học Viên Khách",
-        isGuest: true,
-      };
-    }
+  public getCurrentUser(): UserProfile | null {
     return this.currentUser;
   }
 
@@ -123,12 +115,7 @@ class AuthService {
     if (typeof localStorage !== "undefined") {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
-    this.currentUser = {
-      uid: "guest_user",
-      email: "guest@anki.app",
-      displayName: "Học Viên Khách",
-      isGuest: true,
-    };
+    this.currentUser = null;
     this.notify();
   }
 }

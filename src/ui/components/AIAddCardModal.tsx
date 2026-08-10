@@ -3,6 +3,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { CardData, GeminiService } from "../../infrastructure/ai/geminiService.js";
-import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { appStore } from "../store/useAppStore.js";
 import { CardPreview } from "./CardPreview.js";
 import { DeckPicker } from "./DeckPicker.js";
@@ -51,9 +52,13 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
   initialDeckId,
   defaultDeckId,
 }) => {
-  const { decks, cards } = appStore.getState();
+  const { theme } = useTheme();
+  const [storeState, setStoreState] = useState(appStore.getState());
+  const decks = storeState.decks;
+  const cards = storeState.cards;
+
   const [selectedDeckId, setSelectedDeckId] = useState<string>(
-    () => initialDeckId || defaultDeckId || decks[0]?.id || "deck_hsk1",
+    () => initialDeckId || defaultDeckId || decks[0]?.id || "",
   );
   const [inputWords, setInputWords] = useState<string>("");
   const [wordItems, setWordItems] = useState<WordItem[]>([]);
@@ -61,7 +66,42 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // Inline deck creation state
+  const [newDeckTitle, setNewDeckTitle] = useState<string>("");
+  const [newDeckDesc, setNewDeckDesc] = useState<string>("");
+  const [isCreatingDeck, setIsCreatingDeck] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    const unsub = appStore.subscribe(() => {
+      const state = appStore.getState();
+      setStoreState(state);
+      if (state.decks.length > 0 && !selectedDeckId) {
+        setSelectedDeckId(state.decks[0].id);
+      }
+    });
+    return unsub;
+  }, [selectedDeckId]);
+
   if (!visible) return null;
+
+  const handleCreateDeckInline = async () => {
+    if (!newDeckTitle.trim()) {
+      Alert.alert("Thông báo", "Vui lòng nhập tên bộ thẻ mới.");
+      return;
+    }
+    setIsCreatingDeck(true);
+    try {
+      const created = await appStore.addDeck(newDeckTitle.trim(), newDeckDesc.trim());
+      setSelectedDeckId(created.id);
+      setNewDeckTitle("");
+      setNewDeckDesc("");
+      Alert.alert("Thành công", `Đã tạo bộ thẻ "${created.title}"! Giờ bạn có thể thêm từ AI.`);
+    } catch {
+      Alert.alert("Lỗi", "Không thể tạo bộ thẻ lúc này.");
+    } finally {
+      setIsCreatingDeck(false);
+    }
+  };
 
   const currentDeckCards = cards[selectedDeckId] || [];
   const existingWordsSet = new Set(currentDeckCards.map((c) => c.kanji.trim()));
@@ -164,165 +204,233 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalBox}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>TẠO THẺ TỪ VỰNG AI (Tối đa 10 từ)</Text>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Icon name="trash" size={20} color={theme.colors.textSecondary} />
-            </Pressable>
-          </View>
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
+      <SafeAreaView style={[styles.fullModalContainer, { backgroundColor: theme.colors.bg }]}>
+        <View style={styles.header}>
+          <Pressable onPress={onClose} style={styles.closeBtn}>
+            <Icon name="close" size={24} color={theme.colors.textPrimary} />
+          </Pressable>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
+            TẠO THẺ TỪ VỰNG AI
+          </Text>
+        </View>
 
-          <ScrollView style={styles.scrollContent}>
-            <View style={styles.section}>
-              <DeckPicker
-                decks={decks}
-                selectedDeckId={selectedDeckId}
-                onSelectDeck={setSelectedDeckId}
-              />
-            </View>
+        <ScrollView style={styles.scrollContent}>
+          {decks.length === 0 ? (
+            <DuolingoCard accessibilityLabel="Cần tạo bộ thẻ trước">
+              <View style={styles.noDeckBox}>
+                <Icon name="sparkles" size={40} color={theme.colors.secondary} />
+                <Text style={[styles.noDeckTitle, { color: theme.colors.textPrimary }]}>
+                  BẠN CHƯA CÓ BỘ THẺ NÀO
+                </Text>
+                <Text style={[styles.noDeckSubtitle, { color: theme.colors.textSecondary }]}>
+                  Để tạo từ vựng bằng AI, hãy tạo bộ thẻ mới đầu tiên làm mục tiêu lưu trữ từ vựng!
+                </Text>
 
-            <View style={styles.section}>
-              <Text style={styles.label}>
-                NHẬP CÁC TỪ VỰNG HÁN TỰ (Phân cách bởi dấu phẩy hoặc xuống dòng)
-              </Text>
-              <TextInput
-                multiline
-                numberOfLines={3}
-                value={inputWords}
-                onChangeText={setInputWords}
-                placeholder="Ví dụ: 学习, 苹果, 喝, 茶"
-                placeholderTextColor={theme.colors.textLight}
-                style={styles.textarea}
-              />
-            </View>
-
-            {notice && (
-              <View style={styles.noticeBox}>
-                <Text style={styles.noticeText}>{notice}</Text>
+                <View style={styles.inlineCreateForm}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { backgroundColor: theme.colors.cardBg, color: theme.colors.textPrimary },
+                    ]}
+                    value={newDeckTitle}
+                    onChangeText={setNewDeckTitle}
+                    placeholder="Tên bộ thẻ mới (ví dụ: Từ vựng HSK1)"
+                    placeholderTextColor={theme.colors.textLight}
+                  />
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { backgroundColor: theme.colors.cardBg, color: theme.colors.textPrimary },
+                    ]}
+                    value={newDeckDesc}
+                    onChangeText={setNewDeckDesc}
+                    placeholder="Mô tả bộ thẻ (tùy chọn)"
+                    placeholderTextColor={theme.colors.textLight}
+                  />
+                  <DuolingoButton
+                    title={isCreatingDeck ? "ĐANG TẠO..." : "+ TẠO BỘ THẺ MỚI"}
+                    variant="primary"
+                    disabled={isCreatingDeck || !newDeckTitle.trim()}
+                    onPress={handleCreateDeckInline}
+                  />
+                </View>
               </View>
-            )}
-
-            <DuolingoButton
-              title={isLoading ? "AI ĐANG TẠO THẺ..." : "SINH THẺ TỪ VỰNG AI"}
-              variant="secondary"
-              disabled={isLoading || !inputWords.trim()}
-              onPress={handleGenerate}
-            />
-
-            {wordItems.length > 0 && (
-              <View style={styles.resultSection}>
-                <Text style={styles.sectionTitle}>KẾT QUẢ XEM TRƯỚC</Text>
-                {wordItems.map((item, idx) => (
-                  <View key={idx} style={styles.previewCardWrapper}>
-                    {item.data ? (
-                      <CardPreview
-                        cardData={item.data}
-                        onRemove={() => setWordItems((prev) => prev.filter((_, i) => i !== idx))}
-                      />
-                    ) : (
-                      <DuolingoCard accessibilityLabel={`Đang xử lý ${item.word}`}>
-                        <Text style={styles.loadingWord}>Đang tạo thẻ cho từ: {item.word}...</Text>
-                      </DuolingoCard>
-                    )}
-                  </View>
-                ))}
-
-                <DuolingoButton
-                  title={isSaving ? "ĐANG LƯU..." : "LƯU TẤT CẢ VÀO BỘ THẺ"}
-                  variant="primary"
-                  disabled={isSaving || wordItems.every((i) => i.saved)}
-                  onPress={handleSaveAll}
+            </DuolingoCard>
+          ) : (
+            <>
+              <View style={styles.section}>
+                <DeckPicker
+                  decks={decks}
+                  selectedDeckId={selectedDeckId}
+                  onSelectDeck={setSelectedDeckId}
                 />
               </View>
-            )}
-          </ScrollView>
-        </View>
-      </View>
+
+              <View style={styles.section}>
+                <Text style={[styles.label, { color: theme.colors.textSecondary }]}>
+                  NHẬP CÁC TỪ VỰNG HÁN TỰ (Phân cách bởi dấu phẩy hoặc xuống dòng)
+                </Text>
+                <TextInput
+                  multiline
+                  numberOfLines={3}
+                  value={inputWords}
+                  onChangeText={setInputWords}
+                  placeholder="Ví dụ: 学习, 苹果, 喝, 茶"
+                  placeholderTextColor={theme.colors.textLight}
+                  style={[
+                    styles.textarea,
+                    {
+                      backgroundColor: theme.colors.cardBg,
+                      color: theme.colors.textPrimary,
+                    },
+                  ]}
+                />
+              </View>
+
+              {notice && (
+                <View style={[styles.noticeBox, { backgroundColor: theme.badges.warning.bg }]}>
+                  <Text style={[styles.noticeText, { color: theme.colors.secondary }]}>{notice}</Text>
+                </View>
+              )}
+
+              <DuolingoButton
+                title={isLoading ? "AI ĐANG TẠO THẺ..." : "SINH THẺ TỪ VỰNG AI"}
+                variant="secondary"
+                disabled={isLoading || !inputWords.trim()}
+                onPress={handleGenerate}
+              />
+
+              {wordItems.length > 0 && (
+                <View style={styles.resultSection}>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+                    KẾT QUẢ XEM TRƯỚC
+                  </Text>
+                  {wordItems.map((item, idx) => (
+                    <View key={idx} style={styles.previewCardWrapper}>
+                      {item.data ? (
+                        <CardPreview
+                          cardData={item.data}
+                          onRemove={() => setWordItems((prev) => prev.filter((_, i) => i !== idx))}
+                          onUpdate={(updatedData) =>
+                            setWordItems((prev) =>
+                              prev.map((it, i) => (i === idx ? { ...it, data: updatedData } : it)),
+                            )
+                          }
+                        />
+                      ) : (
+                        <DuolingoCard accessibilityLabel={`Đang xử lý ${item.word}`}>
+                          <Text style={[styles.loadingWord, { color: theme.colors.textSecondary }]}>
+                            Đang tạo thẻ cho từ: {item.word}...
+                          </Text>
+                        </DuolingoCard>
+                      )}
+                    </View>
+                  ))}
+
+                  <DuolingoButton
+                    title={isSaving ? "ĐANG LƯU..." : `LƯU VÀO BỘ THẺ (${wordItems.length} THẺ)`}
+                    variant="primary"
+                    disabled={isSaving}
+                    onPress={handleSaveAll}
+                  />
+                </View>
+              )}
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  fullModalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: theme.spacing.lg,
-  },
-  modalBox: {
-    backgroundColor: theme.colors.bg,
-    borderRadius: theme.radius.xl,
-    width: "100%",
-    maxHeight: "85%",
-    padding: theme.spacing.xl,
-    ...theme.shadows.lg,
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.lg,
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   headerTitle: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: "800",
   },
   closeBtn: {
-    padding: theme.spacing.xs,
+    padding: 6,
   },
   scrollContent: {
-    flexGrow: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   section: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: 16,
   },
   label: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 6,
   },
   textarea: {
-    backgroundColor: theme.colors.cardBg,
-    borderColor: theme.colors.cardBorder,
-    borderWidth: 2,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    fontSize: theme.fontSize.base,
-    color: theme.colors.textPrimary,
-    minHeight: 80,
+    borderRadius: 14,
+    padding: 14,
+    fontSize: 16,
+    minHeight: 90,
     textAlignVertical: "top",
   },
   noticeBox: {
-    backgroundColor: theme.badges.warning.bg,
-    borderColor: theme.badges.warning.border,
-    borderWidth: 1,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.sm,
-    marginBottom: theme.spacing.lg,
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
   },
   noticeText: {
-    fontSize: theme.fontSize.xs,
-    color: theme.badges.warning.text,
+    fontSize: 13,
+    fontWeight: "600",
   },
   resultSection: {
-    marginTop: theme.spacing.xl,
+    marginTop: 24,
+    marginBottom: 40,
   },
   sectionTitle: {
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.md,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 12,
   },
   previewCardWrapper: {
-    marginBottom: theme.spacing.md,
+    marginBottom: 12,
   },
   loadingWord: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+  },
+  noDeckBox: {
+    alignItems: "center",
+    paddingVertical: 16,
+  },
+  noDeckTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    marginTop: 12,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  noDeckSubtitle: {
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  inlineCreateForm: {
+    width: "100%",
+    gap: 10,
+  },
+  input: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
+    padding: 12,
+    fontSize: 14,
   },
 });

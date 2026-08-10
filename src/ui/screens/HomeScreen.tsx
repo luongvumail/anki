@@ -9,6 +9,7 @@ import { Icon } from "../components/Icon.js";
 import { StatusBadge } from "../components/StatusBadge.js";
 import { ZigZagSkillPath } from "../components/ZigZagSkillPath.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { appStore } from "../store/useAppStore.js";
 
 export interface HomeScreenProps {
@@ -16,6 +17,7 @@ export interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartStudy }) => {
+  const { theme } = useTheme();
   const [storeState, setStoreState] = useState(appStore.getState());
   const [isAIModalOpen, setIsAIModalOpen] = useState<boolean>(false);
 
@@ -34,7 +36,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartStudy }) => {
     return unsubscribe;
   }, []);
 
-  const { decks, userProgress, cards } = storeState;
+  const { decks, cards } = storeState;
 
   const dueSummary = useMemo(() => {
     return getDailyDueSummary(cards);
@@ -45,34 +47,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartStudy }) => {
   }, [cards]);
 
   const handleStartUrgentStudy = () => {
-    const targetDeckId = dueSummary.urgentDeckId || decks[0]?.id || "deck_hsk1";
-    onStartStudy(targetDeckId);
+    const targetDeckId = dueSummary.urgentDeckId || decks[0]?.id || "";
+    if (targetDeckId) onStartStudy(targetDeckId);
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Top Header: Streak & XP */}
-        <View style={styles.header}>
-          <View style={styles.statBox}>
-            <Icon name="flame" color={theme.colors.secondary} />
-            <Text style={styles.streakText}>{userProgress.streakDays} Ngày Streak</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Icon name="zap" color={theme.colors.primary} />
-            <Text style={styles.xpText}>
-              {userProgress.totalXp} XP (Lv. {userProgress.level})
-            </Text>
-          </View>
-        </View>
-
         {/* Smart Daily Review Queue Banner */}
         <DuolingoCard accessibilityLabel="Hàng chờ bài học hôm nay">
           <View style={styles.dailyQueueHeader}>
             <Icon name="clock" size={28} color={theme.colors.primary} />
             <View style={styles.dailyQueueTextCol}>
-              <Text style={styles.dailyQueueTitle}>BÀI HỌC HÔM NAY (FSRS v5)</Text>
-              <Text style={styles.dailyQueueSubtitle}>
+              <Text style={[styles.dailyQueueTitle, { color: theme.colors.textPrimary }]}>
+                BÀI HỌC HÔM NAY (FSRS v5)
+              </Text>
+              <Text style={[styles.dailyQueueSubtitle, { color: theme.colors.textSecondary }]}>
                 {dueSummary.totalDue > 0
                   ? `Có ${dueSummary.totalDue} từ vựng cần bạn ôn tập ngay!`
                   : "Tuyệt vời! Bạn đã hoàn thành tất cả từ vựng cần ôn hôm nay."}
@@ -100,7 +90,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartStudy }) => {
                 <Icon name="brain" size={24} color={theme.colors.secondary} />
                 <View style={styles.forecastTextCol}>
                   <Text style={styles.forecastTitle}>DỰ BÁO TRÍ NHỚ (24H TỚI)</Text>
-                  <Text style={styles.forecastSubtitle}>
+                  <Text style={[styles.forecastSubtitle, { color: theme.colors.textSecondary }]}>
                     Thuật toán FSRS v5 dự báo có khoảng{" "}
                     <Text style={styles.forecastHighlight}>{forecastForgottenCount} từ vựng</Text>{" "}
                     có nguy cơ rơi khỏi bộ nhớ nếu không ôn tập.
@@ -121,9 +111,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartStudy }) => {
           />
         ) : (
           <DuolingoCard accessibilityLabel="Chưa có bộ thẻ nào">
-            <Text style={styles.emptyText}>
-              Chưa có bộ thẻ nào. Hãy bấm nút "+" bên dưới để sinh thẻ AI!
-            </Text>
+            <View style={{ alignItems: "center", paddingVertical: 12 }}>
+              <Icon name="sparkles" size={36} color={theme.colors.primary} />
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "800",
+                  color: theme.colors.textPrimary,
+                  marginTop: 8,
+                  marginBottom: 4,
+                  textAlign: "center",
+                }}
+              >
+                CHƯA CÓ BỘ THẺ NÀO
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: theme.colors.textSecondary,
+                  textAlign: "center",
+                  marginBottom: 16,
+                }}
+              >
+                Bạn chưa tạo bộ thẻ nào. Hãy bấm nút tạo bên dưới để bắt đầu bài học của riêng bạn!
+              </Text>
+              <View style={{ width: "100%" }}>
+                <DuolingoButton
+                  title="+ TẠO BỘ THẺ MỚI"
+                  variant="primary"
+                  onPress={() => setIsAIModalOpen(true)}
+                />
+              </View>
+            </View>
           </DuolingoCard>
         )}
       </ScrollView>

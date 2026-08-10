@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { CardEntity } from "../../domain/card/cardEntity.js";
 import { Rating } from "../../domain/fsrs/fsrsTypes.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { DuolingoCard } from "./DuolingoCard.js";
 import { FSRSRatingButtons } from "./FSRSRatingButtons.js";
 import { Icon } from "./Icon.js";
@@ -26,6 +27,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
   onPrev,
   onRating,
 }) => {
+  const { theme: activeTheme } = useTheme();
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
 
@@ -75,7 +77,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
           <Icon
             name="sparkles"
             size={24}
-            color={isPlayingAudio ? theme.colors.secondary : theme.colors.primary}
+            color={isPlayingAudio ? activeTheme.colors.secondary : activeTheme.colors.primary}
           />
         </Pressable>
       </View>
@@ -87,22 +89,32 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
             {!isFlipped ? (
               // FRONT SIDE
               <View style={styles.sideContent}>
-                <Text style={styles.frontKanji}>{card.kanji}</Text>
+                <Text style={[styles.frontKanji, { color: activeTheme.colors.textPrimary }]}>
+                  {card.kanji}
+                </Text>
                 <View style={styles.flipHint}>
-                  <Icon name="brain" size={16} color={theme.colors.info} />
+                  <Icon name="brain" size={16} color={activeTheme.colors.info} />
                   <Text style={styles.flipHintText}>CHẠM ĐỂ XEM ĐÁP ÁN</Text>
                 </View>
               </View>
             ) : (
               // BACK SIDE (REVEALED)
               <View style={styles.sideContent}>
-                <Text style={styles.backKanji}>{card.kanji}</Text>
-                <Text style={styles.pinyinText}>{card.pinyin}</Text>
-                <Text style={styles.meaningText}>{card.meaning}</Text>
+                <Text style={[styles.backKanji, { color: activeTheme.colors.textPrimary }]}>
+                  {card.kanji}
+                </Text>
+                <Text style={[styles.pinyinText, { color: activeTheme.colors.primary }]}>
+                  {card.pinyin}
+                </Text>
+                <Text style={[styles.meaningText, { color: activeTheme.colors.textSecondary }]}>
+                  {card.meaning}
+                </Text>
 
                 {card.exampleSentence && (
-                  <View style={styles.exampleBox}>
-                    <Text style={styles.exampleText}>Ví dụ: {card.exampleSentence}</Text>
+                  <View style={[styles.exampleBox, { backgroundColor: activeTheme.badges.neutral.bg }]}>
+                    <Text style={[styles.exampleText, { color: activeTheme.colors.textPrimary }]}>
+                      Ví dụ: {card.exampleSentence}
+                    </Text>
                   </View>
                 )}
               </View>

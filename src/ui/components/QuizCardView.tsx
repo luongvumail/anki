@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { QuizQuestion } from "../../application/usecases/GenerateQuiz.js";
 import { theme } from "../theme/theme.js";
+import { useTheme } from "../theme/ThemeContext.js";
 import { DuolingoCard } from "./DuolingoCard.js";
 import { Icon } from "./Icon.js";
 
@@ -11,6 +12,7 @@ export interface QuizCardViewProps {
 }
 
 export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }) => {
+  const { theme: activeTheme } = useTheme();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [startTime] = useState<number>(() => Date.now());
   const [timerSeconds, setTimerSeconds] = useState<number>(0);
@@ -66,15 +68,23 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
     <View style={styles.container}>
       <DuolingoCard accessibilityLabel={`Câu hỏi: ${question.questionText}`}>
         <View style={styles.cardHeader}>
-          <Text style={styles.promptText}>{getQuestionLabel()}</Text>
-          <View style={styles.timerBadge}>
-            <Icon name="timer" size={16} color={theme.colors.secondary} />
-            <Text style={styles.timerText}>{timerSeconds}s</Text>
+          <Text style={[styles.promptText, { color: activeTheme.colors.textSecondary }]}>
+            {getQuestionLabel()}
+          </Text>
+          <View style={[styles.timerBadge, { backgroundColor: activeTheme.badges.warning.bg }]}>
+            <Icon name="timer" size={16} color={activeTheme.colors.secondary} />
+            <Text style={[styles.timerText, { color: activeTheme.colors.secondary }]}>
+              {timerSeconds}s
+            </Text>
           </View>
         </View>
 
         <Text
-          style={[styles.questionText, question.type === "FILL_IN_BLANK" && styles.fillInBlankText]}
+          style={[
+            styles.questionText,
+            { color: activeTheme.colors.textPrimary },
+            question.type === "FILL_IN_BLANK" && styles.fillInBlankText,
+          ]}
         >
           {question.questionText}
         </Text>
@@ -87,21 +97,25 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
             styles.feedbackBanner,
             {
               backgroundColor: feedbackInfo.isCorrect
-                ? theme.badges.learned.bg
-                : theme.badges.due.bg,
-              borderColor: feedbackInfo.isCorrect ? theme.colors.primary : theme.colors.danger,
+                ? activeTheme.badges.learned.bg
+                : activeTheme.badges.due.bg,
+              borderColor: feedbackInfo.isCorrect
+                ? activeTheme.colors.primary
+                : activeTheme.colors.danger,
             },
           ]}
         >
           <Icon
             name={feedbackInfo.isCorrect ? "check" : "wrench"}
-            color={feedbackInfo.isCorrect ? theme.colors.primary : theme.colors.danger}
+            color={feedbackInfo.isCorrect ? activeTheme.colors.primary : activeTheme.colors.danger}
           />
           <Text
             style={[
               styles.feedbackText,
               {
-                color: feedbackInfo.isCorrect ? theme.colors.primary : theme.colors.danger,
+                color: feedbackInfo.isCorrect
+                  ? activeTheme.colors.primary
+                  : activeTheme.colors.danger,
               },
             ]}
           >
@@ -119,25 +133,25 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
           const isCorrect = option === question.correctAnswer;
           const showFeedback = selectedOption !== null;
 
-          let bg = theme.colors.white;
-          let border = theme.colors.cardBorder;
-          let text = theme.colors.textPrimary;
+          let bg = activeTheme.colors.cardBg;
+          let border = activeTheme.colors.cardBorder;
+          let text = activeTheme.colors.textPrimary;
 
           if (showFeedback) {
             if (isSelected) {
               if (isCorrect) {
-                bg = theme.badges.learned.bg;
-                border = theme.colors.primary;
-                text = theme.colors.primary;
+                bg = activeTheme.badges.learned.bg;
+                border = activeTheme.colors.primary;
+                text = activeTheme.colors.primary;
               } else {
-                bg = theme.badges.due.bg;
-                border = theme.colors.danger;
-                text = theme.colors.danger;
+                bg = activeTheme.badges.due.bg;
+                border = activeTheme.colors.danger;
+                text = activeTheme.colors.danger;
               }
             } else if (isCorrect) {
-              bg = theme.badges.learned.bg;
-              border = theme.colors.primary;
-              text = theme.colors.primary;
+              bg = activeTheme.badges.learned.bg;
+              border = activeTheme.colors.primary;
+              text = activeTheme.colors.primary;
             }
           }
 
