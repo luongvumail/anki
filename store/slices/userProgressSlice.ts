@@ -4,12 +4,13 @@ import { getDoc, setDoc } from "firebase/firestore";
 import { auth } from "../../lib/firebase";
 import { userProgressRef } from "./firestoreHelpers";
 import { UserProgressState, Badge } from "./types";
+import { APP_CONFIG } from "../../constants/config";
 
 const ASYNC_KEY_XP = "@anki_user_xp";
 const ASYNC_KEY_BADGES = "@anki_user_badges";
 
 export function getLevelInfo(xp: number) {
-  let level = Math.floor(xp / 100) + 1;
+  let level = Math.floor(xp / APP_CONFIG.XP_PER_LEVEL) + 1;
   let title = "初学者"; // Người mới bắt đầu
   let titleVi = "Người mới bắt đầu";
 
@@ -30,9 +31,9 @@ export function getLevelInfo(xp: number) {
     titleVi = "Học viên Nhận chữ";
   }
 
-  const currentLevelXP = (level - 1) * 100;
-  const nextLevelXP = level * 100;
-  const progress = Math.min(1, Math.max(0, (xp - currentLevelXP) / 100));
+  const currentLevelXP = (level - 1) * APP_CONFIG.XP_PER_LEVEL;
+  const nextLevelXP = level * APP_CONFIG.XP_PER_LEVEL;
+  const progress = Math.min(1, Math.max(0, (xp - currentLevelXP) / APP_CONFIG.XP_PER_LEVEL));
 
   return {
     level,
@@ -217,8 +218,8 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
       set({ xp, unlockedBadgeIds });
       await AsyncStorage.setItem(ASYNC_KEY_XP, xp.toString());
       await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(unlockedBadgeIds));
-    } catch {
-      // ignore
+    } catch (err) {
+      console.warn("[userProgressSlice] fetchUserProgress failed:", err);
     }
   },
 

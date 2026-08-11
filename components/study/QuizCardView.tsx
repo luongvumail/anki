@@ -34,7 +34,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
   const [speaking, setSpeaking] = useState(false);
   const [timeLeft, setTimeLeft] = useState(5);
 
-  const startTimeRef = useRef<number>(Date.now());
+  const startTimeRef = useRef<number>(0);
   const responseTimeMsRef = useRef<number>(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 

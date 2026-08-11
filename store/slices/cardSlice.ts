@@ -21,8 +21,9 @@ import { computeDueCount, computeNewCount } from "../../lib/deckUtils";
 
 import { recordReviewToday } from "../../lib/reviewTracker";
 import { getFirestoreErrorMessage } from "../../lib/errorHandler";
+import { APP_CONFIG } from "../../constants/config";
 
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = APP_CONFIG.PAGE_SIZE;
 
 export interface CardSlice {
   cards: Record<string, Card[]>; // deckId → cards

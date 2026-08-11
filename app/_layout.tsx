@@ -7,6 +7,7 @@ import { auth } from '../lib/firebase';
 import { useStore } from '../store/useStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Colors } from '../constants/theme';
+import { APP_CONFIG } from '../constants/config';
 
 export default function RootLayout() {
   const setUserId = useStore(s => s.setUserId);
@@ -70,25 +71,25 @@ export default function RootLayout() {
       }
 
       if (isLoggingOut) {
-        // Fast fade-out transition on logout (no minimum 1.5s wait needed)
+        // Fast fade-out transition on logout
         setTimeout(() => {
           Animated.timing(splashOpacity, {
             toValue: 0,
-            duration: 400,
+            duration: APP_CONFIG.LOGOUT_FADE_MS,
             useNativeDriver: true,
           }).start(() => {
             setShowSplash(false);
           });
-        }, 250);
+        }, APP_CONFIG.LOGOUT_SPLASH_DELAY_MS);
       } else {
-        // Guarantee minimum splash display duration of 1500ms on boot/login so the user sees the logo animation clearly
+        // Guarantee minimum splash display duration
         const elapsed = Date.now() - startTime;
-        const remainingTime = Math.max(0, 1500 - elapsed);
+        const remainingTime = Math.max(0, APP_CONFIG.SPLASH_MIN_DISPLAY_MS - elapsed);
 
         setTimeout(() => {
           Animated.timing(splashOpacity, {
             toValue: 0,
-            duration: 450,
+            duration: APP_CONFIG.SPLASH_FADE_MS,
             useNativeDriver: true,
           }).start(() => {
             setShowSplash(false);

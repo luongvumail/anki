@@ -1,7 +1,4 @@
-/**
- * Standard Anki 4-Grade Spaced Repetition Algorithm (SM-2 / Anki Standard)
- * Adapted for Objective Quiz Validation & Short-Term Recall.
- */
+import { APP_CONFIG } from "../constants/config";
 
 export const SRS_GRADES = {
   AGAIN: 1, // Quên — reset interval = 0, Ease Factor -0.20
@@ -23,7 +20,7 @@ export function createDefaultSRSState(): SRSState {
   return {
     repetitions: 0,
     interval: 0,
-    easeFactor: 2.5,
+    easeFactor: APP_CONFIG.DEFAULT_EASE_FACTOR,
     dueDate: new Date().toISOString(),
   };
 }
@@ -36,7 +33,7 @@ export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
   let interval = current?.interval ?? 0;
   let easeFactor = current?.easeFactor ?? 2.5;
 
-  if (easeFactor < 1.3) easeFactor = 1.3;
+  if (easeFactor < APP_CONFIG.MIN_EASE_FACTOR) easeFactor = APP_CONFIG.MIN_EASE_FACTOR;
 
   if (grade === SRS_GRADES.AGAIN) {
     // Quên: Reset streak, ôn lại ngay trong phiên (interval = 0)
@@ -72,7 +69,7 @@ export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
     easeFactor += 0.15;
   }
 
-  if (easeFactor < 1.3) easeFactor = 1.3;
+  if (easeFactor < APP_CONFIG.MIN_EASE_FACTOR) easeFactor = APP_CONFIG.MIN_EASE_FACTOR;
 
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + interval);
@@ -129,7 +126,7 @@ export function calculateQuizSRS(
     grade = SRS_GRADES.AGAIN;
   } else if (isRetry) {
     grade = SRS_GRADES.HARD;
-  } else if (responseTimeMs > 3500) {
+  } else if (responseTimeMs > APP_CONFIG.SLOW_RESPONSE_THRESHOLD_MS) {
     grade = SRS_GRADES.GOOD;
   } else {
     grade = SRS_GRADES.EASY;

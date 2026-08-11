@@ -31,80 +31,7 @@ import {
 } from "../constants/theme";
 import { DuolingoButton } from "../components/ui/DuolingoButton";
 import { DuolingoCard } from "../components/ui/DuolingoCard";
-
-interface FieldProps {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  placeholder: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  keyboardType?: "default" | "email-address";
-  autoCapitalize?: "none" | "words" | "sentences" | "characters";
-  autoCorrect?: boolean;
-  secureTextEntry?: boolean;
-}
-
-function Field({
-  label,
-  icon,
-  placeholder,
-  value,
-  onChangeText,
-  keyboardType = "default",
-  autoCapitalize = "sentences",
-  autoCorrect = true,
-  secureTextEntry = false,
-}: FieldProps) {
-  const [focused, setFocused] = useState(false);
-  const [showText, setShowText] = useState(false);
-  const inputRef = useRef<TextInput>(null);
-
-  return (
-    <Pressable onPress={() => inputRef.current?.focus()}>
-      <DuolingoCard style={styles.fieldCard} padding={12}>
-        <View style={styles.fieldRow}>
-          <View style={styles.fieldIconWrap}>
-            <Ionicons
-              name={icon}
-              size={20}
-              color={focused ? Colors.duolingo.blue : Colors.duolingo.textMuted}
-            />
-          </View>
-          <View style={styles.fieldBody}>
-            <Text style={styles.fieldLabel}>{label}</Text>
-            <TextInput
-              ref={inputRef}
-              style={styles.fieldInput}
-              placeholder={placeholder}
-              placeholderTextColor={Colors.duolingo.disabledText}
-              value={value}
-              onChangeText={onChangeText}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              keyboardType={keyboardType}
-              autoCapitalize={autoCapitalize}
-              autoCorrect={autoCorrect}
-              secureTextEntry={secureTextEntry && !showText}
-            />
-          </View>
-          {secureTextEntry && (
-            <TouchableOpacity
-              onPress={() => setShowText((v) => !v)}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={styles.eyeBtn}
-            >
-              <Ionicons
-                name={showText ? "eye-off-outline" : "eye-outline"}
-                size={18}
-                color={Colors.duolingo.textMuted}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </DuolingoCard>
-    </Pressable>
-  );
-}
+import { AuthField } from "../components/ui/AuthField";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
@@ -233,7 +160,7 @@ export default function AuthScreen() {
         {/* Form Fields */}
         <View style={styles.formGroup}>
           {mode === "register" && (
-            <Field
+            <AuthField
               label="Họ tên"
               icon="person-outline"
               placeholder="Nguyễn Văn A"
@@ -242,7 +169,7 @@ export default function AuthScreen() {
               autoCapitalize="words"
             />
           )}
-          <Field
+          <AuthField
             label="Email"
             icon="mail-outline"
             placeholder="example@gmail.com"
@@ -252,7 +179,7 @@ export default function AuthScreen() {
             autoCapitalize="none"
             autoCorrect={false}
           />
-          <Field
+          <AuthField
             label="Mật khẩu"
             icon="lock-closed-outline"
             placeholder="••••••••"

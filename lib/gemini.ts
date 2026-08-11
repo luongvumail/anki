@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { APP_CONFIG } from "../constants/config";
 
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -66,6 +67,19 @@ function sanitizeInput(input: string): string {
 }
 
 /**
+ * Debounce helper for AI requests to prevent API spamming
+ */
+let lastRequestTime = 0;
+async function enforceRateLimit(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - lastRequestTime;
+  if (elapsed < APP_CONFIG.GEMINI_DEBOUNCE_MS) {
+    await new Promise((resolve) => setTimeout(resolve, APP_CONFIG.GEMINI_DEBOUNCE_MS - elapsed));
+  }
+  lastRequestTime = Date.now();
+}
+
+/**
  * Robust JSON extraction helper: strips markdown blocks, preamble/postscript text, and trailing commas.
  */
 function extractCleanJson(rawText: string): string {
@@ -112,6 +126,7 @@ export interface CardData {
  * Uses Gemini to auto-fill vocabulary card details for a single Chinese word.
  */
 export async function generateCardData(input: string): Promise<CardData> {
+  await enforceRateLimit();
   const cleanInput = sanitizeInput(input);
   const prompt = `Bạn là chuyên gia Hán-Việt. Phân tích chi tiết từ tiếng Trung: "${cleanInput}"
 
