@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { QuizQuestion } from "../../application/usecases/GenerateQuiz.js";
 import { theme } from "../theme/theme.js";
 import { useTheme } from "../theme/ThemeContext.js";
@@ -20,6 +20,29 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
     isCorrect: boolean;
     ratingText: string;
   } | null>(null);
+
+  // Duolingo-style Slide-In Animation Values
+  const slideAnim = useRef(new Animated.Value(60)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  // Run slide-in animation whenever question changes
+  useEffect(() => {
+    slideAnim.setValue(60);
+    opacityAnim.setValue(0);
+    Animated.parallel([
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 7,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [question.cardId, question.questionText]);
 
   // Live timer tick
   useEffect(() => {
@@ -65,7 +88,15 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View
+      style={[
+        styles.container,
+        {
+          opacity: opacityAnim,
+          transform: [{ translateX: slideAnim }],
+        },
+      ]}
+    >
       <DuolingoCard accessibilityLabel={`Câu hỏi: ${question.questionText}`}>
         <View style={styles.cardHeader}>
           <Text style={[styles.promptText, { color: activeTheme.colors.textSecondary }]}>
@@ -175,7 +206,7 @@ export const QuizCardView: React.FC<QuizCardViewProps> = ({ question, onAnswer }
           );
         })}
       </View>
-    </View>
+    </Animated.View>
   );
 };
 

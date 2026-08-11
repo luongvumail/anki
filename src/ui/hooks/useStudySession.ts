@@ -85,6 +85,15 @@ export function useStudySession(deckId: string) {
     });
   };
 
+  const prevPreviewCard = () => {
+    setState((prev) => {
+      if (prev.currentIndex > 0) {
+        return { ...prev, currentIndex: prev.currentIndex - 1 };
+      }
+      return prev;
+    });
+  };
+
   const submitQuizAnswer = async (
     answer: string,
     elapsedMs?: number,
@@ -184,6 +193,7 @@ export function useStudySession(deckId: string) {
     state,
     startSession,
     nextPreviewCard,
+    prevPreviewCard,
     submitQuizAnswer,
     completeRepairCard,
   };

@@ -14,10 +14,14 @@ import { appStore } from "../store/useAppStore.js";
 
 export const PracticeScreen: React.FC = () => {
   const { theme } = useTheme();
-  const [activeGame, setActiveGame] = useState<"NONE" | "SPEED_MATCH" | "SENTENCE_BUILDER" | "SPEAKING">("NONE");
+  const [activeGame, setActiveGame] = useState<
+    "NONE" | "SPEED_MATCH" | "SENTENCE_BUILDER" | "SPEAKING"
+  >("NONE");
   const [lastScore, setLastScore] = useState<number | null>(null);
   const [decks, setDecks] = useState(appStore.getState().decks);
-  const [selectedDeckId, setSelectedDeckId] = useState<string>(appStore.getState().decks[0]?.id || "");
+  const [selectedDeckId, setSelectedDeckId] = useState<string>(
+    appStore.getState().decks[0]?.id || "",
+  );
   const [isAIModalOpen, setIsAIModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -75,7 +79,7 @@ export const PracticeScreen: React.FC = () => {
         <View style={styles.headerTitleRow}>
           <Icon name="gamepad" size={26} color={theme.colors.primary} />
           <Text style={[styles.pageTitle, { color: theme.colors.textPrimary }]}>
-            Trung Tâm Luyện Tập Arcade
+            Trung Tâm Luyện Tập
           </Text>
         </View>
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
@@ -106,7 +110,8 @@ export const PracticeScreen: React.FC = () => {
                   marginBottom: 16,
                 }}
               >
-                Hãy tạo bộ thẻ đầu tiên của bạn để mở khóa các mini-games luyện phát âm AI, ghép từ nhanh và xếp câu!
+                Hãy tạo bộ thẻ đầu tiên của bạn để mở khóa các mini-games luyện phát âm AI, ghép từ
+                nhanh và xếp câu!
               </Text>
               <View style={{ width: "100%" }}>
                 <DuolingoButton

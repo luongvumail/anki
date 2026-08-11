@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { authService } from "../../infrastructure/auth/authService.js";
 import { appStore } from "../store/useAppStore.js";
@@ -11,9 +11,16 @@ export interface GlobalHeaderProps {
 
 export const GlobalHeader: React.FC<GlobalHeaderProps> = ({ onOpenProfile }) => {
   const { theme } = useTheme();
-  const currentUser = authService.getCurrentUser();
-  const userProgress = appStore.getState().userProgress;
+  const [userProgress, setUserProgress] = useState(() => appStore.getState().userProgress);
 
+  useEffect(() => {
+    const unsub = appStore.subscribe(() => {
+      setUserProgress(appStore.getState().userProgress);
+    });
+    return unsub;
+  }, []);
+
+  const currentUser = authService.getCurrentUser();
   const displayName = currentUser?.displayName || currentUser?.email?.split("@")[0] || "Học viên";
   const initial = displayName.charAt(0).toUpperCase();
 

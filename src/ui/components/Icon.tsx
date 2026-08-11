@@ -5,7 +5,7 @@ export type IconName =
   | "home" | "decks" | "gamepad" | "stats" | "flame" | "zap"
   | "sparkles" | "refresh" | "book" | "timer" | "trophy" | "wrench"
   | "celebrate" | "brain" | "puzzle" | "check" | "trash" | "clock"
-  | "audio" | "layers" | "search" | "close" | "volume" | "mic" | "plus" | "back";
+  | "audio" | "layers" | "search" | "close" | "volume" | "mic" | "plus" | "back" | "arrow-down";
 
 export interface IconProps {
   name: IconName;
@@ -41,6 +41,7 @@ const ICON_MAP: Record<IconName, keyof typeof MaterialIcons.glyphMap> = {
   mic: "mic",
   plus: "add",
   back: "arrow-back",
+  "arrow-down": "keyboard-arrow-down",
 };
 
 export const Icon: React.FC<IconProps> = ({ name, size = 20, color = "#000000" }) => (

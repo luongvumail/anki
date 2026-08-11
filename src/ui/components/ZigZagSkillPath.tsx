@@ -34,7 +34,7 @@ export const ZigZagSkillPath: React.FC<ZigZagSkillPathProps> = ({
       {/* ZigZag Nodes */}
       {decks.map((deck, idx) => {
         const offset = offsets[idx % offsets.length];
-        const isPriority = urgentDeckId ? deck.id === urgentDeckId : idx === 0;
+        const isPriority = Boolean(urgentDeckId && deck.id === urgentDeckId && deck.cardCount > 0);
 
         return (
           <Pressable

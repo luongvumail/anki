@@ -43,12 +43,16 @@ export const DecksScreen: React.FC<DecksScreenProps> = ({ onSelectDeck }) => {
     return unsubscribe;
   }, []);
 
-  const handleCreateDeck = () => {
+  const handleCreateDeck = async () => {
     if (!newTitle.trim()) return;
-    appStore.addDeck(newTitle.trim(), newDesc.trim());
-    setNewTitle("");
-    setNewDesc("");
-    setShowCreateModal(false);
+    try {
+      await appStore.addDeck(newTitle.trim(), newDesc.trim());
+      setNewTitle("");
+      setNewDesc("");
+      setShowCreateModal(false);
+    } catch (e: any) {
+      Alert.alert("Lỗi tạo bộ thẻ", e.message || "Tên bộ thẻ này đã tồn tại.");
+    }
   };
 
   const handleDeleteDeck = (deckId: string, title: string) => {
@@ -379,6 +383,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     fontSize: theme.fontSize.base,
+    borderWidth: 2,
+    borderColor: theme.colors.cardBorder,
   },
   modalBtnRow: {
     flexDirection: "row",

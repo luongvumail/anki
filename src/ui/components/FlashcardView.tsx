@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { CardEntity } from "../../domain/card/cardEntity.js";
 import { Rating } from "../../domain/fsrs/fsrsTypes.js";
 import { theme } from "../theme/theme.js";
@@ -31,6 +31,102 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
 
+  // 3D Flip Animated Value (0 to 180 degrees)
+  const flipAnim = useRef(new Animated.Value(0)).current;
+  // TikTok-style Swipe Animated Position (x, y)
+  const swipeAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+
+  // Reset card state when card ID changes
+  useEffect(() => {
+    setIsFlipped(false);
+    flipAnim.setValue(0);
+    swipeAnim.setValue({ x: 0, y: 0 });
+  }, [card.id]);
+
+  const toggleFlip = () => {
+    const toValue = isFlipped ? 0 : 180;
+    Animated.spring(flipAnim, {
+      toValue,
+      friction: 8,
+      tension: 10,
+      useNativeDriver: true,
+    }).start();
+    setIsFlipped(!isFlipped);
+  };
+
+  // 3D Flip Interpolation
+  const frontInterpolate = flipAnim.interpolate({
+    inputRange: [0, 180],
+    outputRange: ["0deg", "180deg"],
+  });
+  const backInterpolate = flipAnim.interpolate({
+    inputRange: [0, 180],
+    outputRange: ["180deg", "360deg"],
+  });
+
+  const frontOpacity = flipAnim.interpolate({
+    inputRange: [89, 90],
+    outputRange: [1, 0],
+  });
+  const backOpacity = flipAnim.interpolate({
+    inputRange: [89, 90],
+    outputRange: [0, 1],
+  });
+
+  // TikTok-style Swipe Gesture Handler & Tap Handler
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > 10 || Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderMove: Animated.event([null, { dx: swipeAnim.x, dy: swipeAnim.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (_, gestureState) => {
+        // Swipe Up or Left -> Next Card (TikTok style)
+        if (gestureState.dy < -60 || gestureState.dx < -60) {
+          Animated.timing(swipeAnim, {
+            toValue: { x: gestureState.dx < -60 ? -500 : 0, y: gestureState.dy < -60 ? -500 : 0 },
+            duration: 200,
+            useNativeDriver: false,
+          }).start(() => {
+            swipeAnim.setValue({ x: 0, y: 0 });
+            onNext();
+          });
+        }
+        // Swipe Down or Right -> Previous Card
+        else if ((gestureState.dy > 60 || gestureState.dx > 60) && onPrev && currentIndex > 0) {
+          Animated.timing(swipeAnim, {
+            toValue: { x: gestureState.dx > 60 ? 500 : 0, y: gestureState.dy > 60 ? 500 : 0 },
+            duration: 200,
+            useNativeDriver: false,
+          }).start(() => {
+            swipeAnim.setValue({ x: 0, y: 0 });
+            onPrev();
+          });
+        }
+        // Tap detected (movement <= 10px) -> Toggle 3D Flip
+        else if (Math.abs(gestureState.dx) <= 10 && Math.abs(gestureState.dy) <= 10) {
+          Animated.spring(swipeAnim, {
+            toValue: { x: 0, y: 0 },
+            friction: 5,
+            useNativeDriver: false,
+          }).start();
+          toggleFlip();
+        }
+        // Release without swipe -> Snap back smoothly
+        else {
+          Animated.spring(swipeAnim, {
+            toValue: { x: 0, y: 0 },
+            friction: 5,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    }),
+  ).current;
+
   const speakText = (text: string) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -46,10 +142,6 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
 
   const [nowMs] = useState<number>(() => Date.now());
 
-  const handleFlip = () => {
-    setIsFlipped((prev) => !prev);
-  };
-
   const computeCardRetrievability = (): number => {
     if (!card.fsrsState || card.fsrsState.stability <= 0) return 1.0;
     const lastTime = card.fsrsState.last_review
@@ -61,7 +153,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Top status bar */}
+      {/* Top Status Bar */}
       <View style={styles.statusBar}>
         <StatusBadge variant="new" label={`THẺ ${currentIndex + 1}/${totalCards}`} />
 
@@ -82,46 +174,90 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
         </Pressable>
       </View>
 
-      {/* Main Flashcard Container */}
-      <Pressable onPress={handleFlip} style={styles.cardTouchArea}>
+      {/* Swipe Gesture Interactive Card Container */}
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.cardTouchArea,
+          {
+            transform: [
+              { translateX: swipeAnim.x },
+              { translateY: swipeAnim.y },
+              {
+                rotate: swipeAnim.x.interpolate({
+                  inputRange: [-200, 0, 200],
+                  outputRange: ["-10deg", "0deg", "10deg"],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <DuolingoCard accessibilityLabel={`Thẻ từ vựng ${card.kanji}`}>
           <View style={styles.cardInner}>
-            {!isFlipped ? (
-              // FRONT SIDE
-              <View style={styles.sideContent}>
-                <Text style={[styles.frontKanji, { color: activeTheme.colors.textPrimary }]}>
-                  {card.kanji}
-                </Text>
-                <View style={styles.flipHint}>
-                  <Icon name="brain" size={16} color={activeTheme.colors.info} />
-                  <Text style={styles.flipHintText}>CHẠM ĐỂ XEM ĐÁP ÁN</Text>
-                </View>
+            {/* FRONT SIDE (3D Flip Animation) */}
+            <Animated.View
+              pointerEvents={isFlipped ? "none" : "auto"}
+              style={[
+                styles.sideContent,
+                isFlipped && styles.hiddenSide,
+                {
+                  transform: [{ perspective: 1000 }, { rotateY: frontInterpolate }],
+                  opacity: frontOpacity,
+                },
+              ]}
+            >
+              <Text style={[styles.frontKanji, { color: activeTheme.colors.textPrimary }]}>
+                {card.kanji}
+              </Text>
+              <View style={styles.flipHint}>
+                <Icon name="brain" size={16} color={activeTheme.colors.info} />
+                <Text style={styles.flipHintText}>CHẠM ĐỂ LẬT THẺ 3D</Text>
               </View>
-            ) : (
-              // BACK SIDE (REVEALED)
-              <View style={styles.sideContent}>
-                <Text style={[styles.backKanji, { color: activeTheme.colors.textPrimary }]}>
-                  {card.kanji}
-                </Text>
-                <Text style={[styles.pinyinText, { color: activeTheme.colors.primary }]}>
-                  {card.pinyin}
-                </Text>
-                <Text style={[styles.meaningText, { color: activeTheme.colors.textSecondary }]}>
-                  {card.meaning}
-                </Text>
+            </Animated.View>
 
-                {card.exampleSentence && (
-                  <View style={[styles.exampleBox, { backgroundColor: activeTheme.badges.neutral.bg }]}>
-                    <Text style={[styles.exampleText, { color: activeTheme.colors.textPrimary }]}>
-                      Ví dụ: {card.exampleSentence}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
+            {/* BACK SIDE (REVEALED 3D) */}
+            <Animated.View
+              pointerEvents={isFlipped ? "auto" : "none"}
+              style={[
+                styles.sideContent,
+                !isFlipped && styles.backSideAbsolute,
+                {
+                  transform: [{ perspective: 1000 }, { rotateY: backInterpolate }],
+                  opacity: backOpacity,
+                },
+              ]}
+            >
+              <Text style={[styles.backKanji, { color: activeTheme.colors.textPrimary }]}>
+                {card.kanji}
+              </Text>
+              <Text style={[styles.pinyinText, { color: activeTheme.colors.primary }]}>
+                {card.pinyin}
+              </Text>
+              <Text style={[styles.meaningText, { color: activeTheme.colors.textSecondary }]}>
+                {card.meaning}
+              </Text>
+
+              {card.exampleSentence && (
+                <View style={[styles.exampleBox, { backgroundColor: activeTheme.badges.neutral.bg }]}>
+                  <Text style={[styles.exampleText, { color: activeTheme.colors.textPrimary }]}>
+                    Ví dụ: {card.exampleSentence}
+                  </Text>
+                </View>
+              )}
+            </Animated.View>
           </View>
         </DuolingoCard>
-      </Pressable>
+      </Animated.View>
+
+      {/* Swipe Navigation Hint (only shown when front side is visible) */}
+      {!isFlipped && (
+        <View style={styles.swipeHintContainer}>
+          <Text style={[styles.swipeHintText, { color: activeTheme.colors.textSecondary }]}>
+            ⬆️ Vuốt lên / ⬅️ vuốt sang để xem từ tiếp theo
+          </Text>
+        </View>
+      )}
 
       {/* FSRS Rating Buttons when answer is revealed */}
       {isFlipped && onRating && (
@@ -134,7 +270,7 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
         />
       )}
 
-      {/* Navigation Controls */}
+      {/* Manual Button Controls */}
       {!isFlipped && (
         <View style={styles.navRow}>
           {onPrev && currentIndex > 0 && (
@@ -160,22 +296,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
   audioBtn: {
     padding: theme.spacing.xs,
   },
   cardTouchArea: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
   cardInner: {
     alignItems: "center",
-    paddingVertical: theme.spacing.xxl,
+    justifyContent: "center",
+    minHeight: 280,
+    paddingVertical: theme.spacing.xl,
     paddingHorizontal: theme.spacing.md,
   },
   sideContent: {
     alignItems: "center",
     width: "100%",
+    backfaceVisibility: "hidden",
+  },
+  hiddenSide: {
+    position: "absolute",
+    opacity: 0,
+  },
+  backSideAbsolute: {
+    position: "absolute",
+    top: theme.spacing.xl,
+    left: theme.spacing.md,
+    right: theme.spacing.md,
   },
   frontKanji: {
     fontSize: 72,
@@ -195,7 +344,7 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.bold,
   },
   backKanji: {
-    fontSize: 48,
+    fontSize: 44,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.textPrimary,
     marginBottom: theme.spacing.xs,
@@ -210,24 +359,32 @@ const styles = StyleSheet.create({
   meaningText: {
     fontSize: theme.fontSize.xl,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
   exampleBox: {
     backgroundColor: theme.badges.neutral.bg,
     borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     width: "100%",
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.sm,
   },
   exampleText: {
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.textPrimary,
     fontSize: theme.fontSize.sm,
   },
+  swipeHintContainer: {
+    alignItems: "center",
+    marginBottom: theme.spacing.md,
+  },
+  swipeHintText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   navRow: {
     flexDirection: "row",
     gap: theme.spacing.md,
-    marginTop: theme.spacing.lg,
+    marginTop: theme.spacing.sm,
   },
   prevBtn: {
     flex: 1,

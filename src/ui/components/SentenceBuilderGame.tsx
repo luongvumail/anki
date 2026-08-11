@@ -34,7 +34,10 @@ function shuffleArray<T>(array: T[]): T[] {
 
 function splitChineseSentence(sentence: string): string[] {
   if (sentence.includes(",")) {
-    return sentence.split(",").map((s) => s.trim()).filter(Boolean);
+    return sentence
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   return Array.from(sentence).filter((ch) => ch.trim().length > 0);
 }
@@ -70,9 +73,10 @@ export const SentenceBuilderGame: React.FC<SentenceBuilderGameProps> = ({ deckId
     const allDeckKanji = Array.from(new Set(cards.map((c) => c.kanji)));
 
     const built: SentenceExercise[] = cards.slice(0, 10).map((card, idx) => {
-      const fullText = card.exampleSentence && card.exampleSentence.trim().length > 0
-        ? card.exampleSentence
-        : card.kanji;
+      const fullText =
+        card.exampleSentence && card.exampleSentence.trim().length > 0
+          ? card.exampleSentence
+          : card.kanji;
       const primaryTokens = splitChineseSentence(fullText);
 
       // Grab distractors from other cards in the deck
@@ -129,11 +133,7 @@ export const SentenceBuilderGame: React.FC<SentenceBuilderGameProps> = ({ deckId
               Vui lòng thêm từ vựng vào bộ thẻ để bắt đầu chơi mini-game xếp từ thành câu!
             </Text>
             <View style={{ width: "100%" }}>
-              <DuolingoButton
-                title="QUAY LẠI"
-                variant="primary"
-                onPress={() => onFinish(0)}
-              />
+              <DuolingoButton title="QUAY LẠI" variant="primary" onPress={() => onFinish(0)} />
             </View>
           </View>
         </DuolingoCard>
@@ -160,7 +160,7 @@ export const SentenceBuilderGame: React.FC<SentenceBuilderGameProps> = ({ deckId
             <Text style={styles.doneTitle}>Hoàn Thành Thử Thách!</Text>
             <Text style={styles.doneScore}>Điểm số đạt được: {score} Điểm</Text>
             <DuolingoButton
-              title="VỀ TRUNG TÂM ARCADE"
+              title="VỀ TRUNG TÂM"
               variant="primary"
               onPress={() => onFinish(score)}
             />

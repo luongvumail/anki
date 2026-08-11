@@ -34,10 +34,18 @@ export const createDeckSlice = (
   },
 
   addDeck: async (title: string, description: string, color = "#059669") => {
+    const currentDecks = await container.deckRepo.getAll();
+    const isDuplicate = currentDecks.some(
+      (d) => d.title.trim().toLowerCase() === title.trim().toLowerCase(),
+    );
+    if (isDuplicate) {
+      throw new Error("Tên bộ thẻ này đã tồn tại. Vui lòng chọn tên khác!");
+    }
+
     const newDeck: DeckEntity = {
       id: `deck_${Date.now()}`,
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       color,
       cardCount: 0,
       newCardCount: 0,

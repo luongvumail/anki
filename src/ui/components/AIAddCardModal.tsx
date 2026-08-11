@@ -96,8 +96,8 @@ export const AIAddCardModal: React.FC<AIAddCardModalProps> = ({
       setNewDeckTitle("");
       setNewDeckDesc("");
       Alert.alert("Thành công", `Đã tạo bộ thẻ "${created.title}"! Giờ bạn có thể thêm từ AI.`);
-    } catch {
-      Alert.alert("Lỗi", "Không thể tạo bộ thẻ lúc này.");
+    } catch (e: any) {
+      Alert.alert("Lỗi tạo bộ thẻ", e.message || "Không thể tạo bộ thẻ lúc này.");
     } finally {
       setIsCreatingDeck(false);
     }

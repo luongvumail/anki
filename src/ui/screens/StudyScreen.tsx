@@ -18,7 +18,7 @@ export interface StudyScreenProps {
 
 export const StudyScreen: React.FC<StudyScreenProps> = ({ deckId, onFinish }) => {
   const { theme: activeTheme } = useTheme();
-  const { state, startSession, nextPreviewCard, submitQuizAnswer, completeRepairCard } =
+  const { state, startSession, nextPreviewCard, prevPreviewCard, submitQuizAnswer, completeRepairCard } =
     useStudySession(deckId);
 
   useEffect(() => {
@@ -106,6 +106,7 @@ export const StudyScreen: React.FC<StudyScreenProps> = ({ deckId, onFinish }) =>
             currentIndex={currentIndex}
             totalCards={cards.length}
             onNext={nextPreviewCard}
+            onPrev={prevPreviewCard}
           />
         </ScrollView>
       </View>
@@ -159,7 +160,7 @@ export const StudyScreen: React.FC<StudyScreenProps> = ({ deckId, onFinish }) =>
                 </Text>
                 {card.exampleSentence && (
                   <Text style={[styles.repairExample, { color: activeTheme.colors.textLight }]}>
-                    "{card.exampleSentence}"
+                    {`"${card.exampleSentence}"`}
                   </Text>
                 )}
 

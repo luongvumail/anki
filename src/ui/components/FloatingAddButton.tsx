@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Animated, PanResponder, Pressable, StyleSheet } from "react-native";
+import { Animated, PanResponder, StyleSheet, View } from "react-native";
 import { theme } from "../theme/theme.js";
 import { Icon } from "./Icon.js";
 
@@ -54,13 +54,9 @@ export const FloatingAddButton: React.FC<FloatingAddButtonProps> = ({ onPress })
         },
       ]}
     >
-      <Pressable
-        onPress={onPress}
-        accessibilityLabel="Thêm thẻ từ vựng mới bằng AI (có thể kéo di chuyển)"
-        style={styles.innerPress}
-      >
+      <View style={styles.innerPress}>
         <Icon name="sparkles" size={28} color={theme.colors.white} />
-      </Pressable>
+      </View>
     </Animated.View>
   );
 };
