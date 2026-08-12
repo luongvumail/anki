@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: Radii.full,
-    borderWidth: BorderWidths.thin,
+    borderWidth: 0,
   },
   addDeckHeaderBtnText: { fontSize: Typography.caption1.fontSize, fontWeight: Typography.weight.extraBold, color: "#FFFFFF" },
   emptyCard: { alignItems: "center", justifyContent: "center", padding: Spacing.xl, marginTop: Spacing.md },

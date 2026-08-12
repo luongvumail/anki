@@ -46,28 +46,22 @@ export function DuolingoHeader({
       ]}
     >
       {/* Friendly User Greeting */}
-      <View style={[styles.courseSelector, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder, borderBottomColor: theme.cardBottom }]}>
-        <Text style={[styles.courseTitleText, { color: theme.textPrimary }]}>Xin chào, {resolvedName}</Text>
+      <View>
+        <Text style={[styles.courseTitleText, { color: theme.textPrimary }]}>
+          Xin chào, {resolvedName}
+        </Text>
       </View>
 
       {/* Top Indicators Row */}
       <View style={styles.statsRow}>
         {/* Streak Pill */}
-        <TouchableOpacity
-          style={[styles.statPill, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder, borderBottomColor: theme.cardBottom }]}
-          activeOpacity={0.8}
-          onPress={onStreakPress}
-        >
+        <TouchableOpacity style={styles.statPill} activeOpacity={0.8} onPress={onStreakPress}>
           <Ionicons name="flame" size={Layout.iconMd} color={theme.yellow} />
           <Text style={[styles.statValue, { color: theme.yellow }]}>{streakCount}</Text>
         </TouchableOpacity>
 
         {/* Profile Avatar */}
-        <TouchableOpacity
-          style={styles.avatarBtn}
-          onPress={handleAvatarPress}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.avatarBtn} onPress={handleAvatarPress} activeOpacity={0.8}>
           <Ionicons name="person-circle" size={Layout.iconXl} color={theme.blue} />
         </TouchableOpacity>
       </View>
@@ -82,7 +76,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     paddingBottom: Spacing.sm,
-    borderBottomWidth: BorderWidths.thin,
+    borderBottomWidth: 1,
   },
   courseSelector: {
     flexDirection: "row",
@@ -91,7 +85,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
-    borderWidth: BorderWidths.thin,
+    borderWidth: 0,
   },
   courseTitleText: {
     fontSize: Typography.caption.fontSize,
@@ -110,7 +104,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.cellPadding,
     paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
-    borderWidth: BorderWidths.thin,
+    borderWidth: 0,
   },
   statValue: {
     fontSize: Typography.caption.fontSize,

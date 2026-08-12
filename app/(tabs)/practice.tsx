@@ -141,8 +141,8 @@ export default function PracticeScreen() {
         {/* Mode 2: Sentence Builder */}
         <DuolingoCard style={styles.modeCard}>
           <View style={styles.modeRow}>
-            <View style={[styles.modeIconTile, { backgroundColor: theme.greenDim }]}>
-              <Ionicons name="build" size={Layout.iconXl} color={theme.green} />
+            <View style={[styles.modeIconTile, { backgroundColor: theme.blueDim }]}>
+              <Ionicons name="build" size={Layout.iconXl} color={theme.blue} />
             </View>
             <View style={styles.modeTextCol}>
               <Text style={[styles.modeTitle, { color: theme.textPrimary }]}>XẾP TỪ THÀNH CÂU</Text>
@@ -154,7 +154,7 @@ export default function PracticeScreen() {
           <DuolingoButton
             title="BẮT ĐẦU"
             icon={<Ionicons name="play" size={Layout.iconMd} color="#FFFFFF" />}
-            variant="primary"
+            variant="blue"
             size="lg"
             onPress={handleOpenSentenceBuilder}
             style={{ marginTop: Spacing.md }}
@@ -164,8 +164,8 @@ export default function PracticeScreen() {
         {/* Mode 3: AI Pronunciation Trainer */}
         <DuolingoCard style={styles.modeCard}>
           <View style={styles.modeRow}>
-            <View style={[styles.modeIconTile, { backgroundColor: theme.purpleDim }]}>
-              <Ionicons name="mic" size={Layout.iconXl} color={theme.purple} />
+            <View style={[styles.modeIconTile, { backgroundColor: theme.greenDim }]}>
+              <Ionicons name="mic" size={Layout.iconXl} color={theme.green} />
             </View>
             <View style={styles.modeTextCol}>
               <Text style={[styles.modeTitle, { color: theme.textPrimary }]}>PHÒNG LUYỆN PHÁT ÂM AI</Text>
@@ -177,7 +177,7 @@ export default function PracticeScreen() {
           <DuolingoButton
             title="THU ÂM NGAY"
             icon={<Ionicons name="mic-circle" size={Layout.iconMd} color="#FFFFFF" />}
-            variant="purple"
+            variant="success"
             size="lg"
             onPress={handleOpenPronunciationTrainer}
             style={{ marginTop: Spacing.md }}

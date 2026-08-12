@@ -64,7 +64,7 @@ export function PronunciationTrainerModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
@@ -90,7 +90,7 @@ export function PronunciationTrainerModal({
 
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.purple} />
+          <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.green} />
           <Text style={[styles.progressText, { color: theme.textMuted }]}>
             {shuffledCards.length > 0 ? `${currentIndex + 1}/${shuffledCards.length}` : "0/0"}
           </Text>
@@ -122,7 +122,7 @@ export function PronunciationTrainerModal({
           <View style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
               {/* Card Hero Box */}
-              <View style={[styles.heroCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+              <View style={[styles.heroCard, { backgroundColor: theme.cardBg }]}>
                 <Text style={[styles.heroChar, { color: theme.textPrimary }]}>{currentCard.character}</Text>
                 <Text
                   style={[
@@ -153,7 +153,7 @@ export function PronunciationTrainerModal({
                       styles.micBtn,
                       { backgroundColor: theme.blue, shadowColor: theme.blue },
                       isRecording && { backgroundColor: theme.red, shadowColor: theme.red },
-                      analyzing && { backgroundColor: theme.purple, shadowColor: theme.purple },
+                      analyzing && { backgroundColor: theme.yellow, shadowColor: theme.yellow },
                     ]}
                     onPress={isRecording ? handleStopRecording : handleStartRecording}
                     disabled={analyzing}
@@ -239,9 +239,9 @@ export function PronunciationTrainerModal({
                 ) : null}
 
                 {pronunciationTip ? (
-                  <View style={[styles.tipBox, { backgroundColor: theme.purpleDim }]}>
-                    <Ionicons name="bulb" size={Layout.iconSm} color={theme.purple} />
-                    <Text style={[styles.tipText, { color: theme.purple }]}>{pronunciationTip}</Text>
+                  <View style={[styles.tipBox, { backgroundColor: theme.blueDim }]}>
+                    <Ionicons name="bulb" size={Layout.iconSm} color={theme.blue} />
+                    <Text style={[styles.tipText, { color: theme.blue }]}>{pronunciationTip}</Text>
                   </View>
                 ) : null}
 
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   heroCard: {
     width: "100%",
     borderRadius: Radii.xl,
-    borderWidth: BorderWidths.default,
+    borderWidth: 0,
     padding: Spacing.xl,
     alignItems: "center",
     marginVertical: Spacing.cellPadding,
@@ -385,9 +385,9 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
-    borderTopWidth: BorderWidths.default,
-    borderLeftWidth: BorderWidths.default,
-    borderRightWidth: BorderWidths.default,
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
     padding: Spacing.md,
     gap: Spacing.md,
   },

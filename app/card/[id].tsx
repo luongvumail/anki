@@ -149,14 +149,14 @@ export default function CardDetailScreen() {
         <DuolingoCard style={styles.radicalCard}>
           <View style={styles.radicalHeader}>
           <View style={styles.radicalHeaderLeft}>
-            <Ionicons name="sparkles" size={Layout.iconMd} color={theme.purple} />
-            <Text style={[styles.radicalHeaderTitle, { color: theme.purple }]}>Bộ thủ & Chiết tự Hán tự</Text>
+            <Ionicons name="sparkles" size={Layout.iconMd} color={theme.blue} />
+            <Text style={[styles.radicalHeaderTitle, { color: theme.blue }]}>Bộ thủ & Chiết tự Hán tự</Text>
           </View>
 
             {!card.radical && (
               <DuolingoButton
                 title={generatingRadical ? "ĐANG TẠO..." : "TẠO BẰNG AI"}
-                variant="purple"
+                variant="blue"
                 size="sm"
                 disabled={generatingRadical}
                 onPress={handleGenerateRadical}

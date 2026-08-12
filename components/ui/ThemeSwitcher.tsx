@@ -23,7 +23,7 @@ export function ThemeSwitcher({ style }: ThemeSwitcherProps) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bgSoft, borderColor: theme.cardBorder }, style]}>
+    <View style={[styles.container, { backgroundColor: theme.bgSoft }, style]}>
       {options.map((opt) => {
         const isActive = themeMode === opt.mode;
         return (
@@ -37,8 +37,6 @@ export function ThemeSwitcher({ style }: ThemeSwitcherProps) {
                 styles.optionBtnActive,
                 {
                   backgroundColor: theme.cardBg,
-                  borderColor: theme.blue,
-                  borderBottomColor: theme.blueDark,
                 },
               ],
             ]}
@@ -68,7 +66,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     borderRadius: Radii.lg,
-    borderWidth: BorderWidths.thin,
     padding: Spacing.xs,
     gap: Spacing.xs,
   },
@@ -80,12 +77,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: Radii.md,
     gap: Spacing.xs,
-    borderWidth: BorderWidths.thin,
-    borderColor: "transparent",
   },
   optionBtnActive: {
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
   },

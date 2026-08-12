@@ -1,11 +1,17 @@
 import React, { useRef, useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Radii, Spacing, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import {
+  Radii,
+  Spacing,
+  Typography,
+  Layout,
+  BorderWidths,
+  triggerHaptic,
+} from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { Deck } from "../../store/slices/types";
 import { DeckIcon } from "../ui/DeckIcon";
-import { DuolingoMascot } from "../ui/DuolingoMascot";
 
 interface ZigZagSkillPathProps {
   decks: Deck[];
@@ -24,15 +30,7 @@ interface PathNodeItemProps {
 }
 
 const PathNodeItem = React.memo(
-  ({
-    deck,
-    offset,
-    dueCount,
-    isPriority,
-    isCompleted,
-    pulseAnim,
-    onSelect,
-  }: PathNodeItemProps) => {
+  ({ deck, offset, dueCount, isPriority, isCompleted, pulseAnim, onSelect }: PathNodeItemProps) => {
     const { theme } = useTheme();
     const [pressed, setPressed] = useState(false);
 
@@ -75,27 +73,7 @@ const PathNodeItem = React.memo(
     return (
       <View style={[styles.nodeRow, { transform: [{ translateX: offset }] }]}>
         <View style={styles.nodeWrapper}>
-          {/* Floating Due Count Badge */}
-          {dueCount > 0 ? (
-            <Animated.View
-              style={[
-                styles.dueBadge,
-                {
-                  transform: isPriority ? [{ scale: pulseAnim }] : [],
-                  backgroundColor: isPriority ? theme.yellow : theme.blue,
-                  borderColor: "#FFFFFF",
-                },
-              ]}
-            >
-              <Text style={styles.dueBadgeText}>{dueCount}</Text>
-            </Animated.View>
-          ) : isCompleted ? (
-            <View style={[styles.completedBadge, { backgroundColor: theme.green, borderColor: "#FFFFFF" }]}>
-              <Ionicons name="checkmark-sharp" size={Layout.iconSm} color="#FFFFFF" />
-            </View>
-          ) : null}
-
-          {/* Sleek Linear Craft Node Button */}
+          {/* Sleek Node Button */}
           <TouchableOpacity
             activeOpacity={1}
             onPressIn={handlePressIn}
@@ -104,16 +82,14 @@ const PathNodeItem = React.memo(
             style={[
               styles.nodeButtonCraft,
               {
-                backgroundColor: isPriority || isCompleted ? nodeColors.bg : theme.cardBg,
-                borderColor: nodeColors.border,
-                shadowColor: isPriority ? theme.blue : "#000000",
+                backgroundColor: isPriority || isCompleted ? nodeColors.bg : theme.bgSoft,
                 transform: [{ scale: pressed ? 0.94 : 1 }],
                 opacity: pressed ? 0.9 : 1,
               },
             ]}
           >
             {isCompleted ? (
-              <Ionicons name="star" size={Layout.iconLg} color="#FFFFFF" />
+              <Ionicons name="checkmark-sharp" size={Layout.iconLg} color="#FFFFFF" />
             ) : isPriority ? (
               <DeckIcon name={deck.icon} size={Layout.iconLg} color="#FFFFFF" />
             ) : (
@@ -122,7 +98,7 @@ const PathNodeItem = React.memo(
           </TouchableOpacity>
         </View>
 
-        {/* Linear Craft Deck Info Card */}
+        {/* Minimal Deck Info Card */}
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={() => onSelect(deck)}
@@ -130,8 +106,6 @@ const PathNodeItem = React.memo(
             styles.nodeTextCard,
             {
               backgroundColor: theme.cardBg,
-              borderColor: isPriority ? theme.blue : theme.cardBorder,
-              shadowColor: theme.isDark ? "#000000" : "#0F172A",
             },
           ]}
         >
@@ -144,7 +118,7 @@ const PathNodeItem = React.memo(
         </TouchableOpacity>
       </View>
     );
-  }
+  },
 );
 
 export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkillPathProps) {
@@ -164,7 +138,7 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
           duration: 800,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     animation.start();
     return () => animation.stop();
@@ -198,9 +172,6 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
         ]}
       >
         <View style={styles.unitBannerTopRow}>
-          <View style={styles.unitPill}>
-            <Text style={styles.unitPillText}>UNIT 1</Text>
-          </View>
           <View style={styles.dueSummaryPill}>
             <Ionicons name="flame" size={Layout.iconSm} color={theme.yellow} />
             <Text style={styles.dueSummaryText}>{totalDueAllDecks} CẦN ÔN</Text>
@@ -223,26 +194,6 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 
           return (
             <React.Fragment key={deck.id}>
-              {/* Mascot Owl standing proudly at current active deck */}
-              {isPriority && (
-                <View
-                  style={[
-                    styles.mascotPathContainer,
-                    { transform: [{ translateX: -offset * 0.7 }] },
-                  ]}
-                >
-                  <DuolingoMascot
-                    expression={dueCount > 0 ? "happy" : "celebrate"}
-                    size={72}
-                    speechBubbleText={
-                      dueCount > 0
-                        ? `Ôn "${deck.name}" ngay!`
-                        : `Thành công! Đã thuộc "${deck.name}"`
-                    }
-                  />
-                </View>
-              )}
-
               <PathNodeItem
                 deck={deck}
                 offset={offset}
@@ -270,7 +221,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.xl,
     padding: Spacing.lg,
     marginBottom: Spacing.xl,
-    borderWidth: BorderWidths.default,
+    borderWidth: 0,
   },
   unitBannerTopRow: {
     flexDirection: "row",

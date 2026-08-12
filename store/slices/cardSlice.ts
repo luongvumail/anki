@@ -40,6 +40,7 @@ export interface CardSlice {
   lastDocSnapshots: Record<string, QueryDocumentSnapshot | null>; // deckId → last snapshot
   fetchCards: (deckId: string) => Promise<Card[]>;
   fetchMoreCards: (deckId: string) => Promise<void>;
+  fetchAllCardsForStats: (deckId: string) => Promise<void>;
   addCard: (card: Omit<Card, "id" | "createdAt" | "updatedAt">) => Promise<void>;
   updateCard: (cardId: string, deckId: string, updates: Partial<Card>) => Promise<void>;
   deleteCard: (cardId: string, deckId: string) => Promise<void>;
@@ -62,34 +63,37 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     if (!uid) return [];
     set({ isLoading: true });
     try {
-      // First page query with limit
-      const q = query(cardsRef(uid, deckId), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
+      // Fetch ALL cards with no limit — ensures accurate cardCount, dueCount, newCount always.
+      const q = query(cardsRef(uid, deckId), orderBy("createdAt", "desc"));
       const snap = await getDocs(q);
 
       const fetchedCards = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Card);
-      const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
-      const hasMore = snap.docs.length >= PAGE_SIZE;
-
-      const realCardCount = fetchedCards.length;
-      const realDueCount = computeDueCount(fetchedCards);
-      const realNewCount = computeNewCount(fetchedCards);
+      const totalCount = fetchedCards.length;
+      const totalDue = computeDueCount(fetchedCards);
+      const totalNew = computeNewCount(fetchedCards);
 
       set((s) => ({
         cards: { ...s.cards, [deckId]: fetchedCards },
-        lastDocSnapshots: { ...s.lastDocSnapshots, [deckId]: lastDoc },
-        hasMoreCards: { ...s.hasMoreCards, [deckId]: hasMore },
+        // Mark no more pages since we fetched everything
+        hasMoreCards: { ...s.hasMoreCards, [deckId]: false },
+        lastDocSnapshots: { ...s.lastDocSnapshots, [deckId]: null },
         decks: s.decks.map((d) =>
           d.id === deckId
-            ? {
-                ...d,
-                cardCount: Math.max(d.cardCount, realCardCount),
-                dueCount: realDueCount,
-                newCount: realNewCount,
-              }
+            ? { ...d, cardCount: totalCount, dueCount: totalDue, newCount: totalNew }
             : d,
         ),
         isLoading: false,
       }));
+
+      // Persist corrected counts back to Firestore so they're accurate next session too.
+      fireAndForget("fetchCards:syncCounts", async () => {
+        const deckDocRef = doc(decksRef(uid), deckId);
+        await updateDoc(deckDocRef, {
+          cardCount: totalCount,
+          dueCount: totalDue,
+          newCount: totalNew,
+        });
+      });
 
       return fetchedCards;
     } catch (e: unknown) {
@@ -99,50 +103,11 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     }
   },
 
-  fetchMoreCards: async (deckId) => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
+  // No-op: pagination removed. fetchCards now loads everything in one query.
+  fetchAllCardsForStats: async (_deckId) => {},
 
-    const state = get();
-    const hasMore = state.hasMoreCards[deckId];
-    const isFetching = state.isFetchingMoreCards[deckId];
-    const lastDoc = state.lastDocSnapshots[deckId];
-
-    if (!hasMore || isFetching || !lastDoc) return;
-
-    set((s) => ({
-      isFetchingMoreCards: { ...s.isFetchingMoreCards, [deckId]: true },
-    }));
-
-    try {
-      const q = query(
-        cardsRef(uid, deckId),
-        orderBy("createdAt", "desc"),
-        startAfter(lastDoc),
-        limit(PAGE_SIZE),
-      );
-      const snap = await getDocs(q);
-
-      const newCards = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Card);
-      const nextLastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
-      const nextHasMore = snap.docs.length >= PAGE_SIZE;
-
-      const existingCards = state.cards[deckId] || [];
-      const combinedCards = [...existingCards, ...newCards];
-
-      set((s) => ({
-        cards: { ...s.cards, [deckId]: combinedCards },
-        lastDocSnapshots: { ...s.lastDocSnapshots, [deckId]: nextLastDoc },
-        hasMoreCards: { ...s.hasMoreCards, [deckId]: nextHasMore },
-        isFetchingMoreCards: { ...s.isFetchingMoreCards, [deckId]: false },
-      }));
-    } catch (err: unknown) {
-      console.warn("[fetchMoreCards] Failed to fetch more cards:", err);
-      set((s) => ({
-        isFetchingMoreCards: { ...s.isFetchingMoreCards, [deckId]: false },
-      }));
-    }
-  },
+  // No-op: pagination removed. All cards are loaded by fetchCards.
+  fetchMoreCards: async (_deckId) => {},
 
   addCard: async (cardData) => {
     const uid = getUserId();
@@ -185,18 +150,19 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     };
 
     const updatedCards = [card, ...existingCards];
-    const realCardCount = updatedCards.length;
     const realDueCount = computeDueCount(updatedCards);
     const realNewCount = computeNewCount(updatedCards);
 
-    // Optimistically update local store immediately
+    // Optimistically update local store immediately.
+    // cardCount: increment by 1 from the deck's stored count (which reflects total, including unloaded pages).
+    // dueCount/newCount: computed from loaded cards — best approximation when paginated.
     set((s) => ({
       cards: { ...s.cards, [cardData.deckId]: updatedCards },
       decks: s.decks.map((deck) =>
         deck.id === cardData.deckId
           ? {
               ...deck,
-              cardCount: realCardCount,
+              cardCount: (deck.cardCount || 0) + 1,
               dueCount: realDueCount,
               newCount: realNewCount,
             }
@@ -207,9 +173,11 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     // Async background persistence to Firestore
     fireAndForget("addCard", async () => {
       await setDoc(ref, sanitizeForFirestore(card));
+      // Read the current deck count from Firestore and increment to avoid race conditions
       const deckDocRef = doc(decksRef(uid), cardData.deckId);
+      const currentDeck = get().decks.find((d) => d.id === cardData.deckId);
       await updateDoc(deckDocRef, {
-        cardCount: realCardCount,
+        cardCount: currentDeck ? currentDeck.cardCount : updatedCards.length,
         dueCount: realDueCount,
         newCount: realNewCount,
       });
@@ -248,11 +216,11 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     const uid = getUserId();
     const existingCards = get().cards[deckId] || [];
     const updatedCards = existingCards.filter((c) => c.id !== cardId);
-    const realCardCount = updatedCards.length;
     const realDueCount = computeDueCount(updatedCards);
     const realNewCount = computeNewCount(updatedCards);
 
-    // Optimistically update local store immediately
+    // Optimistically update local store immediately.
+    // cardCount: decrement by 1 from stored total (accurate even when paginated).
     set((s) => ({
       cards: {
         ...s.cards,
@@ -260,7 +228,12 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       },
       decks: s.decks.map((d) =>
         d.id === deckId
-          ? { ...d, cardCount: realCardCount, dueCount: realDueCount, newCount: realNewCount }
+          ? {
+              ...d,
+              cardCount: Math.max(0, (d.cardCount || 1) - 1),
+              dueCount: realDueCount,
+              newCount: realNewCount,
+            }
           : d,
       ),
     }));
@@ -269,8 +242,9 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     fireAndForget("deleteCard", async () => {
       await deleteDoc(cardRef(uid, deckId, cardId));
       const deckDocRef = doc(decksRef(uid), deckId);
+      const currentDeck = get().decks.find((d) => d.id === deckId);
       await updateDoc(deckDocRef, {
-        cardCount: realCardCount,
+        cardCount: currentDeck ? currentDeck.cardCount : updatedCards.length,
         dueCount: realDueCount,
         newCount: realNewCount,
       });

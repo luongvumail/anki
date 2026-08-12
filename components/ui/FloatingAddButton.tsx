@@ -84,8 +84,8 @@ export function FloatingAddButton({ onPress, bottomOffset }: FloatingAddButtonPr
         {
           left: pan.x,
           top: pan.y,
-          backgroundColor: theme.green,
-          shadowColor: theme.green,
+          backgroundColor: theme.blue,
+          shadowColor: theme.blue,
         },
         pressed && styles.fabPressed,
       ]}

@@ -135,37 +135,29 @@ export function AccountModal({
           </DuolingoCard>
 
           {/* Theme Settings Section */}
-          <SectionTitle>GIAO DIỆN & CHỦ ĐỀ</SectionTitle>
+          <SectionTitle>GIAO DIỆN</SectionTitle>
           <DuolingoCard style={styles.settingCard}>
-            <Text style={[styles.reminderTitle, { color: theme.textPrimary }]}>Chế độ giao diện</Text>
-            <Text style={[styles.reminderSub, { color: theme.textMuted, marginBottom: Spacing.sm }]}>
-              Tự động đổi theo hệ điều hành hoặc chọn chế độ Sáng / Tối
-            </Text>
             <ThemeSwitcher />
           </DuolingoCard>
 
           {/* Daily Reminder Settings Section */}
-          <SectionTitle>NHẮC NHỞ HỌC TẬP HÀNG NGÀY</SectionTitle>
+          <SectionTitle>NHẮC NHỞ HỌC TẬP</SectionTitle>
           <DuolingoCard style={styles.settingCard}>
             <View style={styles.reminderToggleRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.reminderTitle, { color: theme.textPrimary }]}>Thông báo nhắc ôn bài</Text>
-                <Text style={[styles.reminderSub, { color: theme.textMuted }]}>Đẩy thông báo vào giờ đã chọn mỗi ngày</Text>
-              </View>
+              <Text style={[styles.reminderTitle, { color: theme.textPrimary }]}>Thông báo mỗi ngày</Text>
               <Switch
                 value={reminderEnabled}
                 onValueChange={(val) => {
                   triggerHaptic("selection");
                   onToggleReminder(val);
                 }}
-                trackColor={{ false: theme.cardBottom, true: theme.green }}
+                trackColor={{ false: theme.bgSoft, true: theme.green }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
             {reminderEnabled && (
-              <View style={[styles.pickerBox, { borderTopColor: theme.cardBorder }]}>
-                <Text style={[styles.pickerLabel, { color: theme.textMuted }]}>Chọn giờ nhắc học:</Text>
+              <View style={styles.pickerBox}>
                 <WheelTimePicker
                   hour={reminderHour}
                   minute={reminderMinute}

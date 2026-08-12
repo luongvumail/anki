@@ -44,7 +44,7 @@ export function SpeedMatchModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
@@ -70,17 +70,17 @@ export function SpeedMatchModal({
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <View style={[styles.statBox, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+          <View style={[styles.statBox, { backgroundColor: theme.bgSoft }]}>
             <Ionicons name="timer-outline" size={Layout.iconMd} color={theme.yellow} />
             <Text style={[styles.statVal, { color: theme.textPrimary }]}>{timeLeft}s</Text>
           </View>
 
-          <View style={[styles.statBox, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+          <View style={[styles.statBox, { backgroundColor: theme.bgSoft }]}>
             <Ionicons name="star" size={Layout.iconMd} color={theme.green} />
             <Text style={[styles.statVal, { color: theme.textPrimary }]}>{score} XP</Text>
           </View>
 
-          <View style={[styles.statBox, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+          <View style={[styles.statBox, { backgroundColor: theme.bgSoft }]}>
             <Ionicons name="trophy" size={Layout.iconMd} color={theme.purple} />
             <Text style={[styles.statVal, { color: theme.textPrimary }]}>Kỷ lục: {highScore}</Text>
           </View>
@@ -116,13 +116,7 @@ export function SpeedMatchModal({
 
               const isSelected = selectedTile?.id === tile.id;
 
-              let bgColor = theme.cardBg;
-              let borderColor = theme.cardBorder;
-
-              if (isSelected) {
-                bgColor = theme.blueDim;
-                borderColor = theme.blue;
-              }
+              const bgColor = isSelected ? theme.blueDim : theme.cardBg;
 
               return (
                 <TouchableOpacity
@@ -131,10 +125,7 @@ export function SpeedMatchModal({
                   onPress={() => handleTilePress(tile)}
                   style={[
                     styles.tile,
-                    {
-                      backgroundColor: bgColor,
-                      borderColor: borderColor,
-                    },
+                    { backgroundColor: bgColor },
                   ]}
                 >
                   <Text style={[styles.tileText, { color: theme.textPrimary }]}>{tile.text}</Text>
@@ -191,7 +182,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: Radii.full,
-    borderWidth: BorderWidths.default,
+    borderWidth: 0,
   },
   statVal: {
     fontSize: Typography.caption.fontSize,
@@ -209,7 +200,7 @@ const styles = StyleSheet.create({
   tile: {
     width: "48%",
     height: 90,
-    borderWidth: BorderWidths.default,
+    borderWidth: 0,
     borderRadius: Radii.lg,
     alignItems: "center",
     justifyContent: "center",

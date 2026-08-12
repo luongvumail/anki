@@ -116,13 +116,13 @@ export function ActiveDeckHeroCard({
 const styles = StyleSheet.create({
   cardContainer: {
     borderRadius: Radii.xl,
-    borderWidth: BorderWidths.thin,
+    borderWidth: 0,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
   topRow: {
     flexDirection: "row",
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radii.full,
-    borderWidth: BorderWidths.thin,
+    borderWidth: 0,
   },
   switchBadgeText: {
     fontSize: 12,

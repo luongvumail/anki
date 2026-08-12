@@ -21,8 +21,8 @@ export const ProgressBar = React.memo(function ProgressBar({
   const { theme } = useTheme();
   const percentage = progress <= 1 ? progress * 100 : Math.min(progress, 100);
 
-  const resolvedTrackColor = trackColor || theme.cardBottom;
-  const resolvedFillColor = fillColor || theme.green;
+  const resolvedTrackColor = trackColor || theme.bgSoft;
+  const resolvedFillColor = fillColor || theme.blue;
 
   return (
     <View style={[styles.track, { height, backgroundColor: resolvedTrackColor }, style]}>
@@ -31,9 +31,7 @@ export const ProgressBar = React.memo(function ProgressBar({
           styles.fill,
           { width: `${Math.max(0, percentage)}%`, backgroundColor: resolvedFillColor },
         ]}
-      >
-        <View style={styles.highlightBar} />
-      </View>
+      />
     </View>
   );
 });
@@ -46,17 +44,6 @@ const styles = StyleSheet.create({
   },
   fill: {
     height: '100%',
-    borderRadius: Radii.full,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  highlightBar: {
-    position: 'absolute',
-    top: 2,
-    left: Spacing.sm,
-    right: Spacing.sm,
-    height: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: Radii.full,
   },
 });

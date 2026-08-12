@@ -54,7 +54,7 @@ export function SentenceBuilderModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
@@ -80,7 +80,7 @@ export function SentenceBuilderModal({
 
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.green} />
+          <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.blue} />
           <Text style={[styles.progressText, { color: theme.textMuted }]}>
             {questions.length > 0 ? `${currentIndex + 1}/${questions.length}` : "0/0"}
           </Text>
@@ -112,7 +112,7 @@ export function SentenceBuilderModal({
           <View style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
               {/* Vietnamese Meaning Prompt */}
-              <View style={[styles.promptCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+              <View style={[styles.promptCard, { backgroundColor: theme.cardBg }]}>
                 <Text style={[styles.promptTitle, { color: theme.textMuted }]}>DỊCH CÂU SAU SANG TIẾNG TRUNG:</Text>
                 <Text style={[styles.promptVietnamese, { color: theme.textPrimary }]}>"{currentQuestion.vietnamese}"</Text>
                 {currentQuestion.pinyin ? (
@@ -130,7 +130,7 @@ export function SentenceBuilderModal({
                       ? isCorrect
                         ? theme.green
                         : theme.red
-                      : theme.cardBorder,
+                      : "transparent",
                   },
                 ]}
               >
@@ -166,10 +166,7 @@ export function SentenceBuilderModal({
                       key={item.id}
                       style={[
                         styles.wordTile,
-                        {
-                          backgroundColor: theme.cardBg,
-                          borderColor: theme.cardBorder,
-                        },
+                        { backgroundColor: theme.cardBg },
                       ]}
                       onPress={() => handleSelectWord(item)}
                       disabled={isSubmitted}
@@ -200,7 +197,6 @@ export function SentenceBuilderModal({
                     styles.resultBox,
                     {
                       backgroundColor: isCorrect ? theme.greenDim : theme.redDim,
-                      borderColor: isCorrect ? theme.green : theme.red,
                     },
                   ]}
                 >
@@ -294,7 +290,7 @@ const styles = StyleSheet.create({
   },
   promptCard: {
     borderRadius: Radii.xl,
-    borderWidth: BorderWidths.default,
+    borderWidth: 0,
     padding: Spacing.md,
     marginBottom: Spacing.lg,
   },
@@ -316,8 +312,7 @@ const styles = StyleSheet.create({
   userDropArea: {
     minHeight: 110,
     borderRadius: Radii.lg,
-    borderWidth: BorderWidths.default,
-    borderStyle: "dashed",
+    borderWidth: 0,
     padding: Spacing.md,
     justifyContent: "center",
     marginBottom: Spacing.lg,
@@ -341,7 +336,7 @@ const styles = StyleSheet.create({
     gap: Spacing.cellPadding,
   },
   wordTile: {
-    borderWidth: BorderWidths.default,
+    borderWidth: 0,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.cellPadding,
     borderRadius: Radii.md,
@@ -368,7 +363,7 @@ const styles = StyleSheet.create({
   resultBox: {
     borderRadius: Radii.lg,
     padding: Spacing.md,
-    borderWidth: BorderWidths.default,
+    borderWidth: 0,
   },
   resultHeader: {
     flexDirection: "row",

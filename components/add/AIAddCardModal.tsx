@@ -55,7 +55,7 @@ export function AIAddCardModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
@@ -103,7 +103,7 @@ export function AIAddCardModal({
 
             <DuolingoButton
               title={loading ? "AI ĐANG TẠO..." : "TẠO TỪ VỰNG BẰNG AI"}
-              variant="purple"
+              variant="blue"
               size="lg"
               disabled={loading || !prompt.trim()}
               onPress={handleGenerate}
@@ -189,6 +189,7 @@ const styles = StyleSheet.create({
   },
   inputCard: {
     padding: Spacing.md,
+    marginTop: Spacing.md,
     marginBottom: Spacing.md,
   },
   inputLabel: {
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
   },
   promptInput: {
     borderRadius: Radii.lg,
-    borderWidth: BorderWidths.default,
+    borderWidth: 0,
     paddingHorizontal: Spacing.cellPadding,
     paddingVertical: Spacing.cellPadding,
     fontSize: Typography.bodyMD.fontSize,
