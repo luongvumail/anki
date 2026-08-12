@@ -1,13 +1,9 @@
 import React, { useState } from "react";
-import {
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  ViewStyle,
-} from "react-native";
-import { Colors, Radii, Spacing } from "../../constants/theme";
+import { TouchableOpacity, View, StyleSheet, ViewStyle } from "react-native";
+import { Radii, Spacing, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
-export interface DuolingoCardProps {
+export interface AppCardProps {
   children: React.ReactNode;
   onPress?: () => void;
   variant?: "default" | "active" | "success" | "error";
@@ -15,37 +11,42 @@ export interface DuolingoCardProps {
   padding?: number;
 }
 
-export function DuolingoCard({
+export function AppCard({
   children,
   onPress,
   variant = "default",
   style,
   padding = Spacing.md,
-}: DuolingoCardProps) {
+}: AppCardProps) {
   const [pressed, setPressed] = useState(false);
+  const { theme } = useTheme();
 
   const getVariantStyle = () => {
     switch (variant) {
       case "active":
         return {
-          bg: "#1D3545",
-          borderBottom: Colors.duolingo.blue,
+          bg: theme.blueDim,
+          border: theme.blue,
+          borderBottom: theme.blueDark,
         };
       case "success":
         return {
-          bg: Colors.duolingo.greenDark,
-          borderBottom: Colors.duolingo.green,
+          bg: theme.greenDim,
+          border: theme.green,
+          borderBottom: theme.greenDark,
         };
       case "error":
         return {
-          bg: Colors.duolingo.redDark,
-          borderBottom: Colors.duolingo.red,
+          bg: theme.redDim,
+          border: theme.red,
+          borderBottom: theme.redDark,
         };
       case "default":
       default:
         return {
-          bg: Colors.duolingo.bgSoftDark,
-          borderBottom: "#18242B",
+          bg: theme.cardBg,
+          border: theme.cardBorder,
+          borderBottom: theme.cardBottom,
         };
     }
   };
@@ -56,16 +57,20 @@ export function DuolingoCard({
     return (
       <TouchableOpacity
         activeOpacity={1}
-        onPressIn={() => setPressed(true)}
+        onPressIn={() => {
+          triggerHaptic("light");
+          setPressed(true);
+        }}
         onPressOut={() => setPressed(false)}
         onPress={onPress}
         style={[
           styles.cardBase,
           {
             backgroundColor: vColors.bg,
-            borderBottomColor: vColors.borderBottom,
-            borderBottomWidth: pressed ? 1 : 3,
-            transform: [{ translateY: pressed ? 2 : 0 }],
+            borderColor: vColors.border || theme.cardBorder,
+            shadowOpacity: theme.isDark ? 0.3 : 0.07,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+            opacity: pressed ? 0.92 : 1,
             padding,
           },
           style,
@@ -82,8 +87,8 @@ export function DuolingoCard({
         styles.cardBase,
         {
           backgroundColor: vColors.bg,
-          borderBottomColor: vColors.borderBottom,
-          borderBottomWidth: 3,
+          borderColor: vColors.border || theme.cardBorder,
+          shadowOpacity: theme.isDark ? 0.3 : 0.07,
           padding,
         },
         style,
@@ -97,8 +102,12 @@ export function DuolingoCard({
 const styles = StyleSheet.create({
   cardBase: {
     width: "100%",
-    borderRadius: Radii.lg,              // --radius-lg: 16px
-    borderWidth: 0,                       // KHÔNG border mảnh bao quanh (Rule 2)
-    overflow: "hidden",
+    borderRadius: Radii.lg,
+    borderWidth: 1,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
   },
 });

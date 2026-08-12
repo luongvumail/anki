@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -6,26 +6,17 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
-  Animated,
-  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import { useStore } from "../../store/useStore";
-import { recordReviewToday } from "../../lib/reviewTracker";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
-import { DuolingoButton } from "../ui/DuolingoButton";
-import { DuolingoCard } from "../ui/DuolingoCard";
-import { ProgressBar } from "../ui/ProgressBar";
+import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
-interface SentenceExercise {
-  card: Card;
-  fullChinese: string;
-  pinyin: string;
-  vietnamese: string;
-  wordChips: string[];
-}
+import { AudioButton } from "../ui/AudioButton";
+import { ProgressBar } from "../ui/ProgressBar";
+import { useSentenceBuilder } from "../../hooks/useSentenceBuilder";
+import { AppButton } from "../ui/AppButton";
 
 export interface SentenceBuilderModalProps {
   visible: boolean;
@@ -33,169 +24,32 @@ export interface SentenceBuilderModalProps {
   cards: Card[];
 }
 
-function splitChineseSentence(sentence: string): string[] {
-  // Utility to split Chinese sentence into word tokens
-  const clean = sentence.replace(/[.,!?。，！？]/g, "");
-  const chars = Array.from(clean).filter((c) => c.trim().length > 0);
-  return chars;
-}
-
-const COMMON_DISTRACTOR_TOKENS = [
-  "的", "了", "在", "是", "不", "也", "都", "和", "就", "过", "会", "很", "有", "要", "去", "这", "那"
-];
-
-function getDistractorTokens(sentenceTokens: string[], count = 2): string[] {
-  const existingSet = new Set(sentenceTokens);
-  const candidates = COMMON_DISTRACTOR_TOKENS.filter((t) => !existingSet.has(t));
-  const shuffled = [...candidates].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
-}
-
-export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilderModalProps) {
+export function SentenceBuilderModal({
+  visible,
+  onClose,
+  cards,
+}: SentenceBuilderModalProps) {
   const insets = useSafeAreaInsets();
-  const addXP = useStore((s) => s.addXP);
+  const { theme } = useTheme();
+  const {
+    questions,
+    currentIndex,
+    currentQuestion,
+    wordBank,
+    userSentence,
+    isSubmitted,
+    isCorrect,
+    isDone,
+    handleSelectWord,
+    handleRemoveWord,
+    handleCheck,
+    handleNext,
+    playTTS,
+  } = useSentenceBuilder(visible, cards);
 
-  const [exercises, setExercises] = useState<SentenceExercise[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedChips, setSelectedChips] = useState<{ id: number; text: string }[]>([]);
-  const [allChips, setAllChips] = useState<{ id: number; text: string }[]>([]);
-  const [isChecked, setIsChecked] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [isDone, setIsDone] = useState(false);
+  if (!visible) return null;
 
-  const selectedChipIds = useMemo(() => new Set(selectedChips.map((c) => c.id)), [selectedChips]);
-
-  const drawerAnim = useRef(new Animated.Value(300)).current;
-
-  // Prepare exercises from cards with examples
-  useEffect(() => {
-    if (visible && cards.length > 0) {
-      const validCards = cards.filter(
-        (c) => c.examples && c.examples.length > 0 && c.examples[0].chinese,
-      );
-      const shuffledCards = [...validCards].sort(() => 0.5 - Math.random());
-      const selected = shuffledCards.slice(0, 5);
-
-      const generated: SentenceExercise[] = selected.map((c) => {
-        const ex = c.examples[0];
-        const tokens = splitChineseSentence(ex.chinese);
-        return {
-          card: c,
-          fullChinese: ex.chinese,
-          pinyin: ex.pinyin,
-          vietnamese: ex.vietnamese,
-          wordChips: tokens,
-        };
-      });
-
-      setExercises(generated);
-      setCurrentIndex(0);
-      setCorrectCount(0);
-      setIsDone(false);
-      if (generated.length > 0) {
-        setupExercise(generated[0]);
-      }
-    }
-  }, [visible, cards]);
-
-  const setupExercise = (ex: SentenceExercise) => {
-    setIsChecked(false);
-    setIsCorrect(false);
-    setSelectedChips([]);
-    drawerAnim.setValue(300);
-
-    const mainChips = ex.wordChips.map((text, idx) => ({ id: idx, text }));
-    // Add 2 distractor tokens (từ gây nhiễu) to increase challenge
-    const distractors = getDistractorTokens(ex.wordChips, 2).map((text, idx) => ({
-      id: 100 + idx,
-      text,
-    }));
-
-    const allCombined = [...mainChips, ...distractors];
-    const shuffled = [...allCombined].sort(() => 0.5 - Math.random());
-    setAllChips(shuffled);
-  };
-
-  const handleSelectChip = (chip: { id: number; text: string }) => {
-    if (isChecked || selectedChipIds.has(chip.id)) return;
-    triggerHaptic("selection");
-    setSelectedChips((prev) => [...prev, chip]);
-  };
-
-  const handleUnselectChip = (chip: { id: number; text: string }) => {
-    if (isChecked) return;
-    triggerHaptic("selection");
-    setSelectedChips((prev) => prev.filter((c) => c.id !== chip.id));
-  };
-
-  const handleCheck = () => {
-    if (selectedChips.length === 0 || isChecked) return;
-
-    const currentEx = exercises[currentIndex];
-    const userBuilt = selectedChips.map((c) => c.text).join("");
-    const targetClean = splitChineseSentence(currentEx.fullChinese).join("");
-
-    const correct = userBuilt === targetClean;
-    setIsCorrect(correct);
-    setIsChecked(true);
-    recordReviewToday().catch(() => {});
-
-    if (correct) {
-      triggerHaptic("success");
-      setCorrectCount((prev) => prev + 1);
-      addXP(15);
-    } else {
-      triggerHaptic("error");
-    }
-
-    Animated.spring(drawerAnim, {
-      toValue: 0,
-      tension: 65,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleContinue = () => {
-    const nextIdx = currentIndex + 1;
-    if (nextIdx >= exercises.length) {
-      setIsChecked(false);
-      setIsDone(true);
-    } else {
-      setCurrentIndex(nextIdx);
-      setupExercise(exercises[nextIdx]);
-    }
-  };
-
-  if (exercises.length === 0) {
-    return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={onClose}
-      >
-        <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Chưa có câu ví dụ!</Text>
-            <Text style={styles.emptySub}>
-              Thêm từ vựng bằng AI để tự động tạo các câu ví dụ luyện tập.
-            </Text>
-            <DuolingoButton
-              title="ĐÓNG"
-              variant="secondary"
-              size="md"
-              onPress={onClose}
-              style={{ marginTop: Spacing.md }}
-            />
-          </View>
-        </View>
-      </Modal>
-    );
-  }
-
-  const currentEx = exercises[currentIndex];
+  const progress = questions.length > 0 ? (currentIndex + 1) / questions.length : 0;
 
   return (
     <Modal
@@ -204,317 +58,368 @@ export function SentenceBuilderModal({ visible, onClose, cards }: SentenceBuilde
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
-        {/* Header Bar */}
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
+        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => {
+              triggerHaptic("selection");
+              onClose();
+            }}
+          >
+            <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
           </TouchableOpacity>
-          <ProgressBar
-            progress={(currentIndex + 1) / Math.max(1, exercises.length)}
-            height={12}
-            fillColor={Colors.duolingo.blue}
-            style={{ flex: 1 }}
-          />
-          <Text style={styles.headerProgressText}>
-            {currentIndex + 1}/{exercises.length}
+
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>XẾP TỪ THÀNH CÂU</Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Rèn luyện ngữ pháp & phản xạ câu</Text>
+          </View>
+
+          <View style={{ width: Layout.avatarMd }} />
+        </View>
+
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          <View style={{ flex: 1 }}>
+            <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.blue} />
+          </View>
+          <Text style={[styles.progressText, { color: theme.textMuted }]}>
+            {questions.length > 0 ? `${currentIndex + 1}/${questions.length}` : "0/0"}
           </Text>
         </View>
 
-        {!isDone ? (
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Translation Prompt Card */}
-            <DuolingoCard style={styles.promptCard}>
-              <Text style={styles.promptLabel}>DỊCH CÂU SAU SANG TIẾNG TRUNG:</Text>
-              <Text style={styles.promptTranslation}>"{currentEx.vietnamese}"</Text>
-            </DuolingoCard>
 
-            {/* Selected Chips Drop Zone */}
-            <View style={styles.dropZone}>
-              {selectedChips.length === 0 ? (
-                <Text style={styles.dropZonePlaceholder}>Chạm các từ phía dưới để xếp câu...</Text>
-              ) : (
-                <View style={styles.chipGrid}>
-                  {selectedChips.map((chip) => (
-                    <TouchableOpacity
-                      key={`sel-${chip.id}`}
-                      style={styles.chipSelected}
-                      onPress={() => handleUnselectChip(chip)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.chipTextSelected}>{chip.text}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            {/* Available Chips Pool */}
-            <View style={styles.chipsPool}>
-              <View style={styles.chipGrid}>
-                {allChips.map((chip) => {
-                  const isSelected = selectedChipIds.has(chip.id);
-                  return isSelected ? (
-                    <View key={`avail-empty-${chip.id}`} style={styles.chipSlotEmpty}>
-                      <Text style={[styles.chipTextAvailable, { opacity: 0 }]}>{chip.text}</Text>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      key={`avail-${chip.id}`}
-                      style={styles.chipAvailable}
-                      onPress={() => handleSelectChip(chip)}
-                      activeOpacity={0.85}
-                      disabled={isChecked}
-                    >
-                      <Text style={styles.chipTextAvailable}>{chip.text}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          </ScrollView>
-        ) : (
-          /* Completion Screen with Adaptive Evaluation Message */
+        {isDone ? (
+          /* Completion Screen */
           <View style={styles.doneContainer}>
-            <View style={styles.doneIconCircle}>
-              <Ionicons
-                name={
-                  correctCount === exercises.length
-                    ? "trophy"
-                    : correctCount >= exercises.length / 2
-                      ? "checkmark-circle"
-                      : "alert-circle"
-                }
-                size={48}
-                color={
-                  correctCount === exercises.length
-                    ? Colors.duolingo.yellow
-                    : correctCount >= exercises.length / 2
-                      ? Colors.duolingo.green
-                      : Colors.duolingo.red
-                }
-              />
+            <View style={[styles.doneIconCircle, { backgroundColor: theme.yellowDim }]}>
+              <Ionicons name="trophy" size={Layout.fabSize} color={theme.yellow} />
             </View>
-
-            <Text style={styles.doneTitle}>
-              {correctCount === exercises.length
-                ? "XUẤT SẮC! 太棒了!"
-                : correctCount >= exercises.length / 2
-                  ? "RẤT TỐT!"
-                  : "CẦN CỐ GẮNG HƠN!"}
+            <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>XUẤT SẮC! HOÀN THÀNH BÀI XẾP CÂU</Text>
+            <Text style={[styles.doneSub, { color: theme.textMuted }]}>
+              Bạn đã xếp đúng các câu ví dụ mẫu. Thêm XP tích lũy vào tài khoản!
             </Text>
 
-            <Text style={styles.doneSub}>
-              {correctCount === exercises.length
-                ? `Bạn đã xếp đúng tuyệt đối ${correctCount}/${exercises.length} câu ví dụ!`
-                : correctCount >= exercises.length / 2
-                  ? `Bạn đã xếp đúng ${correctCount}/${exercises.length} câu ví dụ. Tiếp tục phát huy nhé!`
-                  : `Bạn chỉ xếp đúng ${correctCount}/${exercises.length} câu. Hãy luyện tập thêm để làm quen cấu trúc câu!`}
-            </Text>
-
-            <DuolingoButton
-              title="HOÀN TẤT"
-              variant={correctCount >= exercises.length / 2 ? "primary" : "ghost"}
-              size="lg"
-              onPress={onClose}
-              style={{ marginTop: Spacing.lg }}
-            />
-          </View>
-        )}
-
-        {/* Bottom Check Bar */}
-        {!isChecked && !isDone && (
-          <View style={styles.bottomBar}>
-            <DuolingoButton
-              title="KIỂM TRA"
+            <AppButton
+              title="HOÀN THÀNH"
               variant="primary"
               size="lg"
-              disabled={selectedChips.length === 0}
-              onPress={handleCheck}
+              onPress={() => {
+                triggerHaptic("success");
+                onClose();
+              }}
+              style={{ marginTop: Spacing.xl, width: "100%" }}
             />
           </View>
-        )}
+        ) : currentQuestion ? (
+          /* Active Question Screen */
+          <View style={{ flex: 1 }}>
+            <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+              {/* Vietnamese Meaning Prompt */}
+              <View style={[styles.promptCard, { backgroundColor: theme.cardBg }]}>
+                <Text style={[styles.promptTitle, { color: theme.textMuted }]}>DỊCH CÂU SAU SANG TIẾNG TRUNG:</Text>
+                <Text style={[styles.promptVietnamese, { color: theme.textPrimary }]}>"{currentQuestion.vietnamese}"</Text>
+                {currentQuestion.pinyin ? (
+                  <Text style={[styles.promptPinyin, { color: theme.blue }]}>{currentQuestion.pinyin}</Text>
+                ) : null}
+              </View>
 
-        {/* Feedback Sheet */}
-        {isChecked && !isDone && (
-          <Animated.View
-            style={[
-              styles.resultDrawer,
-              isCorrect ? styles.drawerCorrect : styles.drawerWrong,
-              { transform: [{ translateY: drawerAnim }] },
-            ]}
-          >
-            <View style={styles.resultTitleRow}>
-              <Ionicons
-                name={isCorrect ? "checkmark-circle" : "close-circle"}
-                size={26}
-                color={isCorrect ? Colors.duolingo.green : Colors.duolingo.red}
-              />
-              <Text
+              {/* User Drop Area */}
+              <View
                 style={[
-                  styles.resultTitle,
-                  { color: isCorrect ? Colors.duolingo.green : Colors.duolingo.red },
+                  styles.userDropArea,
+                  {
+                    backgroundColor: theme.bgSoft,
+                    borderColor: isSubmitted
+                      ? isCorrect
+                        ? theme.green
+                        : theme.red
+                      : "transparent",
+                  },
                 ]}
               >
-                {isCorrect ? "Chính xác! (+15 XP)" : "Chưa chính xác"}
-              </Text>
+                {userSentence.length === 0 ? (
+                  <Text style={[styles.dropPlaceholder, { color: theme.textMuted }]}>
+                    Chạm các từ bên dưới để ghép thành câu...
+                  </Text>
+                ) : (
+                  <View style={styles.wordWrapRow}>
+                    {userSentence.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[
+                          styles.wordTileSelected,
+                          { backgroundColor: theme.blue, borderColor: theme.blueDark },
+                        ]}
+                        onPress={() => handleRemoveWord(item)}
+                        disabled={isSubmitted}
+                      >
+                        <Text style={styles.wordTileTextSelected}>{item.text}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Available Word Bank */}
+              <View style={styles.wordBankArea}>
+                <Text style={[styles.wordBankTitle, { color: theme.textMuted }]}>KHO TỪ VỰNG:</Text>
+                <View style={styles.wordWrapRow}>
+                  {wordBank.map((item) => {
+                    const isSelected = userSentence.some((w) => w.id === item.id);
+                    return (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[
+                          styles.wordTile,
+                          {
+                            backgroundColor: isSelected ? theme.bgSoft : theme.cardBg,
+                            opacity: isSelected ? 0.25 : 1,
+                          },
+                        ]}
+                        onPress={() => handleSelectWord(item)}
+                        disabled={isSubmitted || isSelected}
+                      >
+                        <Text
+                          style={[
+                            styles.wordTileText,
+                            { color: isSelected ? theme.textMuted : theme.textPrimary },
+                          ]}
+                        >
+                          {item.text}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+            </ScrollView>
+
+            {/* Bottom Footer Actions */}
+            <View
+              style={[
+                styles.footer,
+                {
+                  backgroundColor: theme.bg,
+                  borderTopColor: theme.cardBorder,
+                  paddingBottom: Math.max(insets.bottom + Spacing.sm, Spacing.lg),
+                },
+              ]}
+            >
+              {isSubmitted ? (
+                <View
+                  style={[
+                    styles.resultBox,
+                    {
+                      backgroundColor: isCorrect ? theme.greenDim : theme.redDim,
+                    },
+                  ]}
+                >
+                  <View style={styles.resultHeader}>
+                    <Ionicons
+                      name={isCorrect ? "checkmark-circle" : "close-circle"}
+                      size={Layout.iconLg}
+                      color={isCorrect ? theme.green : theme.red}
+                    />
+                    <Text
+                      style={[
+                        styles.resultTitle,
+                        { color: isCorrect ? theme.green : theme.red },
+                      ]}
+                    >
+                      {isCorrect ? "CHÍNH XÁC! CÂU ĐÚNG NGHỮ PHÁP." : "CHƯA CHÍNH XÁC!"}
+                    </Text>
+                    <AudioButton onPress={() => playTTS(currentQuestion.chinese)} size="sm" />
+                  </View>
+                  {!isCorrect ? (
+                    <Text style={[styles.correctAnswerText, { color: theme.textMuted }]}>
+                      Đáp án đúng: <Text style={{ color: theme.textPrimary, fontWeight: "800" }}>{currentQuestion.chinese}</Text>
+                    </Text>
+                  ) : null}
+                  <AppButton
+                    title="CÂU TIẾP THEO"
+                    variant={isCorrect ? "primary" : "secondary"}
+                    size="lg"
+                    onPress={handleNext}
+                    style={{ marginTop: Spacing.md }}
+                  />
+                </View>
+              ) : (
+                <AppButton
+                  title="KIỂM TRA ĐÁP ÁN"
+                  variant="primary"
+                  size="lg"
+                  disabled={userSentence.length === 0}
+                  onPress={handleCheck}
+                />
+              )}
             </View>
-            <View style={{ marginTop: 4 }}>
-              <Text style={styles.explainValue}>{currentEx.fullChinese}</Text>
-              {currentEx.pinyin ? (
-                <Text style={styles.explainPinyin}>{currentEx.pinyin}</Text>
-              ) : null}
-              {currentEx.vietnamese ? (
-                <Text style={styles.explainSubText}>{currentEx.vietnamese}</Text>
-              ) : null}
-            </View>
-            <DuolingoButton
-              title={isCorrect ? "TIẾP TỤC" : "ĐÃ HIỂU"}
-              variant={isCorrect ? "primary" : "error"}
-              size="lg"
-              onPress={handleContinue}
-              style={{ marginTop: Spacing.sm }}
-            />
-          </Animated.View>
-        )}
+          </View>
+        ) : null}
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg, position: "relative" },
+  container: {
+    flex: 1,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    marginBottom: Spacing.md,
-    gap: 12,
+    paddingBottom: Spacing.cellPadding,
   },
-  closeBtn: { padding: 4 },
-  headerProgressText: { fontSize: 13, fontWeight: "800", color: Colors.duolingo.blue },
-  scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingBottom: 120 },
+  closeBtn: {
+    padding: Spacing.sm,
+  },
+  headerTitleContainer: {
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
+  },
+  headerSub: {
+    fontSize: Typography.caption1.fontSize,
+    marginTop: 2,
+    fontWeight: Typography.weight.semibold,
+  },
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.cellPadding,
+    paddingHorizontal: Spacing.pageMargin,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
 
+  progressText: {
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
+  },
+  scrollBody: {
+    paddingHorizontal: Spacing.pageMargin,
+    paddingBottom: Spacing.xl,
+  },
   promptCard: {
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.xl,
+    borderWidth: 0,
     padding: Spacing.md,
-    marginBottom: Spacing.md,
-    borderBottomWidth: 3,
-    borderBottomColor: Colors.duolingo.cardBottom,
+    marginBottom: Spacing.lg,
   },
-  promptLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: Colors.duolingo.blue,
-    letterSpacing: 0.5,
-    marginBottom: 4,
+  promptTitle: {
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.bold,
+    textTransform: "uppercase",
   },
-  promptTranslation: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", lineHeight: 24 },
-
-  dropZone: {
+  promptVietnamese: {
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.sm,
+  },
+  promptPinyin: {
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.xs,
+    fontWeight: Typography.weight.semibold,
+  },
+  userDropArea: {
     minHeight: 110,
-    backgroundColor: "#131F24",
-    borderRadius: Radii.xl,
+    borderRadius: Radii.lg,
+    borderWidth: 0,
     padding: Spacing.md,
-    marginBottom: Spacing.md,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.border,
-    borderStyle: "dashed",
     justifyContent: "center",
+    marginBottom: Spacing.lg,
   },
-  dropZonePlaceholder: {
-    color: Colors.duolingo.textMuted,
-    fontSize: 14,
+  dropPlaceholder: {
+    fontSize: Typography.caption.fontSize,
     textAlign: "center",
-    fontStyle: "italic",
+    fontWeight: Typography.weight.medium,
   },
-
-  chipsPool: { minHeight: 120 },
-  chipGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  chipAvailable: {
-    backgroundColor: Colors.duolingo.cardBg,
+  wordBankArea: {
+    marginTop: Spacing.cellPadding,
+  },
+  wordBankTitle: {
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginBottom: Spacing.cellPadding,
+  },
+  wordWrapRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.cellPadding,
+  },
+  wordTile: {
+    borderWidth: 0,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.cellPadding,
     borderRadius: Radii.md,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 2,
-    borderColor: "transparent",
-    borderBottomWidth: 3,
-    borderBottomColor: Colors.duolingo.cardBottom,
   },
-  chipTextAvailable: { fontSize: 18, fontWeight: "800", color: Colors.text.white },
-  chipSlotEmpty: {
-    backgroundColor: "#18242B",
+  wordTileText: {
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
+  },
+  wordTileSelected: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.cellPadding,
     borderRadius: Radii.md,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 2,
-    borderColor: "#2B3D4F",
-    borderStyle: "dashed",
   },
-  chipSelected: {
-    backgroundColor: Colors.duolingo.blue,
-    borderRadius: Radii.md,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 2,
-    borderColor: "transparent",
-    borderBottomWidth: 3,
-    borderBottomColor: Colors.duolingo.blueDark,
+  wordTileTextSelected: {
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    color: "#FFFFFF",
   },
-  chipTextSelected: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
-
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.duolingo.bg,
-    paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: Spacing.md,
-    paddingTop: Spacing.xs,
-  },
-  resultDrawer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  footer: {
     paddingHorizontal: Spacing.pageMargin,
     paddingTop: Spacing.md,
-    paddingBottom: Math.max(Spacing.lg, 24),
-    borderTopLeftRadius: Radii.xl,
-    borderTopRightRadius: Radii.xl,
+    borderTopWidth: BorderWidths.thin,
   },
-  drawerCorrect: { backgroundColor: "#193318" },
-  drawerWrong: { backgroundColor: "#381616" },
-  resultTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
-  resultTitle: { fontSize: 22, fontWeight: "800" },
-  explainValue: { fontSize: 20, fontWeight: "800", color: "#FFFFFF", marginTop: 2 },
-  explainPinyin: { fontSize: 16, fontWeight: "700", color: Colors.duolingo.blue, marginTop: 2 },
-  explainSubText: { fontSize: 15, fontWeight: "600", color: "rgba(255, 255, 255, 0.85)", marginTop: 2 },
-
-  emptyContainer: {
+  resultBox: {
+    borderRadius: Radii.lg,
+    padding: Spacing.md,
+    borderWidth: 0,
+  },
+  resultHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  resultTitle: {
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
+  },
+  correctAnswerText: {
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.sm,
+  },
+  doneContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
   },
-  emptyTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF" },
-  emptySub: { fontSize: 14, color: Colors.duolingo.textMuted, textAlign: "center", marginTop: 6 },
-  doneContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: Spacing.xl },
   doneIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.duolingo.cardBg,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
-  doneTitle: { fontSize: 24, fontWeight: "800", color: Colors.text.white },
-  doneSub: { fontSize: 14, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center", lineHeight: 20 },
+  doneTitle: {
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    textAlign: "center",
+  },
+  doneSub: {
+    fontSize: Typography.subhead.fontSize,
+    textAlign: "center",
+    marginTop: Spacing.sm,
+    lineHeight: 20,
+  },
 });

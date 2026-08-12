@@ -9,9 +9,9 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Typography, Radii, Spacing } from "../../constants/theme";
+import { Typography, Radii, Spacing, Layout, BorderWidths } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { Deck } from "../../store/slices/types";
-import { DeckIcon } from "../ui/DeckIcon";
 
 interface DeckPickerProps {
   decks: Deck[];
@@ -28,10 +28,12 @@ export const DeckPicker = React.memo(function DeckPicker({
   onToggleOpen,
   onSelectDeck,
 }: DeckPickerProps) {
+  const { theme } = useTheme();
+
   if (decks.length === 0) {
     return (
-      <View style={styles.warningBox}>
-        <Text style={styles.warningText}>
+      <View style={[styles.warningBox, { backgroundColor: theme.cardBg }]}>
+        <Text style={[styles.warningText, { color: theme.textMuted }]}>
           Chưa có bộ thẻ. Hãy tạo bộ thẻ trước trong tab "Từ vựng".
         </Text>
       </View>
@@ -44,23 +46,23 @@ export const DeckPicker = React.memo(function DeckPicker({
     <>
       {/* Trigger Card Component to Open Target Deck Picker */}
       <TouchableOpacity
-        style={styles.pickerTriggerCard}
+        style={[styles.pickerTriggerCard, { backgroundColor: theme.bg, borderColor: theme.blue }]}
         onPress={onToggleOpen}
         activeOpacity={0.8}
       >
         <View style={styles.triggerLeftRow}>
           <View style={styles.triggerTextContainer}>
-            <Text style={styles.triggerDeckTitle} numberOfLines={1}>
+            <Text style={[styles.triggerDeckTitle, { color: theme.textPrimary }]} numberOfLines={1}>
               {currentDeck?.name || "Chọn bộ thẻ mục tiêu"}
             </Text>
-            <Text style={styles.triggerDeckSub}>
+            <Text style={[styles.triggerDeckSub, { color: theme.textMuted }]}>
               {currentDeck?.cardCount || 0} từ vựng trong bộ này
             </Text>
           </View>
         </View>
 
-        <View style={styles.triggerRightBadge}>
-          <Text style={styles.triggerChangeText}>ĐỔI</Text>
+        <View style={[styles.triggerRightBadge, { backgroundColor: theme.blueDim }]}>
+          <Text style={[styles.triggerChangeText, { color: theme.blue }]}>ĐỔI</Text>
         </View>
       </TouchableOpacity>
 
@@ -70,77 +72,84 @@ export const DeckPicker = React.memo(function DeckPicker({
         animationType="slide"
         onRequestClose={onToggleOpen}
       >
-      <TouchableWithoutFeedback onPress={onToggleOpen}>
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-            <View style={styles.sheetContainer}>
-              {/* SHEET HEADER */}
-              <View style={styles.sheetHeader}>
-                <View style={styles.dragHandle} />
-                <View style={styles.headerTitleRow}>
-                  <Text style={styles.sheetTitle}>CHỌN BỘ THẺ LƯU TỪ</Text>
+        <TouchableWithoutFeedback onPress={onToggleOpen}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={[styles.sheetContainer, { backgroundColor: theme.bgSoft, borderTopColor: theme.cardBorder }]}>
+                {/* SHEET HEADER */}
+                <View style={[styles.sheetHeader, { borderBottomColor: theme.cardBorder }]}>
+                  <View style={[styles.dragHandle, { backgroundColor: theme.cardBorder }]} />
+                  <View style={styles.headerTitleRow}>
+                    <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>CHỌN BỘ THẺ LƯU TỪ</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={onToggleOpen}
+                    style={[styles.closeBtn, { backgroundColor: theme.cardBg }]}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
+                  </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  onPress={onToggleOpen}
-                  style={styles.closeBtn}
-                  activeOpacity={0.8}
+                {/* DECK LIST */}
+                <ScrollView
+                  style={styles.sheetList}
+                  contentContainerStyle={styles.sheetListContent}
+                  showsVerticalScrollIndicator={false}
                 >
-                  <Ionicons name="close" size={22} color={Colors.duolingo.textMuted} />
-                </TouchableOpacity>
+                  {decks.map((deck) => {
+                    const isSelected = selectedDeckId === deck.id;
+                    return (
+                      <TouchableOpacity
+                        key={deck.id}
+                        style={[
+                          styles.deckCard3D,
+                          {
+                            backgroundColor: theme.cardBg,
+                            borderBottomColor: theme.cardBottom,
+                          },
+                          isSelected && {
+                            backgroundColor: theme.blueDim,
+                            borderBottomColor: theme.blueDark,
+                          },
+                        ]}
+                        onPress={() => onSelectDeck(deck.id)}
+                        activeOpacity={0.85}
+                      >
+                        <View style={styles.deckCardLeft}>
+                          <View style={styles.deckInfo}>
+                            <Text
+                              style={[
+                                styles.deckNameText,
+                                { color: theme.textPrimary },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {deck.name}
+                            </Text>
+                            <Text style={[styles.deckSubText, { color: theme.textMuted }]}>
+                              {deck.cardCount || 0} từ vựng
+                            </Text>
+                          </View>
+                        </View>
+
+                        {isSelected ? (
+                          <View style={[styles.selectedBadge, { backgroundColor: theme.blue }]}>
+                            <Text style={styles.selectedBadgeText}>ĐÃ CHỌN</Text>
+                          </View>
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
               </View>
-
-              {/* DECK LIST */}
-              <ScrollView
-                style={styles.sheetList}
-                contentContainerStyle={styles.sheetListContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {decks.map((deck) => {
-                  const isSelected = selectedDeckId === deck.id;
-                  return (
-                    <TouchableOpacity
-                      key={deck.id}
-                      style={[
-                        styles.deckCard3D,
-                        isSelected && styles.deckCard3DSelected,
-                      ]}
-                      onPress={() => onSelectDeck(deck.id)}
-                      activeOpacity={0.85}
-                    >
-                      <View style={styles.deckCardLeft}>
-                        <View style={styles.deckInfo}>
-                          <Text
-                            style={[
-                              styles.deckNameText,
-                              isSelected && styles.deckNameTextSelected,
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {deck.name}
-                          </Text>
-                          <Text style={styles.deckSubText}>
-                            {deck.cardCount || 0} từ vựng
-                          </Text>
-                        </View>
-                      </View>
-
-                      {isSelected ? (
-                        <View style={styles.selectedBadge}>
-                          <Text style={styles.selectedBadgeText}>ĐÃ CHỌN</Text>
-                        </View>
-                      ) : null}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
-  </>
-);
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </>
+  );
 });
 
 const styles = StyleSheet.create({
@@ -148,62 +157,46 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors.duolingo.bg,
     borderRadius: Radii.lg,
-    padding: Spacing.sm + 2,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.blue,
+    padding: Spacing.cellPadding,
+    borderWidth: BorderWidths.default,
   },
   triggerLeftRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: Spacing.cellPadding,
     flex: 1,
-  },
-  triggerIconTile: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.duolingo.blueDim,
-    alignItems: "center",
-    justifyContent: "center",
   },
   triggerTextContainer: { flex: 1 },
   triggerDeckTitle: {
-    fontSize: Typography.text.subhead.fontSize,
-    fontWeight: Typography.weight.extraBold,
-    color: "#FFFFFF",
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.bold,
   },
   triggerDeckSub: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption2.fontSize,
     fontWeight: Typography.weight.semibold,
     marginTop: 1,
   },
   triggerRightBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.duolingo.blueDim,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
   },
   triggerChangeText: {
-    fontSize: Typography.text.caption2.fontSize,
-    fontWeight: Typography.weight.extraBold,
-    color: "#FFFFFF",
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.bold,
   },
 
   warningBox: {
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.lg,
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
   warningText: {
-    color: Colors.duolingo.textMuted,
-    fontSize: Typography.text.caption1.fontSize,
+    fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.bold,
   },
 
@@ -214,13 +207,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheetContainer: {
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: Radii.xl,
+    borderTopRightRadius: Radii.xl,
     maxHeight: "75%",
-    paddingBottom: 34,
-    borderTopWidth: 2,
-    borderTopColor: Colors.duolingo.cardBorder,
+    paddingBottom: Spacing.xxl,
+    borderTopWidth: BorderWidths.default,
   },
   sheetHeader: {
     alignItems: "center",
@@ -228,35 +219,31 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.pageMargin,
     position: "relative",
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBorder,
+    borderBottomWidth: BorderWidths.thin,
   },
   dragHandle: {
     width: 40,
     height: 5,
     borderRadius: 3,
-    backgroundColor: Colors.duolingo.cardBorder,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   headerTitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.sm,
   },
   sheetTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.8,
   },
   closeBtn: {
     position: "absolute",
     right: Spacing.pageMargin,
-    top: Spacing.sm + 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.duolingo.cardBg,
+    top: Spacing.lg,
+    width: Layout.avatarSm,
+    height: Layout.avatarSm,
+    borderRadius: Layout.avatarSm / 2,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -265,68 +252,48 @@ const styles = StyleSheet.create({
   },
   sheetListContent: {
     paddingVertical: Spacing.md,
-    gap: 10,
+    gap: Spacing.cellPadding,
   },
 
-  /* 3D Tactile Deck Item Card */
+  /* Linear Craft Deck Item Card */
   deckCard3D: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.lg,
     padding: Spacing.md,
-    borderBottomWidth: 4,
-    borderBottomColor: Colors.duolingo.cardBottom,
-  },
-  deckCard3DSelected: {
-    backgroundColor: Colors.duolingo.blueDim,
-    borderBottomColor: Colors.duolingo.blueDark,
+    borderWidth: BorderWidths.thin,
   },
   deckCardLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: Spacing.md,
     flex: 1,
-  },
-  deckIconTile: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    alignItems: "center",
-    justifyContent: "center",
   },
   deckInfo: {
     flex: 1,
   },
   deckNameText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  deckNameTextSelected: {
-    color: "#FFFFFF",
+    fontSize: Typography.bodyMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   deckSubText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.bold,
     marginTop: 2,
   },
 
   selectedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
   },
   selectedBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
   },
 });

@@ -7,9 +7,11 @@ import {
   Animated,
 } from "react-native";
 import { CardData } from "../../lib/gemini";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
+import { Typography, Spacing, Radii, Layout, BorderWidths } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { SectionTitle } from "../ui/SectionTitle";
-import { DuolingoButton } from "../ui/DuolingoButton";
+import { AppButton } from "../ui/AppButton";
+
 import { Ionicons } from "@expo/vector-icons";
 
 interface CardPreviewProps {
@@ -19,7 +21,6 @@ interface CardPreviewProps {
   saved?: boolean;
   onReGenerate?: () => void;
   onSave?: () => void;
-  /** Optional: show an X button to remove this card from the batch list */
   onRemove?: () => void;
 }
 
@@ -33,6 +34,7 @@ export const CardPreview = React.memo(function CardPreview({
   onRemove,
 }: CardPreviewProps) {
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const { theme } = useTheme();
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -41,12 +43,11 @@ export const CardPreview = React.memo(function CardPreview({
       friction: 8,
       useNativeDriver: true,
     }).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [slideAnim]);
 
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [24, 0],
+    outputRange: [Spacing.xl, 0],
   });
 
   return (
@@ -55,32 +56,32 @@ export const CardPreview = React.memo(function CardPreview({
         <SectionTitle>XEM TRƯỚC THẺ BÀI</SectionTitle>
         <View style={styles.previewHeaderActions}>
           <TouchableOpacity onPress={onReGenerate}>
-            <Text style={styles.reGenLink}>Tạo lại</Text>
+            <Text style={[styles.reGenLink, { color: theme.blue }]}>Tạo lại</Text>
           </TouchableOpacity>
           {onRemove && (
             <TouchableOpacity
               onPress={onRemove}
               style={styles.removeBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={Layout.hitSlopMd}
             >
-              <Ionicons name="close" size={16} color={Colors.text.tertiary} />
+              <Ionicons name="close" size={Layout.iconSm} color={theme.textMuted} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      <View style={styles.previewCard}>
+      <View style={[styles.previewCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
         {/* Hanzi Header */}
-        <View style={styles.previewTop}>
-          <Text style={styles.characterBig}>{cardData.character}</Text>
+        <View style={[styles.previewTop, { borderBottomColor: theme.cardBorder }]}>
+          <Text style={[styles.characterBig, { color: theme.textPrimary }]}>{cardData.character}</Text>
           {cardData.traditional && cardData.traditional !== cardData.character && (
-            <Text style={styles.traditional}>{cardData.traditional} (phồn thể)</Text>
+            <Text style={[styles.traditional, { color: theme.textMuted }]}>{cardData.traditional} (phồn thể)</Text>
           )}
         </View>
 
         {/* Data Rows */}
         <View style={styles.previewRows}>
-          <InfoRow label="Pinyin" value={cardData.pinyin} color={Colors.neon.cyan} />
+          <InfoRow label="Pinyin" value={cardData.pinyin} color={theme.blue} />
           <InfoRow label="Nghĩa TV" value={cardData.translation} />
           {cardData.hskLevel ? <InfoRow label="Cấp HSK" value={`HSK ${cardData.hskLevel}`} /> : null}
           {cardData.radical ? <InfoRow label="Bộ thủ" value={cardData.radical} /> : null}
@@ -91,30 +92,21 @@ export const CardPreview = React.memo(function CardPreview({
 
         {/* Examples */}
         {cardData.examples && cardData.examples.length > 0 && (
-          <View style={styles.exampleSection}>
-            <Text style={styles.exampleHeaderTitle}>CÂU VÍ DỤ</Text>
+          <View style={[styles.exampleSection, { borderTopColor: theme.cardBorder }]}>
+            <Text style={[styles.exampleHeaderTitle, { color: theme.textMuted }]}>CÂU VÍ DỤ</Text>
             {cardData.examples.map((ex, i) => (
-              <View key={i} style={styles.exampleItem}>
-                <Text style={styles.exCn}>{ex.chinese}</Text>
-                <Text style={styles.exPy}>{ex.pinyin}</Text>
-                <Text style={styles.exVi}>{ex.vietnamese}</Text>
+              <View key={i} style={[styles.exampleItem, { backgroundColor: theme.bgSoft }]}>
+                <Text style={[styles.exCn, { color: theme.textPrimary }]}>{ex.chinese}</Text>
+                <Text style={[styles.exPy, { color: theme.blue }]}>{ex.pinyin}</Text>
+                <Text style={[styles.exVi, { color: theme.textMuted }]}>{ex.vietnamese}</Text>
               </View>
             ))}
           </View>
         )}
 
-        {/* Save Button */}
         {onSave && (
-          <DuolingoButton
-            title={
-              saved
-                ? "ĐÃ LƯU VÀO BỘ THẺ"
-                : saving
-                ? "ĐANG LƯU..."
-                : targetDeckName
-                ? `LƯU VÀO BỘ "${targetDeckName.toUpperCase()}"`
-                : "LƯU VÀO BỘ THẺ"
-            }
+          <AppButton
+            title={saving ? "ĐANG LƯU..." : saved ? "ĐÃ LƯU ✓" : `LƯU VÀO BỘ ${targetDeckName ? `"${targetDeckName}"` : ""}`}
             variant={saved ? "success" : "primary"}
             size="lg"
             disabled={saving || saved}
@@ -126,65 +118,57 @@ export const CardPreview = React.memo(function CardPreview({
   );
 });
 
-const InfoRow = React.memo(function InfoRow({ label, value, color }: { label: string; value: string; color?: string }) {
+function InfoRow({ label, value, color }: { label: string; value: string; color?: string }) {
+  const { theme } = useTheme();
   return (
     <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text
-        style={[styles.infoValue, color ? { color, fontWeight: Typography.weight.semibold } : null]}
-      >
-        {value}
-      </Text>
+      <Text style={[styles.infoLabel, { color: theme.textMuted }]}>{label}</Text>
+      <Text style={[styles.infoValue, { color: color || theme.textPrimary }]}>{value}</Text>
     </View>
   );
-});
+}
 
 const styles = StyleSheet.create({
   previewHeaderRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     marginTop: Spacing.sectionTop,
     marginBottom: Spacing.sectionBottom,
-    paddingHorizontal: 4,
   },
   previewHeaderActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: Spacing.md,
   },
   reGenLink: {
-    fontSize: Typography.text.footnote.fontSize,
-    color: Colors.accent.indigoLight,
+    fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.medium,
   },
   removeBtn: {
-    padding: 2,
+    padding: Spacing.xs / 2,
   },
   previewCard: {
-    backgroundColor: Colors.bg.secondary,
     borderRadius: Radii.card,
+    borderWidth: BorderWidths.thin,
     padding: Spacing.cellHorizontal,
   },
   previewTop: {
     alignItems: "center",
     paddingVertical: Spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border.separator,
+    borderBottomWidth: BorderWidths.thin,
     marginBottom: Spacing.md,
   },
   characterBig: {
-    fontSize: Typography.hanzi.lg,
+    fontSize: Typography.hanziCard.fontSize,
     fontWeight: Typography.weight.bold,
-    color: Colors.text.primary,
   },
   traditional: {
-    fontSize: Typography.text.footnote.fontSize,
-    color: Colors.text.secondary,
-    marginTop: 4,
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.xs,
   },
   previewRows: {
-    gap: 8,
+    gap: Spacing.sm,
     marginBottom: Spacing.lg,
   },
   infoRow: {
@@ -192,68 +176,39 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   infoLabel: {
-    width: 80,
-    fontSize: Typography.text.subhead.fontSize,
-    color: Colors.text.secondary,
+    width: Layout.avatarLg * 1.6,
+    fontSize: Typography.bodyMD.fontSize,
   },
   infoValue: {
     flex: 1,
-    fontSize: Typography.text.subhead.fontSize,
-    color: Colors.text.primary,
+    fontSize: Typography.bodyMD.fontSize,
   },
   exampleSection: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.border.separator,
+    borderTopWidth: BorderWidths.thin,
     paddingTop: Spacing.md,
     marginBottom: Spacing.lg,
   },
   exampleHeaderTitle: {
-    fontSize: Typography.text.caption1.fontSize,
-    color: Colors.text.secondary,
+    fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.semibold,
     marginBottom: Spacing.xs,
     letterSpacing: 0.8,
   },
   exampleItem: {
-    backgroundColor: Colors.bg.tertiary,
     borderRadius: Radii.card,
     padding: Spacing.md,
     marginBottom: Spacing.xs,
   },
   exCn: {
-    fontSize: Typography.text.body.fontSize,
+    fontSize: Typography.bodyMD.fontSize,
     fontWeight: Typography.weight.semibold,
-    color: Colors.text.primary,
   },
   exPy: {
-    fontSize: Typography.text.footnote.fontSize,
-    color: Colors.neon.cyan,
+    fontSize: Typography.caption.fontSize,
     marginTop: 2,
   },
   exVi: {
-    fontSize: Typography.text.footnote.fontSize,
-    color: Colors.text.secondary,
+    fontSize: Typography.caption.fontSize,
     marginTop: 2,
-  },
-  saveBtn: {
-    backgroundColor: Colors.accent.indigo,
-    borderRadius: Radii.card,
-    height: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saveBtnDisabled: {
-    backgroundColor: Colors.bg.tertiary,
-    opacity: 0.6,
-  },
-  saveBtnText: {
-    color: "#F0F3F6",
-    fontSize: Typography.text.callout.fontSize,
-    fontWeight: Typography.weight.semibold,
-    letterSpacing: -0.2,
-    textAlign: "center",
-    textAlignVertical: "center",
-    includeFontPadding: false,
   },
 });

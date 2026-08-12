@@ -22,3 +22,17 @@ export function cardRef(uid: string, deckId: string, cardId: string) {
 export function userProgressRef(uid: string) {
   return doc(db, 'users', uid, 'data', 'progress');
 }
+
+/**
+ * Removes undefined properties from an object so Firestore setDoc/updateDoc calls don't crash.
+ */
+export function sanitizeForFirestore<T extends object>(obj: T): Partial<T> {
+  const clean: Record<string, unknown> = {};
+  const record = obj as Record<string, unknown>;
+  Object.keys(record).forEach((key) => {
+    if (record[key] !== undefined) {
+      clean[key] = record[key];
+    }
+  });
+  return clean as Partial<T>;
+}

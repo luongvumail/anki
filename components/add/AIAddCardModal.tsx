@@ -1,54 +1,29 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   StyleSheet,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Keyboard,
   Modal,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import { generateCardDataBatch, CardData } from "../../lib/gemini";
-import { createDefaultSRSState } from "../../lib/srs";
-import { useStore } from "../../store/useStore";
-import { getFirestoreErrorMessage, getGeminiErrorMessage } from "../../lib/errorHandler";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
-import { SectionTitle } from "../ui/SectionTitle";
+import {
+  Spacing,
+  Radii,
+  Typography,
+  Layout,
+  triggerHaptic,
+} from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
+import { AppButton } from "../ui/AppButton";
+import { AppCard } from "../ui/AppCard";
 import { DeckPicker } from "./DeckPicker";
 import { CardPreview } from "./CardPreview";
-import { DuolingoCard } from "../ui/DuolingoCard";
-import { DuolingoButton } from "../ui/DuolingoButton";
-
-const MAX_WORDS = 10;
-
-type WordItemStatus = "loading" | "done" | "error";
-
-interface WordItem {
-  word: string;
-  status: WordItemStatus;
-  data: CardData | null;
-  saving: boolean;
-  saved: boolean;
-  errorMsg?: string;
-}
-
-function parseWords(raw: string, limit = MAX_WORDS): string[] {
-  const words = raw
-    .split(/[,，\n]/)
-    .map((w) => w.trim())
-    .filter((w) => w.length > 0);
-  const unique = Array.from(new Set(words));
-  return limit ? unique.slice(0, limit) : unique;
-}
+import { useAICardGenerator } from "../../hooks/useAICardGenerator";
 
 export interface AIAddCardModalProps {
   visible: boolean;
@@ -58,251 +33,25 @@ export interface AIAddCardModalProps {
 
 export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardModalProps) {
   const insets = useSafeAreaInsets();
-  const decks = useStore((s) => s.decks);
-  const cards = useStore((s) => s.cards);
-  const addCard = useStore((s) => s.addCard);
-  const findExistingCard = useStore((s) => s.findExistingCard);
-  const fetchCards = useStore((s) => s.fetchCards);
+  const { theme } = useTheme();
+  const {
+    prompt,
+    setPrompt,
+    selectedDeckId,
+    setSelectedDeckId,
+    isDeckPickerOpen,
+    setIsDeckPickerOpen,
+    loading,
+    generatedCards,
+    selectedIndices,
+    errorMessage,
+    decks,
+    handleGenerate,
+    toggleSelectCard,
+    handleSaveSelected,
+  } = useAICardGenerator(initialDeckId, onClose);
 
-  const [input, setInput] = useState("");
-  const [selectedDeckId, setSelectedDeckId] = useState<string>(initialDeckId || "");
-  const [wordItems, setWordItems] = useState<WordItem[]>([]);
-  const [analyzingBatch, setAnalyzingBatch] = useState(false);
-  const [bulkSaving, setBulkSaving] = useState(false);
-  const [recentHistory, setRecentHistory] = useState<string[]>([]);
-  const [isDeckPickerOpen, setIsDeckPickerOpen] = useState(false);
-
-  useEffect(() => {
-    if (initialDeckId && decks.some((d) => d.id === initialDeckId)) {
-      setSelectedDeckId(initialDeckId);
-    } else if (
-      decks.length > 0 &&
-      (!selectedDeckId || !decks.some((d) => d.id === selectedDeckId))
-    ) {
-      setSelectedDeckId(decks[0].id);
-    }
-  }, [decks, initialDeckId, selectedDeckId]);
-
-  useEffect(() => {
-    if (selectedDeckId && !cards[selectedDeckId]) {
-      fetchCards(selectedDeckId);
-    }
-  }, [selectedDeckId, cards, fetchCards]);
-
-  useEffect(() => {
-    if (visible) {
-      AsyncStorage.getItem("@gemini_history").then((json) => {
-        if (json) {
-          try {
-            setRecentHistory(JSON.parse(json));
-          } catch {
-            // ignore
-          }
-        }
-      });
-    }
-  }, [visible]);
-
-  const saveToHistory = async (newWords: string[]) => {
-    const combined = Array.from(new Set([...newWords, ...recentHistory])).slice(0, 8);
-    setRecentHistory(combined);
-    await AsyncStorage.setItem("@gemini_history", JSON.stringify(combined));
-  };
-
-  const currentDeck = useMemo(() => {
-    return decks.find((d) => d.id === selectedDeckId) || decks[0] || null;
-  }, [decks, selectedDeckId]);
-
-  const parsedCount = useMemo(() => parseWords(input).length, [input]);
-  const totalInputCount = useMemo(() => parseWords(input, 0).length, [input]);
-
-  const handleGenerateBatch = async () => {
-    const parsed = parseWords(input);
-    if (parsed.length === 0) {
-      Alert.alert("Thông báo", "Vui lòng nhập từ hoặc câu Tiếng Trung");
-      return;
-    }
-    if (!selectedDeckId) {
-      Alert.alert("Thông báo", "Vui lòng chọn hoặc tạo 1 bộ thẻ trước");
-      return;
-    }
-
-    if (totalInputCount > MAX_WORDS) {
-      Alert.alert(
-        "Giới hạn số từ AI",
-        `Bạn đã nhập ${totalInputCount} từ. Để đảm bảo tốc độ và chất lượng AI tốt nhất, hệ thống sẽ phân tích ${MAX_WORDS} từ đầu tiên.`,
-      );
-    }
-
-    const deckCardsList = cards[selectedDeckId] || [];
-    const existingChars = new Set(deckCardsList.map((c) => c.character));
-
-    // Auto filter words that already exist in target deck
-    const newWords = parsed.filter((w) => !existingChars.has(w));
-    const preSkippedCount = parsed.length - newWords.length;
-
-    if (newWords.length === 0) {
-      Alert.alert(
-        "Tất cả từ đã tồn tại",
-        `Tất cả ${parsed.length} từ bạn nhập đều đã có sẵn trong bộ thẻ này!`,
-      );
-      return;
-    }
-
-    Keyboard.dismiss();
-    setAnalyzingBatch(true);
-
-    const initialItems: WordItem[] = newWords.map((w) => ({
-      word: w,
-      status: "loading",
-      data: null,
-      saving: false,
-      saved: false,
-    }));
-    setWordItems(initialItems);
-    saveToHistory(parsed);
-
-    try {
-      const results = await generateCardDataBatch(newWords);
-
-      const seenChars = new Set<string>();
-      const finalItems: WordItem[] = [];
-      let postSkippedCount = 0;
-
-      newWords.forEach((word, idx) => {
-        const resData = results[idx];
-        if (resData && resData.character) {
-          if (existingChars.has(resData.character) || seenChars.has(resData.character)) {
-            postSkippedCount++;
-            return;
-          }
-          seenChars.add(resData.character);
-          finalItems.push({
-            word,
-            status: "done",
-            data: resData,
-            saving: false,
-            saved: false,
-          });
-        } else {
-          finalItems.push({
-            word,
-            status: "error",
-            data: null,
-            saving: false,
-            saved: false,
-            errorMsg: "Không thể phân tích từ này.",
-          });
-        }
-      });
-
-      setWordItems(finalItems);
-
-      const totalSkipped = preSkippedCount + postSkippedCount;
-      if (totalSkipped > 0) {
-        Alert.alert(
-          "Lọc từ trùng lặp",
-          `Đã tự động loại bỏ ${totalSkipped} từ bị trùng với các thẻ đã có trong bộ.`,
-        );
-      }
-    } catch (e: any) {
-      setWordItems((prev) =>
-        prev.map((item) => ({
-          ...item,
-          status: "error",
-          errorMsg: getGeminiErrorMessage(e),
-        })),
-      );
-    } finally {
-      setAnalyzingBatch(false);
-    }
-  };
-
-  const handleSaveAll = async () => {
-    const validItemsToSave = wordItems.filter(
-      (item) => item.status === "done" && item.data && !item.saved,
-    );
-
-    if (validItemsToSave.length === 0) return;
-    if (!selectedDeckId) {
-      Alert.alert("Thông báo", "Vui lòng chọn bộ thẻ mục tiêu.");
-      return;
-    }
-
-    setBulkSaving(true);
-    let savedCount = 0;
-
-    try {
-      for (const item of validItemsToSave) {
-        if (!item.data) continue;
-
-        const existing = findExistingCard(item.data.character, selectedDeckId);
-        if (existing) continue;
-
-        await addCard({
-          deckId: selectedDeckId,
-          character: item.data.character,
-          pinyin: item.data.pinyin,
-          translation: item.data.translation,
-          examples: item.data.examples || [],
-          srs: createDefaultSRSState(),
-        });
-        savedCount++;
-      }
-
-      if (savedCount > 0) {
-        try {
-          const aiCountStr = await AsyncStorage.getItem("@anki_ai_added_count");
-          const currentAiCount = aiCountStr ? parseInt(aiCountStr, 10) : 0;
-          const newAiCount = currentAiCount + savedCount;
-          await AsyncStorage.setItem("@anki_ai_added_count", newAiCount.toString());
-          if (newAiCount >= 50) {
-            useStore.getState().unlockBadge("ai_50");
-          }
-        } catch {
-          // ignore
-        }
-      }
-
-      Alert.alert(
-        "Thêm thẻ thành công",
-        `Đã thêm ${savedCount} thẻ mới vào bộ "${currentDeck?.name || ""}".`,
-      );
-
-      // Clear input and generated list after successful add!
-      setInput("");
-      setWordItems([]);
-    } catch (e: any) {
-      Alert.alert("Lỗi", getFirestoreErrorMessage(e));
-    } finally {
-      setBulkSaving(false);
-    }
-  };
-
-  const handleRemoveItem = (index: number) => {
-    setWordItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleChipClick = (historyWord: string) => {
-    const currentList = parseWords(input);
-    if (currentList.includes(historyWord)) return;
-
-    if (currentList.length >= MAX_WORDS) {
-      Alert.alert("Thông báo", `Tối đa ${MAX_WORDS} từ mỗi lần tạo.`);
-      return;
-    }
-
-    if (!input.trim()) {
-      setInput(historyWord);
-    } else {
-      setInput(`${input.trim()}, ${historyWord}`);
-    }
-  };
-
-  const validItemsToSaveCount = useMemo(
-    () => wordItems.filter((i) => i.status === "done" && i.data && !i.saved).length,
-    [wordItems],
-  );
+  if (!visible) return null;
 
   return (
     <Modal
@@ -311,289 +60,191 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        {/* Header Modal */}
-        <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 16) }]}>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
+      <View
+        style={[
+          styles.container,
+          { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg },
+        ]}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => {
+              triggerHaptic("selection");
+              onClose();
+            }}
+          >
+            <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>NẠP TỪ VỰNG BẰNG AI</Text>
-          <View style={{ width: 26 }} />
+
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+              THÊM TỪ VỰNG BẰNG AI
+            </Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>
+              Tự động tạo Pinyin, Nghĩa & Ví dụ
+            </Text>
+          </View>
+
+          <View style={{ width: Layout.avatarMd }} />
         </View>
 
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-          <ScrollView
-            contentContainerStyle={[
-              styles.scrollContent,
-              { paddingBottom: Math.max(insets.bottom + 40, 60) },
-            ]}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Target Deck Picker Card */}
-            <DuolingoCard style={styles.sectionCard}>
-              <Text style={styles.cardLabel}>BỘ THẺ MỤC TIÊU</Text>
-              <DeckPicker
-                decks={decks}
-                selectedDeckId={selectedDeckId}
-                onSelectDeck={(deckId) => {
-                  setSelectedDeckId(deckId);
-                  setIsDeckPickerOpen(false);
-                }}
-                isOpen={isDeckPickerOpen}
-                onToggleOpen={() => setIsDeckPickerOpen((prev) => !prev)}
-              />
-            </DuolingoCard>
+        <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+          {/* Deck Picker */}
+          <DeckPicker
+            decks={decks}
+            selectedDeckId={selectedDeckId}
+            isOpen={isDeckPickerOpen}
+            onToggleOpen={() => setIsDeckPickerOpen((v) => !v)}
+            onSelectDeck={setSelectedDeckId}
+          />
 
-            {/* Input Words Card */}
-            <DuolingoCard style={styles.sectionCard}>
-              <View style={styles.inputHeaderRow}>
-                <Text style={styles.cardLabel}>NHẬP TỪ HOẶC CÂU TIẾNG TRUNG</Text>
-                <Text
-                  style={[
-                    styles.wordCounter,
-                    totalInputCount > MAX_WORDS && styles.wordCounterOverLimit,
-                  ]}
-                >
-                  {totalInputCount > MAX_WORDS
-                    ? `${totalInputCount}/${MAX_WORDS} từ (lấy 10)`
-                    : `${parsedCount}/${MAX_WORDS} từ`}
-                </Text>
-              </View>
+          {/* AI Prompt Input Section */}
+          <AppCard style={styles.inputCard}>
+            <Text style={[styles.inputLabel, { color: theme.textMuted }]}>
+              Nhập từ Hán, Pinyin hoặc chủ đề:
+            </Text>
+            <TextInput
+              style={[
+                styles.promptInput,
+                { backgroundColor: theme.bgSoft, color: theme.textPrimary },
+              ]}
+              placeholder="Ví dụ: 苹果, Du lịch, Ăn uống, HSK 3..."
+              placeholderTextColor={theme.textMuted}
+              value={prompt}
+              onChangeText={setPrompt}
+              autoCapitalize="none"
+            />
 
-              <TextInput
-                style={styles.textArea}
-                multiline
-                numberOfLines={3}
-                placeholder="Ví dụ: 苹果, 喜欢, 学习... (Phân cách bằng dấu phẩy hoặc xuống dòng)"
-                placeholderTextColor={Colors.duolingo.textMuted}
-                value={input}
-                onChangeText={setInput}
-              />
+            <AppButton
+              title={loading ? "AI ĐANG TẠO..." : "TẠO TỪ VỰNG BẰNG AI"}
+              variant="blue"
+              size="lg"
+              disabled={loading || !prompt.trim()}
+              onPress={handleGenerate}
+              style={{ marginTop: Spacing.md }}
+              icon={
+                loading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons name="sparkles" size={Layout.iconMd} color="#FFFFFF" />
+                )
+              }
+            />
+          </AppCard>
 
-              {recentHistory.length > 0 && (
-                <View style={styles.historyContainer}>
-                  <Text style={styles.historyLabel}>Lịch sử tra gần đây:</Text>
-                  <View style={styles.chipGrid}>
-                    {recentHistory.map((word) => (
-                      <TouchableOpacity
-                        key={word}
-                        style={styles.chip}
-                        onPress={() => handleChipClick(word)}
-                      >
-                        <Text style={styles.chipText}>+ {word}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              )}
+          {/* Error Banner */}
+          {errorMessage ? (
+            <View style={[styles.errorBox, { backgroundColor: theme.redDim }]}>
+              <Ionicons name="alert-circle" size={Layout.iconMd} color={theme.red} />
+              <Text style={[styles.errorText, { color: theme.red }]}>{errorMessage}</Text>
+            </View>
+          ) : null}
 
-              <DuolingoButton
-                title={analyzingBatch ? "ĐANG PHÂN TÍCH AI..." : `TẠO THẺ AI (${parsedCount}/${MAX_WORDS})`}
+          {/* Generated Cards Result List */}
+          {generatedCards.length > 0 && (
+            <View style={styles.resultSection}>
+              <Text style={[styles.resultTitle, { color: theme.textPrimary }]}>
+                Kết quả AI ({selectedIndices.size}/{generatedCards.length} từ chọn):
+              </Text>
+
+              {generatedCards.map((card, idx) => (
+                <CardPreview key={idx} cardData={card} onRemove={() => toggleSelectCard(idx)} />
+              ))}
+
+              <AppButton
+                title={`NẠP ${selectedIndices.size} TỪ VÀO BỘ THẺ`}
                 variant="primary"
                 size="lg"
-                disabled={analyzingBatch || parsedCount === 0}
-                onPress={handleGenerateBatch}
+                disabled={loading || selectedIndices.size === 0}
+                onPress={handleSaveSelected}
                 style={{ marginTop: Spacing.md }}
               />
-            </DuolingoCard>
-
-            {/* Single Global AI Loading Indicator Banner */}
-            {analyzingBatch && (
-              <DuolingoCard style={styles.singleLoadingCard}>
-                <ActivityIndicator size="small" color={Colors.duolingo.blue} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.singleLoadingTitle}>Gemini AI đang phân tích dữ liệu...</Text>
-                  <Text style={styles.singleLoadingSub}>
-                    Đang tự động tạo Pinyin, nghĩa Hán-Việt, bộ thủ & câu ví dụ cho các từ vựng.
-                  </Text>
-                </View>
-              </DuolingoCard>
-            )}
-
-            {/* Generated Cards List Preview */}
-            {!analyzingBatch && wordItems.length > 0 && (
-              <View style={styles.resultsContainer}>
-                <View style={styles.resultsHeaderRow}>
-                  <SectionTitle>KẾT QUẢ TỰ ĐỘNG TẠO ({wordItems.length})</SectionTitle>
-                </View>
-
-                {wordItems.map((item, idx) => (
-                  <View key={`${item.word}-${idx}`} style={{ marginBottom: 12 }}>
-                    {item.status === "error" ? (
-                      <DuolingoCard style={styles.errorItemCard}>
-                        <View style={styles.errorItemRow}>
-                          <Text style={styles.errorItemTitle}>Chữ Hán: {item.word}</Text>
-                          <TouchableOpacity onPress={() => handleRemoveItem(idx)}>
-                            <Ionicons name="trash-outline" size={18} color={Colors.duolingo.red} />
-                          </TouchableOpacity>
-                        </View>
-                        <Text style={styles.errorItemDesc}>{item.errorMsg || "Lỗi tạo từ."}</Text>
-                      </DuolingoCard>
-                    ) : item.data ? (
-                      <CardPreview
-                        cardData={item.data}
-                        targetDeckName={currentDeck?.name}
-                        onRemove={() => handleRemoveItem(idx)}
-                      />
-                    ) : null}
-                  </View>
-                ))}
-
-                {/* Single Add All Button */}
-                {validItemsToSaveCount > 0 && (
-                  <DuolingoButton
-                    title={
-                      bulkSaving
-                        ? "ĐANG LƯU TẤT CẢ..."
-                        : `THÊM TẤT CẢ ${validItemsToSaveCount} THẺ VÀO BỘ "${currentDeck?.name.toUpperCase() || ""}"`
-                    }
-                    variant="success"
-                    size="lg"
-                    disabled={bulkSaving}
-                    onPress={handleSaveAll}
-                    style={{ marginTop: Spacing.md, marginBottom: Spacing.lg }}
-                  />
-                )}
-              </View>
-            )}
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </View>
+          )}
+        </ScrollView>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg },
+  container: {
+    flex: 1,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.duolingo.cardBg,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.border,
+    paddingBottom: Spacing.cellPadding,
+    borderBottomWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3,
+    zIndex: 10,
   },
-  headerTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  headerTitle: {
-    fontSize: Typography.text.callout.fontSize,
-    fontWeight: Typography.weight.extraBold,
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
-  closeBtn: { padding: Spacing.xs },
-  scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md },
-  sectionCard: { marginBottom: Spacing.md, padding: Spacing.md },
-  cardLabel: {
-    fontSize: Typography.text.caption2.fontSize,
-    fontWeight: Typography.weight.extraBold,
-    color: Colors.duolingo.textMuted,
-    letterSpacing: 0.8,
-    marginBottom: Spacing.xs,
-  },
-  inputHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  wordCounter: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.duolingo.textMuted,
-  },
-  wordCounterOverLimit: {
-    color: Colors.duolingo.yellow,
-  },
-  textArea: {
-    backgroundColor: Colors.duolingo.bg,
-    borderRadius: Radii.md,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.border,
-    color: "#FFFFFF",
-    fontSize: Typography.text.body.fontSize,
+
+  closeBtn: {
     padding: Spacing.sm,
-    minHeight: 80,
-    textAlignVertical: "top",
   },
-  historyContainer: { marginTop: Spacing.sm },
-  historyLabel: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: Colors.duolingo.textMuted,
-    fontWeight: Typography.weight.semibold,
-    marginBottom: Spacing.xs,
+  headerTitleContainer: {
+    alignItems: "center",
   },
-  chipGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  chip: {
-    backgroundColor: Colors.duolingo.bg,
-    borderRadius: Radii.full,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: Colors.duolingo.border,
+  headerTitle: {
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
-  chipText: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: "#FFFFFF",
+  headerSub: {
+    fontSize: Typography.caption1.fontSize,
+    marginTop: 2,
     fontWeight: Typography.weight.semibold,
   },
-  resultsContainer: { marginTop: Spacing.xs },
-  resultsHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.sm,
+  scrollBody: {
+    paddingHorizontal: Spacing.pageMargin,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xxl,
   },
-  singleLoadingCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+  inputCard: {
     padding: Spacing.md,
     marginBottom: Spacing.md,
-    borderColor: Colors.duolingo.blue,
   },
-  singleLoadingTitle: {
-    fontSize: Typography.text.subhead.fontSize,
-    color: "#FFFFFF",
+
+  inputLabel: {
+    fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.bold,
+    marginBottom: Spacing.sm,
   },
-  singleLoadingSub: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: Colors.duolingo.textMuted,
-    marginTop: 2,
-  },
-  loadingItemCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: Spacing.md,
-  },
-  loadingItemText: {
-    fontSize: Typography.text.footnote.fontSize,
-    color: Colors.duolingo.textMuted,
+  promptInput: {
+    borderRadius: Radii.lg,
+    borderWidth: 0,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.cellPadding,
+    fontSize: Typography.bodyMD.fontSize,
     fontWeight: Typography.weight.semibold,
   },
-  errorItemCard: {
-    padding: Spacing.md,
-    borderColor: Colors.duolingo.redDark,
-  },
-  errorItemRow: {
+  errorBox: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: Radii.md,
+    marginBottom: Spacing.md,
   },
-  errorItemTitle: {
-    fontSize: Typography.text.subhead.fontSize,
+  errorText: {
+    fontSize: Typography.caption.fontSize,
+    flex: 1,
+    fontWeight: Typography.weight.semibold,
+  },
+  resultSection: {
+    marginTop: Spacing.cellPadding,
+  },
+  resultTitle: {
+    fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.extraBold,
-    color: Colors.duolingo.red,
-  },
-  errorItemDesc: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: Colors.duolingo.textMuted,
-    marginTop: Spacing.xs,
+    marginBottom: Spacing.cellPadding,
   },
 });

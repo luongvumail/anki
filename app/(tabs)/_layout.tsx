@@ -1,21 +1,28 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "../../constants/theme";
-
-import { View } from "react-native";
+import { Spacing, Typography, Layout } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { GlobalAccountModal } from "../../components/home/GlobalAccountModal";
 
 export default function TabLayout() {
+  const { theme } = useTheme();
+
   return (
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarStyle: styles.tabBar,
-          tabBarActiveTintColor: Colors.duolingo.green,
-          tabBarInactiveTintColor: Colors.duolingo.textMuted,
+          tabBarStyle: [
+            styles.tabBar,
+            {
+              backgroundColor: theme.bg,
+            },
+          ],
+
+          tabBarActiveTintColor: theme.blue,
+          tabBarInactiveTintColor: theme.textMuted,
           tabBarLabelStyle: styles.tabLabel,
           tabBarItemStyle: styles.tabItem,
         }}
@@ -25,7 +32,7 @@ export default function TabLayout() {
           options={{
             title: "Học",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
+              <Ionicons name={focused ? "home" : "home-outline"} size={Layout.iconLg} color={color} />
             ),
           }}
         />
@@ -34,7 +41,7 @@ export default function TabLayout() {
           options={{
             title: "Từ vựng",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "book" : "book-outline"} size={24} color={color} />
+              <Ionicons name={focused ? "book" : "book-outline"} size={Layout.iconLg} color={color} />
             ),
           }}
         />
@@ -43,7 +50,7 @@ export default function TabLayout() {
           options={{
             title: "Luyện tập",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "extension-puzzle" : "extension-puzzle-outline"} size={24} color={color} />
+              <Ionicons name={focused ? "extension-puzzle" : "extension-puzzle-outline"} size={Layout.iconLg} color={color} />
             ),
           }}
         />
@@ -52,7 +59,7 @@ export default function TabLayout() {
           options={{
             title: "Thống kê",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={24} color={color} />
+              <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={Layout.iconLg} color={color} />
             ),
           }}
         />
@@ -64,20 +71,24 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: Colors.duolingo.bg,
-    borderTopColor: Colors.duolingo.cardBorder,
-    borderTopWidth: 2,
+    borderTopWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 8,
     height: Platform.OS === "ios" ? 86 : 66,
-    paddingBottom: Platform.OS === "ios" ? 26 : 10,
-    paddingTop: 6,
+    paddingBottom: Platform.OS === "ios" ? 26 : Spacing.sm,
+    paddingTop: Spacing.xs,
   },
+
   tabItem: {
-    paddingTop: 2,
+    paddingTop: Spacing.xs,
   },
   tabLabel: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.3,
-    marginTop: 2,
+    marginTop: Spacing.xs,
   },
 });

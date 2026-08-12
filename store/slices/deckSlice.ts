@@ -1,11 +1,12 @@
 import { StateCreator } from "zustand";
-import { getDocs, doc, setDoc, deleteDoc, QuerySnapshot, DocumentData } from "firebase/firestore";
+import { getDocs, doc, setDoc, deleteDoc, query, orderBy, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { auth } from "../../lib/firebase";
 import { Deck } from "./types";
 import { getUserId, decksRef, cardsRef } from "./firestoreHelpers";
 import { UISlice } from "./uiSlice";
 import { CardSlice } from "./cardSlice";
 import { getFirestoreErrorMessage } from "../../lib/errorHandler";
+import { APP_CONFIG } from "../../constants/config";
 
 export interface DeckSlice {
   decks: Deck[];
@@ -34,14 +35,15 @@ export const createDeckSlice: StateCreator<DeckSlice & UISlice & CardSlice, [], 
                 "Firestore timeout — kiểm tra Firestore Database và Security Rules trên Firebase Console",
               ),
             ),
-          10000,
+          APP_CONFIG.FIRESTORE_TIMEOUT_MS,
         ),
       );
-      const snap = (await Promise.race([getDocs(decksRef(uid)), timeout])) as QuerySnapshot<DocumentData>;
+      const q = query(decksRef(uid), orderBy("createdAt", "desc"));
+      const snap = (await Promise.race([getDocs(q), timeout])) as QuerySnapshot<DocumentData>;
       const decks = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Deck);
 
       set({ decks, isLoading: false });
-      // Pre-fetch cards for all decks in parallel so SRS due states are accurate everywhere immediately
+      // Pre-fetch all cards for each deck so cardCount/dueCount/newCount are accurate on every screen.
       Promise.all(decks.map((d) => get().fetchCards(d.id))).catch((err) =>
         console.warn("[fetchDecks] Card pre-fetch error:", err),
       );

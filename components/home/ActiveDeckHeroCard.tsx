@@ -1,10 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Colors, Radii, Spacing } from "../../constants/theme";
+import { Radii, Spacing } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { Deck } from "../../store/slices/types";
-import { DeckIcon } from "../ui/DeckIcon";
-import { DuolingoButton } from "../ui/DuolingoButton";
+import { AppButton } from "../ui/AppButton";
 
 interface ActiveDeckHeroCardProps {
   deck: Deck;
@@ -23,21 +22,27 @@ export function ActiveDeckHeroCard({
   onStartStudy,
   onChangeDeck,
 }: ActiveDeckHeroCardProps) {
-  const totalCards = deck.cardCount || (dueCount + learnedCount + newCount) || 0;
+  const totalCards = deck.cardCount || dueCount + learnedCount + newCount || 0;
+  const { theme } = useTheme();
 
   return (
-    <View style={styles.cardContainer}>
+    <View
+      style={[
+        styles.cardContainer,
+        {
+          backgroundColor: theme.cardBg,
+          borderColor: theme.cardBorder,
+          borderBottomColor: theme.cardBottom,
+        },
+      ]}
+    >
       {/* Top Header Row: Deck Info & Change Deck Button */}
       <View style={styles.topRow}>
-        <TouchableOpacity
-          style={styles.deckTitleBtn}
-          onPress={onChangeDeck}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.deckTitleBtn} onPress={onChangeDeck} activeOpacity={0.8}>
           <View style={styles.titleTextGroup}>
-            <Text style={styles.deckLabel}>BỘ THẺ ĐANG HỌC</Text>
+            <Text style={[styles.deckLabel, { color: theme.textMuted }]}>BỘ THẺ ĐANG HỌC</Text>
             <View style={styles.nameRow}>
-              <Text style={styles.deckNameText} numberOfLines={1}>
+              <Text style={[styles.deckNameText, { color: theme.textPrimary }]} numberOfLines={1}>
                 {deck.name}
               </Text>
             </View>
@@ -45,55 +50,58 @@ export function ActiveDeckHeroCard({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.switchBadge}
+          style={[
+            styles.switchBadge,
+            { backgroundColor: theme.bgSoft, borderBottomColor: theme.cardBottom },
+          ]}
           onPress={onChangeDeck}
           activeOpacity={0.8}
         >
-          <Text style={styles.switchBadgeText}>Đổi bộ</Text>
+          <Text style={[styles.switchBadgeText, { color: theme.textPrimary }]}>Đổi bộ</Text>
         </TouchableOpacity>
       </View>
 
       {/* SRS Stats Row: Due, Learned, New */}
       <View style={styles.statsGrid}>
         {/* DUE COUNT (RED) */}
-        <View style={[styles.statBox, styles.statBoxDue]}>
+        <View
+          style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.red }]}
+        >
           <View>
-            <Text style={[styles.statValueText, { color: Colors.duolingo.red }]}>
-              {dueCount}
-            </Text>
-            <Text style={styles.statLabelText}>Cần ôn</Text>
+            <Text style={[styles.statValueText, { color: theme.red }]}>{dueCount}</Text>
+            <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Cần ôn</Text>
           </View>
         </View>
 
         {/* LEARNED COUNT (GREEN) */}
-        <View style={[styles.statBox, styles.statBoxLearned]}>
+        <View
+          style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.green }]}
+        >
           <View>
-            <Text style={[styles.statValueText, { color: Colors.duolingo.green }]}>
-              {learnedCount}
-            </Text>
-            <Text style={styles.statLabelText}>Đã thuộc</Text>
+            <Text style={[styles.statValueText, { color: theme.green }]}>{learnedCount}</Text>
+            <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Đã thuộc</Text>
           </View>
         </View>
 
         {/* NEW COUNT (BLUE) */}
-        <View style={[styles.statBox, styles.statBoxNew]}>
+        <View
+          style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.blue }]}
+        >
           <View>
-            <Text style={[styles.statValueText, { color: "#FFFFFF" }]}>
-              {newCount}
-            </Text>
-            <Text style={styles.statLabelText}>Từ mới</Text>
+            <Text style={[styles.statValueText, { color: theme.blue }]}>{newCount}</Text>
+            <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Từ mới</Text>
           </View>
         </View>
       </View>
 
       {/* Main Start Action Button */}
-      <DuolingoButton
+      <AppButton
         title={
           dueCount > 0
             ? `ÔN TẬP NGAY (${dueCount} TỪ CẦN ÔN)`
             : totalCards > 0
-            ? "BẮT ĐẦU HỌC BÀI KẾ TIẾP"
-            : "THÊM TỪ VỰNG VÀO BỘ"
+              ? "BẮT ĐẦU HỌC BÀI KẾ TIẾP"
+              : "THÊM TỪ VỰNG VÀO BỘ"
         }
         variant="primary"
         size="lg"
@@ -106,12 +114,14 @@ export function ActiveDeckHeroCard({
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.xl,
-    borderBottomWidth: 5,
-    borderBottomColor: Colors.duolingo.cardBottom,
+    borderWidth: 0,
     padding: Spacing.md,
     marginBottom: Spacing.md,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
   topRow: {
     flexDirection: "row",
@@ -125,21 +135,12 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
   },
-  iconTile: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   titleTextGroup: {
     flex: 1,
   },
   deckLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: Colors.duolingo.textMuted,
     letterSpacing: 0.8,
   },
   nameRow: {
@@ -150,21 +151,17 @@ const styles = StyleSheet.create({
   deckNameText: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#FFFFFF",
     flexShrink: 1,
   },
   switchBadge: {
-    backgroundColor: Colors.duolingo.bgSoftDark,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radii.full,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBottom,
+    borderWidth: 0,
   },
   switchBadgeText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#FFFFFF",
   },
 
   statsGrid: {
@@ -180,22 +177,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: Radii.lg,
-    backgroundColor: Colors.duolingo.bgSoftDark,
-  },
-  statBoxDue: {
     borderLeftWidth: 3,
-    borderLeftColor: Colors.duolingo.red,
-  },
-  statBoxLearned: {
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.duolingo.green,
-  },
-  statBoxNew: {
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.duolingo.blue,
-  },
-  statEmoji: {
-    fontSize: 16,
   },
   statValueText: {
     fontSize: 16,
@@ -204,6 +186,5 @@ const styles = StyleSheet.create({
   statLabelText: {
     fontSize: 10,
     fontWeight: "700",
-    color: Colors.duolingo.textMuted,
   },
 });

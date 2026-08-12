@@ -1,30 +1,24 @@
 import React, { useState } from "react";
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from "react-native";
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from "react-native";
-import { Colors, Radii } from "../../constants/theme";
+  Radii,
+  Layout,
+  Spacing,
+  Typography,
+  triggerHaptic,
+} from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
-export type DuolingoButtonVariant =
-  | "primary"
-  | "success"
-  | "blue"
-  | "error"
-  | "purple"
-  | "yellow"
-  | "secondary"
-  | "ghost";
+export type AppButtonVariant =
+  "primary" | "success" | "blue" | "error" | "purple" | "yellow" | "secondary" | "ghost";
 
-export type DuolingoButtonSize = "lg" | "md" | "sm";
+export type AppButtonSize = "lg" | "md" | "sm";
 
-export interface DuolingoButtonProps {
+export interface AppButtonProps {
   title: string;
   onPress: () => void;
-  variant?: DuolingoButtonVariant;
-  size?: DuolingoButtonSize;
+  variant?: AppButtonVariant;
+  size?: AppButtonSize;
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -32,7 +26,7 @@ export interface DuolingoButtonProps {
   height?: number;
 }
 
-export function DuolingoButton({
+export function AppButton({
   title,
   onPress,
   variant = "primary",
@@ -42,19 +36,31 @@ export function DuolingoButton({
   textStyle,
   icon,
   height,
-}: DuolingoButtonProps) {
+}: AppButtonProps) {
   const [pressed, setPressed] = useState(false);
+  const { theme } = useTheme();
 
-  // Size Presets (Sleek & Compact: lg=46px, md=40px, sm=32px)
   const getSizeStyle = () => {
     switch (size) {
       case "sm":
-        return { height: height || 32, fontSize: 12, paddingHorizontal: 12 };
+        return {
+          height: height || Layout.btnHeightSm,
+          fontSize: Typography.text.caption2.fontSize,
+          paddingHorizontal: Spacing.md,
+        };
       case "md":
-        return { height: height || 40, fontSize: 13, paddingHorizontal: 14 };
+        return {
+          height: height || Layout.btnHeightMd,
+          fontSize: Typography.caption.fontSize,
+          paddingHorizontal: Spacing.cellPadding,
+        };
       case "lg":
       default:
-        return { height: height || 46, fontSize: 14, paddingHorizontal: 16 };
+        return {
+          height: height || Layout.btnHeightLg,
+          fontSize: Typography.subhead.fontSize,
+          paddingHorizontal: Spacing.lg,
+        };
     }
   };
 
@@ -63,63 +69,48 @@ export function DuolingoButton({
   const getVariantStyles = () => {
     if (disabled) {
       return {
-        bg: Colors.duolingo.cardBg,
-        border: Colors.duolingo.cardBorder,
-        bottom: Colors.duolingo.cardBottom,
-        text: Colors.duolingo.disabledText,
+        bg: theme.bgSoft,
+        text: theme.textMuted,
       };
     }
 
     switch (variant) {
       case "primary":
-      case "success":
-        return {
-          bg: Colors.duolingo.green,
-          border: Colors.duolingo.green,
-          bottom: Colors.duolingo.greenDark,
-          text: Colors.text.white,
-        };
       case "blue":
         return {
-          bg: Colors.duolingo.blue,
-          border: Colors.duolingo.blue,
-          bottom: Colors.duolingo.blueDark,
-          text: Colors.text.white,
+          bg: theme.blue,
+          text: "#FFFFFF",
+        };
+      case "success":
+        return {
+          bg: theme.green,
+          text: "#FFFFFF",
         };
       case "error":
         return {
-          bg: Colors.duolingo.red,
-          border: Colors.duolingo.red,
-          bottom: Colors.duolingo.redDark,
-          text: Colors.text.white,
-        };
-      case "purple":
-        return {
-          bg: Colors.duolingo.purple,
-          border: Colors.duolingo.purple,
-          bottom: Colors.duolingo.purpleDark,
-          text: Colors.text.white,
+          bg: theme.red,
+          text: "#FFFFFF",
         };
       case "yellow":
         return {
-          bg: Colors.duolingo.yellow,
-          border: Colors.duolingo.yellow,
-          bottom: Colors.duolingo.yellowDark,
-          text: Colors.duolingo.text,
+          bg: theme.yellow,
+          text: "#FFFFFF",
+        };
+      case "purple":
+        return {
+          bg: theme.purple,
+          text: "#FFFFFF",
         };
       case "secondary":
         return {
-          bg: Colors.duolingo.cardBg,
-          border: Colors.duolingo.cardBorder,
-          bottom: Colors.duolingo.cardBottom,
-          text: Colors.text.white,
+          bg: theme.bgSoft,
+          text: theme.textPrimary,
         };
       case "ghost":
+      default:
         return {
           bg: "transparent",
-          border: "transparent",
-          bottom: "transparent",
-          text: Colors.duolingo.textMuted,
+          text: theme.textMuted,
         };
     }
   };
@@ -128,6 +119,7 @@ export function DuolingoButton({
 
   const handlePressIn = () => {
     if (disabled) return;
+    triggerHaptic("light");
     setPressed(true);
   };
 
@@ -149,16 +141,12 @@ export function DuolingoButton({
           height: sizeStyle.height,
           paddingHorizontal: sizeStyle.paddingHorizontal,
           backgroundColor: vColors.bg,
-          borderColor: vColors.border,
-          borderWidth: variant === "ghost" ? 0 : 1,
-          borderBottomColor: vColors.bottom,
-          borderBottomWidth: variant === "ghost" ? 0 : pressed ? 1 : 3,
-          transform: [{ translateY: pressed ? 2 : 0 }],
+          transform: [{ scale: pressed ? 0.97 : 1 }],
+          opacity: pressed ? 0.92 : 1,
         },
         style,
       ]}
     >
-      {icon && icon}
       <Text
         style={[
           styles.buttonText,
@@ -171,6 +159,7 @@ export function DuolingoButton({
       >
         {title}
       </Text>
+      {icon && icon}
     </TouchableOpacity>
   );
 }
@@ -178,15 +167,14 @@ export function DuolingoButton({
 const styles = StyleSheet.create({
   buttonBase: {
     width: "100%",
-    borderRadius: Radii.lg, // --radius-lg: 16px
-    borderWidth: 0, // KHÔNG border mảnh bao quanh (Rule 2)
+    borderRadius: Radii.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: Spacing.sm,
   },
   buttonText: {
-    fontWeight: "800", // font-weight: 800
+    fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.5,
     textAlign: "center",
     textAlignVertical: "center",

@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { auth } from "../../lib/firebase";
-import { Colors, Radii, Spacing } from "../../constants/theme";
-
+import { Radii, Spacing, Typography, Layout } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { useStore } from "../../store/useStore";
 
-interface DuolingoHeaderProps {
+interface AppHeaderProps {
   userName?: string;
   courseName?: string;
   streakCount?: number;
@@ -19,13 +19,14 @@ interface DuolingoHeaderProps {
   onHeartsPress?: () => void;
 }
 
-export function DuolingoHeader({
+export function AppHeader({
   userName,
   streakCount = 1,
   onProfilePress,
   onStreakPress,
-}: DuolingoHeaderProps) {
+}: AppHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const openAccountModal = useStore((s) => s.openAccountModal);
   const authUser = auth.currentUser;
   const resolvedName =
@@ -34,31 +35,33 @@ export function DuolingoHeader({
   const handleAvatarPress = onProfilePress || openAccountModal;
 
   return (
-    <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 8, 44) }]}>
-      {/* Friendly User Greeting - Synchronized & Unified across all screens */}
-      <View style={styles.courseSelector}>
-        <Text style={styles.courseTitleText}>Xin chào, {resolvedName}</Text>
+    <View
+      style={[
+        styles.headerContainer,
+        {
+          paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight),
+          backgroundColor: theme.bg,
+        },
+      ]}
+    >
+      {/* Friendly User Greeting */}
+      <View>
+        <Text style={[styles.courseTitleText, { color: theme.textPrimary }]}>
+          Xin chào, {resolvedName}
+        </Text>
       </View>
 
-      {/* Top Indicators Row: Streak Only with Vector Icons */}
+      {/* Top Indicators Row */}
       <View style={styles.statsRow}>
         {/* Streak Pill */}
-        <TouchableOpacity
-          style={styles.statPill}
-          activeOpacity={0.8}
-          onPress={onStreakPress}
-        >
-          <Ionicons name="flame" size={18} color={Colors.duolingo.yellow} />
-          <Text style={[styles.statValue, { color: Colors.duolingo.yellow }]}>{streakCount}</Text>
+        <TouchableOpacity style={styles.statPill} activeOpacity={0.8} onPress={onStreakPress}>
+          <Ionicons name="flame" size={Layout.iconMd} color={theme.yellow} />
+          <Text style={[styles.statValue, { color: theme.yellow }]}>{streakCount}</Text>
         </TouchableOpacity>
 
-        {/* Profile Avatar - Always rendered for 100% header layout stability */}
-        <TouchableOpacity
-          style={styles.avatarBtn}
-          onPress={handleAvatarPress}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="person-circle" size={28} color={Colors.duolingo.blue} />
+        {/* Profile Avatar */}
+        <TouchableOpacity style={styles.avatarBtn} onPress={handleAvatarPress} activeOpacity={0.8}>
+          <Ionicons name="person-circle" size={Layout.iconXl} color={theme.blue} />
         </TouchableOpacity>
       </View>
     </View>
@@ -70,50 +73,50 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.space4,
-    paddingBottom: Spacing.space2,
-    backgroundColor: Colors.duolingo.bg,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBorder,
+    paddingHorizontal: Spacing.pageMargin,
+    paddingBottom: Spacing.sm,
+    borderBottomWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3,
+    zIndex: 10,
   },
+
   courseSelector: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: Colors.duolingo.cardBg,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBottom,
+    borderWidth: 0,
   },
   courseTitleText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.3,
   },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.sm,
   },
   statPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    backgroundColor: Colors.duolingo.cardBg,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBottom,
+    borderWidth: 0,
   },
   statValue: {
-    fontSize: 13,
-    fontWeight: "800",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   avatarBtn: {
-    paddingLeft: 2,
+    paddingLeft: Spacing.xs,
   },
 });

@@ -1,14 +1,31 @@
 // Centralized User-Facing Error Handler for Anki Anki
 // Converts raw technical error codes into friendly, localized Vietnamese messages with clear guidance.
 
+interface FirebaseErrorLike {
+  code?: string;
+  message?: string;
+}
+
+function extractErrorDetails(error: unknown): { code: string; message: string } {
+  if (!error) return { code: "", message: "" };
+  if (typeof error === "string") return { code: error, message: error };
+  if (typeof error === "object" && error !== null) {
+    const err = error as FirebaseErrorLike;
+    return {
+      code: typeof err.code === "string" ? err.code : "",
+      message: typeof err.message === "string" ? err.message : String(error),
+    };
+  }
+  return { code: "", message: String(error) };
+}
+
 /**
  * Maps Firebase Authentication error codes to friendly Vietnamese messages.
  */
-export function getAuthErrorMessage(error: any): string {
+export function getAuthErrorMessage(error: unknown): string {
   if (!error) return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
 
-  const code = typeof error === "string" ? error : error.code || "";
-  const message = error.message || "";
+  const { code, message } = extractErrorDetails(error);
 
   switch (code) {
     case "auth/invalid-credential":
@@ -50,10 +67,10 @@ export function getAuthErrorMessage(error: any): string {
 /**
  * Maps AI & API errors to friendly Vietnamese messages.
  */
-export function getGeminiErrorMessage(error: any): string {
+export function getGeminiErrorMessage(error: unknown): string {
   if (!error) return "Không thể tạo từ vựng bằng AI. Vui lòng thử lại.";
 
-  const message = error.message || String(error);
+  const { message } = extractErrorDetails(error);
 
   if (
     message.includes("RESOURCE_EXHAUSTED") ||
@@ -81,11 +98,10 @@ export function getGeminiErrorMessage(error: any): string {
 /**
  * Maps Firestore & database errors to friendly Vietnamese messages.
  */
-export function getFirestoreErrorMessage(error: any): string {
+export function getFirestoreErrorMessage(error: unknown): string {
   if (!error) return "Đã xảy ra lỗi dữ liệu. Vui lòng thử lại.";
 
-  const code = error.code || "";
-  const message = error.message || "";
+  const { code, message } = extractErrorDetails(error);
 
   if (code === "permission-denied") {
     return "Bạn không có quyền thực hiện thao tác này. Vui lòng đăng nhập lại.";
@@ -97,3 +113,4 @@ export function getFirestoreErrorMessage(error: any): string {
 
   return "Không thể lưu dữ liệu. Vui lòng thử lại sau.";
 }
+

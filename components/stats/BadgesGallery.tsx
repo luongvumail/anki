@@ -1,11 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useStore } from "../../store/useStore";
+import { useStore, Card } from "../../store/useStore";
 import { ALL_BADGES } from "../../store/slices/userProgressSlice";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
-import { DuolingoCard } from "../ui/DuolingoCard";
+import { Spacing, Typography, Layout, Radii } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
+import { AppCard } from "../ui/AppCard";
 import { SectionTitle } from "../ui/SectionTitle";
+import { computeLearnedCount } from "../../lib/deckUtils";
 
 interface BadgesGalleryProps {
   streakCount?: number;
@@ -13,15 +15,16 @@ interface BadgesGalleryProps {
 }
 
 export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearned }: BadgesGalleryProps) {
+  const { theme } = useTheme();
   const unlockedBadgeIds = useStore((s) => s.unlockedBadgeIds || []);
   const checkAndUnlockBadges = useStore((s) => s.checkAndUnlockBadges);
 
   const fallbackCards = useStore((s) => {
-    let count = 0;
-    Object.values(s.cards).forEach((list) => {
-      count += list.filter((c) => c.srs && c.srs.repetitions > 0).length;
+    let list: Card[] = [];
+    Object.values(s.cards).forEach((cardList) => {
+      list = list.concat(cardList);
     });
-    return count;
+    return computeLearnedCount(list);
   });
 
   const streakCount = propStreak ?? 0;
@@ -37,7 +40,11 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
     <View style={styles.container}>
       <SectionTitle>BỘ SƯU TẬP HUY HIỆU THÀNH TÍCH</SectionTitle>
 
-      <View style={styles.badgeGrid}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
+      >
         {ALL_BADGES.map((badge) => {
           let isUnlocked = unlockedBadgeIds.includes(badge.id);
           let progressText = "";
@@ -49,94 +56,107 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
             progressText = `${Math.min(badge.target, learnedCardsCount)}/${badge.target} từ`;
             if (learnedCardsCount >= badge.target) isUnlocked = true;
           } else {
-            progressText = isUnlocked ? "Đã đạt" : `Chưa mở`;
+            progressText = isUnlocked ? "Đạt" : `Chưa mở`;
           }
 
           return (
-            <DuolingoCard
+            <AppCard
               key={badge.id}
-              style={[
-                styles.badgeCard,
-                isUnlocked ? styles.badgeUnlockedCard : styles.badgeLockedCard,
-              ] as any}
+              style={StyleSheet.flatten([
+                styles.badgeCompactCard,
+                {
+                  borderColor: isUnlocked ? theme.yellow : theme.cardBorder,
+                  opacity: isUnlocked ? 1 : 0.75,
+                },
+              ])}
             >
-              <View style={[styles.iconBox, isUnlocked ? styles.iconUnlocked : styles.iconLocked]}>
+              <View
+                style={[
+                  styles.iconBoxCompact,
+                  { backgroundColor: isUnlocked ? theme.yellowDim : theme.bgSoft },
+                ]}
+              >
                 <Ionicons
                   name={badge.icon as any}
-                  size={24}
-                  color={isUnlocked ? Colors.duolingo.yellow : Colors.duolingo.textMuted}
+                  size={Layout.iconMd}
+                  color={isUnlocked ? theme.yellow : theme.textMuted}
                 />
               </View>
 
-              <Text style={[styles.badgeTitle, isUnlocked && styles.badgeTitleUnlocked]} numberOfLines={1}>
+              <Text
+                style={[
+                  styles.badgeTitle,
+                  { color: isUnlocked ? theme.textPrimary : theme.textMuted },
+                ]}
+                numberOfLines={1}
+              >
                 {badge.title}
               </Text>
 
-              <Text style={styles.badgeDesc} numberOfLines={2}>
+              <Text style={[styles.badgeDesc, { color: theme.textMuted }]} numberOfLines={1}>
                 {badge.description}
               </Text>
 
-              <Text style={[styles.progressText, isUnlocked && styles.progressUnlockedText]}>
-                {isUnlocked ? "ĐÃ MỞ KHÓA" : progressText}
-              </Text>
-            </DuolingoCard>
+              <View
+                style={[
+                  styles.tagCompact,
+                  { backgroundColor: isUnlocked ? theme.greenDim : theme.bgSoft },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.progressText,
+                    { color: isUnlocked ? theme.green : theme.textMuted },
+                  ]}
+                >
+                  {isUnlocked ? "ĐÃ MỞ" : progressText}
+                </Text>
+              </View>
+            </AppCard>
+
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: Spacing.md },
-  badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  badgeCard: {
-    width: "48%",
+  container: { marginTop: Spacing.xs, marginBottom: Spacing.xl },
+
+  horizontalList: { gap: Spacing.sm, paddingRight: Spacing.pageMargin },
+  badgeCompactCard: {
+    width: 135,
     padding: Spacing.sm,
     alignItems: "center",
   },
-  badgeUnlockedCard: {
-    borderColor: Colors.duolingo.yellow,
-  },
-  badgeLockedCard: {
-    opacity: 0.7,
-  },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  iconBoxCompact: {
+    width: Layout.avatarMd,
+    height: Layout.avatarMd,
+    borderRadius: Radii.full,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6,
-  },
-  iconUnlocked: {
-    backgroundColor: "rgba(255, 200, 0, 0.15)",
-  },
-  iconLocked: {
-    backgroundColor: Colors.duolingo.bg,
+    marginBottom: Spacing.xs,
   },
   badgeTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
-  badgeTitleUnlocked: {
-    color: "#FFFFFF",
-  },
   badgeDesc: {
-    fontSize: 11,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption2.fontSize,
     textAlign: "center",
     marginTop: 2,
   },
-  progressText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
-    marginTop: 6,
+  tagCompact: {
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+    borderRadius: Radii.sm,
+    marginTop: Spacing.xs,
   },
-  progressUnlockedText: {
-    color: Colors.duolingo.green,
+  progressText: {
+    fontSize: Typography.caption2.fontSize - 1,
+    fontWeight: Typography.weight.extraBold,
   },
 });
+

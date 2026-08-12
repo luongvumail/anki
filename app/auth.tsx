@@ -1,20 +1,15 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  Image,
-  TextInput,
   TouchableOpacity,
-  Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Alert,
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -24,90 +19,21 @@ import {
 import { auth } from "../lib/firebase";
 import { getAuthErrorMessage } from "../lib/errorHandler";
 import {
-  Colors,
   Spacing,
   Radii,
+  Typography,
+  Layout,
+  BorderWidths,
   triggerHaptic,
 } from "../constants/theme";
-import { DuolingoButton } from "../components/ui/DuolingoButton";
-import { DuolingoCard } from "../components/ui/DuolingoCard";
-
-interface FieldProps {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  placeholder: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  keyboardType?: "default" | "email-address";
-  autoCapitalize?: "none" | "words" | "sentences" | "characters";
-  autoCorrect?: boolean;
-  secureTextEntry?: boolean;
-}
-
-function Field({
-  label,
-  icon,
-  placeholder,
-  value,
-  onChangeText,
-  keyboardType = "default",
-  autoCapitalize = "sentences",
-  autoCorrect = true,
-  secureTextEntry = false,
-}: FieldProps) {
-  const [focused, setFocused] = useState(false);
-  const [showText, setShowText] = useState(false);
-  const inputRef = useRef<TextInput>(null);
-
-  return (
-    <Pressable onPress={() => inputRef.current?.focus()}>
-      <DuolingoCard style={styles.fieldCard} padding={12}>
-        <View style={styles.fieldRow}>
-          <View style={styles.fieldIconWrap}>
-            <Ionicons
-              name={icon}
-              size={20}
-              color={focused ? Colors.duolingo.blue : Colors.duolingo.textMuted}
-            />
-          </View>
-          <View style={styles.fieldBody}>
-            <Text style={styles.fieldLabel}>{label}</Text>
-            <TextInput
-              ref={inputRef}
-              style={styles.fieldInput}
-              placeholder={placeholder}
-              placeholderTextColor={Colors.duolingo.disabledText}
-              value={value}
-              onChangeText={onChangeText}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              keyboardType={keyboardType}
-              autoCapitalize={autoCapitalize}
-              autoCorrect={autoCorrect}
-              secureTextEntry={secureTextEntry && !showText}
-            />
-          </View>
-          {secureTextEntry && (
-            <TouchableOpacity
-              onPress={() => setShowText((v) => !v)}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={styles.eyeBtn}
-            >
-              <Ionicons
-                name={showText ? "eye-off-outline" : "eye-outline"}
-                size={18}
-                color={Colors.duolingo.textMuted}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </DuolingoCard>
-    </Pressable>
-  );
-}
+import { useTheme } from "../hooks/useTheme";
+import { AppButton } from "../components/ui/AppButton";
+import { AuthField } from "../components/ui/AuthField";
+import { AppMascot } from "../components/ui/AppMascot";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -133,15 +59,11 @@ export default function AuthScreen() {
           setLoading(false);
           return;
         }
-        const cred = await createUserWithEmailAndPassword(
-          auth,
-          email.trim(),
-          password,
-        );
+        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
         await updateProfile(cred.user, { displayName: name.trim() });
         triggerHaptic("success");
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       triggerHaptic("error");
       Alert.alert("Lỗi xác thực", getAuthErrorMessage(e));
     } finally {
@@ -166,7 +88,7 @@ export default function AuthScreen() {
         "Đã gửi email khôi phục",
         `Hướng dẫn đặt lại mật khẩu đã được gửi tới ${email.trim()}.\nVui lòng mở hộp thư để đặt lại mật khẩu.`,
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       triggerHaptic("error");
       Alert.alert("Không thể gửi email", getAuthErrorMessage(e));
     } finally {
@@ -181,15 +103,15 @@ export default function AuthScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
           {
-            paddingTop: Math.max(insets.top + 24, 64),
-            paddingBottom: Math.max(insets.bottom + 24, 48),
+            paddingTop: Math.max(insets.top + Spacing.lg, 64),
+            paddingBottom: Math.max(insets.bottom + Spacing.lg, 48),
           },
         ]}
         keyboardShouldPersistTaps="handled"
@@ -197,91 +119,57 @@ export default function AuthScreen() {
       >
         {/* Header / Branding */}
         <View style={styles.header}>
-          <View style={styles.appIconBox}>
-            <Image
-              source={require("../assets/adaptive-icon.png")}
-              style={styles.appIconImage}
-              resizeMode="cover"
-            />
-          </View>
-          <Text style={styles.appName}>Anki Tiếng Trung</Text>
-          <Text style={styles.tagline}>HỌC TỪ VỰNG TIẾNG TRUNG THÔNG MINH</Text>
-        </View>
+          <AppMascot size={88} useAppLogo />
 
-        {/* Mode Switcher 3D Segment */}
-        <View style={styles.segmentedControl}>
-          <TouchableOpacity
-            style={[styles.segmentBtn, mode === "login" && styles.segmentBtnActive]}
-            onPress={() => toggleMode("login")}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.segmentText, mode === "login" && styles.segmentTextActive]}>
-              ĐĂNG NHẬP
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.segmentBtn, mode === "register" && styles.segmentBtnActive]}
-            onPress={() => toggleMode("register")}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.segmentText, mode === "register" && styles.segmentTextActive]}>
-              TẠO TÀI KHOẢN
-            </Text>
-          </TouchableOpacity>
+          <Text style={[styles.appName, { color: theme.textPrimary }]}>Anki Chinese</Text>
+          <Text style={[styles.tagline, { color: theme.textMuted }]}>
+            HỌC TIẾNG TRUNG THEO PHƯƠNG PHÁP SRS
+          </Text>
         </View>
 
         {/* Form Fields */}
         <View style={styles.formGroup}>
           {mode === "register" && (
-            <Field
-              label="Họ tên"
-              icon="person-outline"
-              placeholder="Nguyễn Văn A"
+            <AuthField
+              placeholder="Họ và tên"
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
             />
           )}
-          <Field
-            label="Email"
-            icon="mail-outline"
-            placeholder="example@gmail.com"
+
+          <AuthField
+            placeholder="Email"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            autoCorrect={false}
           />
-          <Field
-            label="Mật khẩu"
-            icon="lock-closed-outline"
-            placeholder="••••••••"
+
+          <AuthField
+            placeholder="Mật khẩu"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
           />
         </View>
 
-        {/* Forgot Password */}
+        {/* Forgot Password link */}
         {mode === "login" && (
           <TouchableOpacity
             style={styles.forgotBtn}
             onPress={handleForgotPassword}
             disabled={resettingPassword}
-            activeOpacity={0.7}
           >
-            {resettingPassword ? (
-              <ActivityIndicator size="small" color={Colors.duolingo.blue} />
-            ) : (
-              <Text style={styles.forgotBtnText}>Quên mật khẩu?</Text>
-            )}
+            <Text style={[styles.forgotBtnText, { color: theme.blue }]}>
+              {resettingPassword ? "Đang gửi..." : "Quên mật khẩu?"}
+            </Text>
           </TouchableOpacity>
         )}
 
         {/* 3D Primary Button */}
-        <DuolingoButton
+        <AppButton
           title={loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
-          icon={loading ? undefined : <Ionicons name={mode === "login" ? "log-in" : "person-add"} size={20} color="#FFFFFF" />}
           variant="primary"
           size="lg"
           disabled={loading}
@@ -291,14 +179,14 @@ export default function AuthScreen() {
 
         {/* Footer Toggle */}
         <View style={styles.footerToggle}>
-          <Text style={styles.footerText}>
+          <Text style={[styles.footerText, { color: theme.textMuted }]}>
             {mode === "login" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}
           </Text>
           <TouchableOpacity
             onPress={() => toggleMode(mode === "login" ? "register" : "login")}
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+            hitSlop={Layout.hitSlopSm}
           >
-            <Text style={styles.footerLink}>
+            <Text style={[styles.footerLink, { color: theme.blue }]}>
               {mode === "login" ? " Tạo ngay" : " Đăng nhập"}
             </Text>
           </TouchableOpacity>
@@ -309,7 +197,7 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg },
+  container: { flex: 1 },
   scroll: {
     flexGrow: 1,
     justifyContent: "center",
@@ -318,106 +206,59 @@ const styles = StyleSheet.create({
 
   header: { alignItems: "center", marginBottom: Spacing.xl },
   appIconBox: {
-    width: 80,
-    height: 80,
+    width: Layout.avatarXl,
+    height: Layout.avatarXl,
     borderRadius: Radii.xl,
     overflow: "hidden",
     marginBottom: Spacing.sm,
   },
-  appIconImage: { width: 80, height: 80 },
+  appIconImage: { width: Layout.avatarXl, height: Layout.avatarXl },
   appName: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontSize: Typography.titleLG.fontSize,
+    fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.5,
   },
   tagline: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.text.caption2.fontSize,
     textAlign: "center",
-    marginTop: 4,
+    marginTop: Spacing.xs,
     letterSpacing: 1,
-    fontWeight: "700",
+    fontWeight: Typography.weight.bold,
   },
 
   segmentedControl: {
     flexDirection: "row",
-    backgroundColor: Colors.duolingo.bgSoftDark,
     borderRadius: Radii.lg,
-    padding: 4,
+    padding: Spacing.xs,
     marginBottom: Spacing.lg,
-    borderBottomWidth: 3,
-    borderBottomColor: "#18242B",
+    borderWidth: BorderWidths.thin,
   },
   segmentBtn: {
     flex: 1,
-    height: 40,
+    height: Layout.btnHeightMd,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: Radii.md,
   },
-  segmentBtnActive: {
-    backgroundColor: Colors.duolingo.blue,
-  },
   segmentText: {
-    fontSize: 13,
-    color: Colors.duolingo.textMuted,
-    fontWeight: "700",
-  },
-  segmentTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.bold,
   },
 
   formGroup: {
-    gap: 10,
+    gap: Spacing.cellPadding,
     marginBottom: Spacing.md,
-  },
-  fieldCard: {
-    marginBottom: 0,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  fieldIconWrap: {
-    width: 32,
-    alignItems: "center",
-    marginRight: 8,
-  },
-  fieldBody: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  fieldLabel: {
-    fontSize: 11,
-    color: Colors.duolingo.textMuted,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-    marginBottom: 2,
-  },
-  fieldInput: {
-    fontSize: 16,
-    color: "#FFFFFF",
-    padding: 0,
-    minHeight: 24,
-    fontWeight: "600",
-  },
-  eyeBtn: {
-    paddingLeft: 8,
   },
 
   forgotBtn: {
     alignSelf: "flex-end",
     marginBottom: Spacing.lg,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.xs,
   },
   forgotBtnText: {
-    fontSize: 13,
-    color: "#FFFFFF",
-    fontWeight: "700",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.bold,
     textDecorationLine: "underline",
   },
 
@@ -428,13 +269,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   footerText: {
-    fontSize: 14,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
   },
   footerLink: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    fontWeight: "800",
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textDecorationLine: "underline",
   },
 });

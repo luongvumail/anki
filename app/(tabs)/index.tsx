@@ -1,31 +1,25 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, Text, ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { auth } from "../../lib/firebase";
 import { getStreakCount } from "../../lib/reviewTracker";
 import { useStore } from "../../store/useStore";
-import { Colors, Spacing } from "../../constants/theme";
-import { DuolingoButton } from "../../components/ui/DuolingoButton";
-import { DuolingoCard } from "../../components/ui/DuolingoCard";
-import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
+import { Spacing, Typography, Layout } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
+import { AppButton } from "../../components/ui/AppButton";
+import { AppCard } from "../../components/ui/AppCard";
+import { AppHeader } from "../../components/ui/AppHeader";
 import { ZigZagSkillPath } from "../../components/home/ZigZagSkillPath";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
+import { SkeletonCard } from "../../components/ui/SkeletonCard";
 import { Deck } from "../../store/slices/types";
 import { computeDueCount } from "../../lib/deckUtils";
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const decks = useStore((s) => s.decks);
   const fetchDecks = useStore((s) => s.fetchDecks);
   const isLoading = useStore((s) => s.isLoading);
@@ -48,7 +42,7 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       getStreakCount().then(setStreakCount);
-    }, [])
+    }, []),
   );
 
   const onRefresh = async () => {
@@ -58,9 +52,9 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header Bar with Personalized User Greeting */}
-      <DuolingoHeader streakCount={streakCount} />
+      <AppHeader streakCount={streakCount} />
 
       <ScrollView
         contentContainerStyle={[
@@ -68,32 +62,31 @@ export default function DashboardScreen() {
           { paddingBottom: Math.max(insets.bottom + 80, 100) },
         ]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.duolingo.green}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.green} />
         }
         showsVerticalScrollIndicator={false}
       >
         {isLoading && decks.length === 0 ? (
-          <ActivityIndicator
-            size="small"
-            color={Colors.duolingo.green}
-            style={{ marginVertical: 40 }}
-          />
+          <View style={{ marginTop: Spacing.md }}>
+            <SkeletonCard lines={3} />
+            <SkeletonCard lines={2} />
+          </View>
         ) : decks.length === 0 ? (
-          <DuolingoCard style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Chưa có bộ thẻ nào!</Text>
-            <Text style={styles.emptySub}>Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng.</Text>
-            <DuolingoButton
+          <AppCard style={styles.emptyCard}>
+            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+              Chưa có bộ thẻ nào!
+            </Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
+              Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng.
+            </Text>
+            <AppButton
               title="TẠO BỘ THẺ MỚI"
-              icon={<Ionicons name="add-circle" size={20} color="#FFFFFF" />}
+              icon={<Ionicons name="add-circle" size={Layout.iconMd} color="#FFFFFF" />}
               variant="primary"
               onPress={() => router.push("/(tabs)/decks")}
               style={{ marginTop: Spacing.md }}
             />
-          </DuolingoCard>
+          </AppCard>
         ) : (
           /* REAL DECKS ZIGZAG SKILL PATH (1 NODE = 1 DECK) */
           <ZigZagSkillPath
@@ -116,12 +109,8 @@ export default function DashboardScreen() {
 
       {/* AI Add Card Full Overlay Modal */}
       {showAIAddModal && (
-        <AIAddCardModal
-          visible={showAIAddModal}
-          onClose={() => setShowAIAddModal(false)}
-        />
+        <AIAddCardModal visible={showAIAddModal} onClose={() => setShowAIAddModal(false)} />
       )}
-
     </View>
   );
 }
@@ -129,13 +118,11 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
   },
   scrollContent: {
     paddingHorizontal: Spacing.pageMargin,
     paddingTop: Spacing.md,
   },
-
   emptyCard: {
     alignItems: "center",
     justifyContent: "center",
@@ -143,14 +130,12 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   emptySub: {
-    fontSize: 13,
-    color: Colors.duolingo.textMuted,
-    marginTop: 4,
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.xs,
     textAlign: "center",
   },
 });

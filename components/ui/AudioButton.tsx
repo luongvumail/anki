@@ -1,7 +1,8 @@
 import React from "react";
 import { TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, triggerHaptic } from "../../constants/theme";
+import { triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
 interface AudioButtonProps {
   onPress: () => void;
@@ -17,9 +18,14 @@ export function AudioButton({
   isPlaying = false,
   size = "md",
   style,
-  color = Colors.duolingo.blue,
-  backgroundColor = Colors.duolingo.blueDim,
+  color,
+  backgroundColor,
 }: AudioButtonProps) {
+  const { theme } = useTheme();
+
+  const resolvedColor = color || theme.blue;
+  const resolvedBg = backgroundColor || theme.blueDim;
+
   const getDimensions = () => {
     switch (size) {
       case "sm":
@@ -47,7 +53,7 @@ export function AudioButton({
           width: boxSize,
           height: boxSize,
           borderRadius: boxSize / 2,
-          backgroundColor,
+          backgroundColor: resolvedBg,
         },
         style,
       ]}
@@ -58,7 +64,7 @@ export function AudioButton({
       <Ionicons
         name={isPlaying ? "volume-high" : "volume-medium"}
         size={iconSize}
-        color={color}
+        color={resolvedColor}
       />
     </TouchableOpacity>
   );
