@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import { View, TextInput, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../hooks/useTheme";
 import { Spacing, Typography, Layout, BorderWidths } from "../../constants/theme";
-import { DuolingoCard } from "./DuolingoCard";
+import { AppCard } from "./AppCard";
 
 export interface AuthFieldProps {
   label?: string;
@@ -32,7 +32,7 @@ export function AuthField({
 
   return (
     <Pressable onPress={() => inputRef.current?.focus()}>
-      <DuolingoCard
+      <AppCard
         style={StyleSheet.flatten([
           styles.fieldCard,
           { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
@@ -68,7 +68,7 @@ export function AuthField({
             </Pressable>
           )}
         </View>
-      </DuolingoCard>
+      </AppCard>
     </Pressable>
   );
 }

@@ -1,18 +1,18 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import {
+  Spacing,
+  Radii,
+  Typography,
+  Layout,
+  triggerHaptic,
+} from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { DuolingoButton } from "../ui/DuolingoButton";
-import { useSpeedMatch, MatchTile } from "../../hooks/useSpeedMatch";
+import { useSpeedMatch } from "../../hooks/useSpeedMatch";
+import { AppButton } from "../ui/AppButton";
 
 export interface SpeedMatchModalProps {
   visible: boolean;
@@ -20,11 +20,7 @@ export interface SpeedMatchModalProps {
   cards: Card[];
 }
 
-export function SpeedMatchModal({
-  visible,
-  onClose,
-  cards,
-}: SpeedMatchModalProps) {
+export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const {
@@ -47,7 +43,12 @@ export function SpeedMatchModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg },
+        ]}
+      >
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -61,8 +62,12 @@ export function SpeedMatchModal({
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>GHÉP TỪ NHANH 60S</Text>
-            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Thử thách phản xạ từ vựng siêu tốc</Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+              GHÉP TỪ NHANH 60S
+            </Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>
+              Thử thách phản xạ từ vựng siêu tốc
+            </Text>
           </View>
 
           <View style={{ width: Layout.avatarMd }} />
@@ -92,13 +97,15 @@ export function SpeedMatchModal({
             <View style={[styles.doneIconCircle, { backgroundColor: theme.green }]}>
               <Ionicons name="trophy" size={48} color="#FFFFFF" />
             </View>
-            <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>HOÀN THÀNH LỢT CHƠI!</Text>
+            <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>
+              HOÀN THÀNH LỢT CHƠI!
+            </Text>
             <Text style={[styles.scoreBigText, { color: theme.green }]}>+{score} XP</Text>
             <Text style={[styles.highScoreText, { color: theme.textMuted }]}>
               Kỷ lục cao nhất: {highScore} XP
             </Text>
-
-            <DuolingoButton
+            App
+            <AppButton
               title="CHƠI LẠI"
               variant="primary"
               size="lg"
@@ -129,17 +136,20 @@ export function SpeedMatchModal({
                     },
                   ]}
                 >
-                  <Text style={[styles.tileText, { color: isSelected ? "#FFFFFF" : theme.textPrimary }]}>
+                  <Text
+                    style={[styles.tileText, { color: isSelected ? "#FFFFFF" : theme.textPrimary }]}
+                  >
                     {tile.text}
                   </Text>
                   {tile.pinyin ? (
-                    <Text style={[styles.tilePinyin, { color: isSelected ? "#E0F2FE" : theme.blue }]}>
+                    <Text
+                      style={[styles.tilePinyin, { color: isSelected ? "#E0F2FE" : theme.blue }]}
+                    >
                       {tile.pinyin}
                     </Text>
                   ) : null}
                 </TouchableOpacity>
               );
-
             })}
           </View>
         )}

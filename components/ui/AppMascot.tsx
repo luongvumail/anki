@@ -6,7 +6,7 @@ import { useTheme } from "../../hooks/useTheme";
 
 export type MascotExpression = "waving" | "celebrate" | "happy" | "thinking" | "sad";
 
-interface AppMascotProps {
+export interface AppMascotProps {
   expression?: MascotExpression;
   size?: number;
   speechBubbleText?: string;
@@ -107,6 +107,7 @@ export function AppMascot({
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   mascotContainer: {

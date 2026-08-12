@@ -34,8 +34,8 @@ async function callGeminiWithRetry(url, payload, maxRetries = 2) {
 async function handleWorkerRequest(request, env) {
   // Safe environment variable resolution (works in both Module & Service Worker modes)
   const geminiApiKey =
-    env?.GEMINI_API_KEY || (typeof GEMINI_API_KEY !== "undefined" ? GEMINI_API_KEY : "");
-  const appSecret = env?.APP_SECRET || (typeof APP_SECRET !== "undefined" ? APP_SECRET : "");
+    env?.GEMINI_API_KEY || (typeof globalThis.GEMINI_API_KEY !== "undefined" ? globalThis.GEMINI_API_KEY : "");
+  const appSecret = env?.APP_SECRET || (typeof globalThis.APP_SECRET !== "undefined" ? globalThis.APP_SECRET : "");
 
   // 1. Handle CORS Preflight (OPTIONS request)
   if (request.method === "OPTIONS") {

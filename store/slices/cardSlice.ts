@@ -8,8 +8,6 @@ import {
   writeBatch,
   query,
   orderBy,
-  limit,
-  startAfter,
   QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { auth, db } from "../../lib/firebase";
@@ -115,9 +113,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     const cleanChar = cardData.character.trim().toLowerCase();
 
     // Prevent duplicate cards: if card already exists in this deck, update it instead of creating duplicate
-    const duplicate = existingCards.find(
-      (c) => c.character.trim().toLowerCase() === cleanChar,
-    );
+    const duplicate = existingCards.find((c) => c.character.trim().toLowerCase() === cleanChar);
 
     if (duplicate) {
       if (__DEV__) {
@@ -360,4 +356,3 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     return undefined;
   },
 });
-

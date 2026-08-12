@@ -12,10 +12,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
 import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { DuolingoButton } from "../ui/DuolingoButton";
+
 import { AudioButton } from "../ui/AudioButton";
 import { ProgressBar } from "../ui/ProgressBar";
 import { useSentenceBuilder } from "../../hooks/useSentenceBuilder";
+import { AppButton } from "../ui/AppButton";
 
 export interface SentenceBuilderModalProps {
   visible: boolean;
@@ -99,7 +100,8 @@ export function SentenceBuilderModal({
             <Text style={[styles.doneSub, { color: theme.textMuted }]}>
               Bạn đã xếp đúng các câu ví dụ mẫu. Thêm XP tích lũy vào tài khoản!
             </Text>
-            <DuolingoButton
+
+            <AppButton
               title="HOÀN THÀNH"
               variant="primary"
               size="lg"
@@ -236,8 +238,7 @@ export function SentenceBuilderModal({
                       Đáp án đúng: <Text style={{ color: theme.textPrimary, fontWeight: "800" }}>{currentQuestion.chinese}</Text>
                     </Text>
                   ) : null}
-
-                  <DuolingoButton
+                  <AppButton
                     title="CÂU TIẾP THEO"
                     variant={isCorrect ? "primary" : "secondary"}
                     size="lg"
@@ -246,7 +247,7 @@ export function SentenceBuilderModal({
                   />
                 </View>
               ) : (
-                <DuolingoButton
+                <AppButton
                   title="KIỂM TRA ĐÁP ÁN"
                   variant="primary"
                   size="lg"

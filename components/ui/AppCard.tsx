@@ -27,26 +27,22 @@ export function AppCard({
         return {
           bg: theme.blueDim,
           border: theme.blue,
-          borderBottom: theme.blueDark,
         };
       case "success":
         return {
           bg: theme.greenDim,
           border: theme.green,
-          borderBottom: theme.greenDark,
         };
       case "error":
         return {
           bg: theme.redDim,
           border: theme.red,
-          borderBottom: theme.redDark,
         };
       case "default":
       default:
         return {
           bg: theme.cardBg,
           border: theme.cardBorder,
-          borderBottom: theme.cardBottom,
         };
     }
   };
@@ -99,15 +95,16 @@ export function AppCard({
   );
 }
 
+
 const styles = StyleSheet.create({
   cardBase: {
     width: "100%",
     borderRadius: Radii.lg,
     borderWidth: 1,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 4,
   },
 });

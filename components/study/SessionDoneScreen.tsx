@@ -6,9 +6,9 @@ import { Spacing, Typography, Layout, triggerHaptic } from "../../constants/them
 import { useTheme } from "../../hooks/useTheme";
 import { StudySession } from "../../store/slices/types";
 import { useStore } from "../../store/useStore";
-import { DuolingoCard } from "../ui/DuolingoCard";
-import { DuolingoButton } from "../ui/DuolingoButton";
-import { DuolingoMascot } from "../ui/DuolingoMascot";
+import { AppCard } from "../ui/AppCard";
+import { AppButton } from "../ui/AppButton";
+import { AppMascot } from "../ui/AppMascot";
 
 interface SessionDoneScreenProps {
   session: StudySession;
@@ -72,7 +72,7 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
       ]}
     >
       <Animated.View style={[styles.innerContent, { opacity: fadeAnim }]}>
-        <DuolingoMascot
+        <AppMascot
           expression={mascotExpression}
           size={Layout.avatarXl}
           speechBubbleText={mascotSpeech}
@@ -82,24 +82,24 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
 
         {/* Celebratory Stats Grid Cards (3 Balanced Boxes: Accuracy %, Reviewed Count, Earned XP) */}
         <View style={styles.statsGrid}>
-          <DuolingoCard style={styles.statBox}>
+          <AppCard style={styles.statBox}>
             <Text style={[styles.statVal, { color: theme.green }]}>{accuracy}%</Text>
             <Text style={[styles.statLabel, { color: theme.textMuted }]}>CHÍNH XÁC</Text>
-          </DuolingoCard>
+          </AppCard>
 
-          <DuolingoCard style={styles.statBox}>
+          <AppCard style={styles.statBox}>
             <Text style={[styles.statVal, { color: theme.blue }]}>{session.reviewedCount}</Text>
             <Text style={[styles.statLabel, { color: theme.textMuted }]}>TỪ ĐÃ ÔN</Text>
-          </DuolingoCard>
+          </AppCard>
 
-          <DuolingoCard style={styles.statBox}>
+          <AppCard style={styles.statBox}>
             <Text style={[styles.statVal, { color: theme.yellow }]}>+{earnedXP}</Text>
             <Text style={[styles.statLabel, { color: theme.textMuted }]}>KINH NGHIỆM</Text>
-          </DuolingoCard>
+          </AppCard>
         </View>
 
         {/* 3D Full-Width Primary Continue Button */}
-        <DuolingoButton
+        <AppButton
           title="TIẾP TỤC"
           icon={<Ionicons name="arrow-forward" size={Layout.iconMd} color="#FFFFFF" />}
           variant="primary"
@@ -107,6 +107,7 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
           onPress={onDone}
           style={{ marginTop: Spacing.lg }}
         />
+
       </Animated.View>
     </View>
   );

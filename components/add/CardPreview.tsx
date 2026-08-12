@@ -10,7 +10,8 @@ import { CardData } from "../../lib/gemini";
 import { Typography, Spacing, Radii, Layout, BorderWidths } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { SectionTitle } from "../ui/SectionTitle";
-import { DuolingoButton } from "../ui/DuolingoButton";
+import { AppButton } from "../ui/AppButton";
+
 import { Ionicons } from "@expo/vector-icons";
 
 interface CardPreviewProps {
@@ -42,7 +43,7 @@ export const CardPreview = React.memo(function CardPreview({
       friction: 8,
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [slideAnim]);
 
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
@@ -104,7 +105,7 @@ export const CardPreview = React.memo(function CardPreview({
         )}
 
         {onSave && (
-          <DuolingoButton
+          <AppButton
             title={saving ? "ĐANG LƯU..." : saved ? "ĐÃ LƯU ✓" : `LƯU VÀO BỘ ${targetDeckName ? `"${targetDeckName}"` : ""}`}
             variant={saved ? "success" : "primary"}
             size="lg"

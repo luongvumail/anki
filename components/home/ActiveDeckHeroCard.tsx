@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Radii, Spacing, BorderWidths } from "../../constants/theme";
+import { Radii, Spacing } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { Deck } from "../../store/slices/types";
-import { DuolingoButton } from "../ui/DuolingoButton";
+import { AppButton } from "../ui/AppButton";
 
 interface ActiveDeckHeroCardProps {
   deck: Deck;
@@ -22,7 +22,7 @@ export function ActiveDeckHeroCard({
   onStartStudy,
   onChangeDeck,
 }: ActiveDeckHeroCardProps) {
-  const totalCards = deck.cardCount || (dueCount + learnedCount + newCount) || 0;
+  const totalCards = deck.cardCount || dueCount + learnedCount + newCount || 0;
   const { theme } = useTheme();
 
   return (
@@ -38,11 +38,7 @@ export function ActiveDeckHeroCard({
     >
       {/* Top Header Row: Deck Info & Change Deck Button */}
       <View style={styles.topRow}>
-        <TouchableOpacity
-          style={styles.deckTitleBtn}
-          onPress={onChangeDeck}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.deckTitleBtn} onPress={onChangeDeck} activeOpacity={0.8}>
           <View style={styles.titleTextGroup}>
             <Text style={[styles.deckLabel, { color: theme.textMuted }]}>BỘ THẺ ĐANG HỌC</Text>
             <View style={styles.nameRow}>
@@ -54,7 +50,10 @@ export function ActiveDeckHeroCard({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.switchBadge, { backgroundColor: theme.bgSoft, borderBottomColor: theme.cardBottom }]}
+          style={[
+            styles.switchBadge,
+            { backgroundColor: theme.bgSoft, borderBottomColor: theme.cardBottom },
+          ]}
           onPress={onChangeDeck}
           activeOpacity={0.8}
         >
@@ -65,44 +64,44 @@ export function ActiveDeckHeroCard({
       {/* SRS Stats Row: Due, Learned, New */}
       <View style={styles.statsGrid}>
         {/* DUE COUNT (RED) */}
-        <View style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.red }]}>
+        <View
+          style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.red }]}
+        >
           <View>
-            <Text style={[styles.statValueText, { color: theme.red }]}>
-              {dueCount}
-            </Text>
+            <Text style={[styles.statValueText, { color: theme.red }]}>{dueCount}</Text>
             <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Cần ôn</Text>
           </View>
         </View>
 
         {/* LEARNED COUNT (GREEN) */}
-        <View style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.green }]}>
+        <View
+          style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.green }]}
+        >
           <View>
-            <Text style={[styles.statValueText, { color: theme.green }]}>
-              {learnedCount}
-            </Text>
+            <Text style={[styles.statValueText, { color: theme.green }]}>{learnedCount}</Text>
             <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Đã thuộc</Text>
           </View>
         </View>
 
         {/* NEW COUNT (BLUE) */}
-        <View style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.blue }]}>
+        <View
+          style={[styles.statBox, { backgroundColor: theme.bgSoft, borderLeftColor: theme.blue }]}
+        >
           <View>
-            <Text style={[styles.statValueText, { color: theme.blue }]}>
-              {newCount}
-            </Text>
+            <Text style={[styles.statValueText, { color: theme.blue }]}>{newCount}</Text>
             <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Từ mới</Text>
           </View>
         </View>
       </View>
 
       {/* Main Start Action Button */}
-      <DuolingoButton
+      <AppButton
         title={
           dueCount > 0
             ? `ÔN TẬP NGAY (${dueCount} TỪ CẦN ÔN)`
             : totalCards > 0
-            ? "BẮT ĐẦU HỌC BÀI KẾ TIẾP"
-            : "THÊM TỪ VỰNG VÀO BỘ"
+              ? "BẮT ĐẦU HỌC BÀI KẾ TIẾP"
+              : "THÊM TỪ VỰNG VÀO BỘ"
         }
         variant="primary"
         size="lg"

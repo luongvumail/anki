@@ -76,6 +76,7 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
       startGame();
     }
     if (!visible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsPlaying(false);
       if (timerRef.current) clearInterval(timerRef.current);
     }
@@ -89,6 +90,7 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (isPlaying && timeLeft === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsPlaying(false);
       setIsGameOver(true);
       triggerHaptic("heavy");

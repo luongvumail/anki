@@ -8,7 +8,7 @@ interface SkeletonCardProps {
   style?: ViewStyle;
 }
 
-export const SkeletonCard = React.memo(({ lines = 2, style }: SkeletonCardProps) => {
+export const SkeletonCard = React.memo(function SkeletonCard({ lines = 2, style }: SkeletonCardProps) {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
   const { theme } = useTheme();
 

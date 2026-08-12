@@ -6,9 +6,7 @@ import { computeLearnedCount, getDeckMasteryPct } from "../lib/deckUtils";
 import { isDue } from "../lib/srs";
 import { getLevelInfo } from "../store/slices/userProgressSlice";
 
-
 export interface DayActivity {
-
   dateStr: string;
   dayName: string;
   count: number;
@@ -34,7 +32,6 @@ function getLast7Days(): DayActivity[] {
 }
 
 export function useStats() {
-  const decks = useStore((s) => s.decks);
   const cards = useStore((s) => s.cards);
   const fetchDecks = useStore((s) => s.fetchDecks);
   const fetchCards = useStore((s) => s.fetchCards);
@@ -109,7 +106,6 @@ export function useStats() {
   const retentionRatePct = useMemo(() => {
     return getDeckMasteryPct(totalCardsCount, dueCount, allCardsList);
   }, [totalCardsCount, dueCount, allCardsList]);
-
 
   const weeklyActivity = useMemo(() => {
     const days = getLast7Days();

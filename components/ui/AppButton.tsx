@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from "react-native";
-import {
-  Radii,
-  Layout,
-  Spacing,
-  Typography,
-  triggerHaptic,
-} from "../../constants/theme";
+import { Radii, Layout, Spacing, Typography, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 
 export type AppButtonVariant =
@@ -163,6 +157,7 @@ export function AppButton({
     </TouchableOpacity>
   );
 }
+
 
 const styles = StyleSheet.create({
   buttonBase: {

@@ -11,6 +11,7 @@ export function useFlashcardAnimation(character: string = "") {
 
   // Reset animation state when character changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsRevealed(false);
     detailAnim.setValue(0);
   }, [character, detailAnim]);

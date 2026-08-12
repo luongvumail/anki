@@ -6,8 +6,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Spacing, Radii, Typography, Layout, BorderWidths } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
-import { DuolingoCard } from "../../components/ui/DuolingoCard";
-import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
+import { AppCard } from "../../components/ui/AppCard";
+import { AppHeader } from "../../components/ui/AppHeader";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { BadgesGallery } from "../../components/stats/BadgesGallery";
 import { StudyGuideSection } from "../../components/stats/StudyGuideSection";
@@ -35,12 +35,12 @@ export default function StatsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadAllData();
-    }, [loadAllData])
+    }, [loadAllData]),
   );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <DuolingoHeader streakCount={streakCount} />
+      <AppHeader streakCount={streakCount} />
 
       <ScrollView
         contentContainerStyle={[
@@ -57,15 +57,26 @@ export default function StatsScreen() {
         ) : (
           <Animated.View style={{ opacity: fadeAnim }}>
             {/* Level & Rank Hero Banner */}
-            <DuolingoCard style={styles.levelBanner}>
+            <AppCard style={styles.levelBanner}>
               <View style={styles.levelRow}>
-                <View style={[styles.levelBadgeCircle, { backgroundColor: theme.yellowDim, borderColor: theme.yellow }]}>
-                  <Text style={[styles.levelBadgeText, { color: theme.yellow }]}>Lv.{levelInfo.level}</Text>
+                <View
+                  style={[
+                    styles.levelBadgeCircle,
+                    { backgroundColor: theme.yellowDim, borderColor: theme.yellow },
+                  ]}
+                >
+                  <Text style={[styles.levelBadgeText, { color: theme.yellow }]}>
+                    Lv.{levelInfo.level}
+                  </Text>
                 </View>
                 <View style={styles.levelTextContainer}>
                   <View style={styles.levelTitleRow}>
-                    <Text style={[styles.levelTitleCn, { color: theme.textPrimary }]}>{levelInfo.title}</Text>
-                    <Text style={[styles.levelTitleVi, { color: theme.textMuted }]}>({levelInfo.titleVi})</Text>
+                    <Text style={[styles.levelTitleCn, { color: theme.textPrimary }]}>
+                      {levelInfo.title}
+                    </Text>
+                    <Text style={[styles.levelTitleVi, { color: theme.textMuted }]}>
+                      ({levelInfo.titleVi})
+                    </Text>
                   </View>
                   <Text style={[styles.xpText, { color: theme.yellow }]}>{xp} XP Tích Lũy</Text>
                 </View>
@@ -76,16 +87,23 @@ export default function StatsScreen() {
                 fillColor={theme.yellow}
                 style={{ marginTop: Spacing.sm }}
               />
-            </DuolingoCard>
+            </AppCard>
 
             {/* Main Trophy Progress Card */}
-            <DuolingoCard style={styles.trophyBanner}>
+            <AppCard style={styles.trophyBanner}>
               <View style={styles.trophyRow}>
-                <View style={[styles.guideIconTile, { backgroundColor: theme.yellowDim, marginRight: Spacing.cellPadding }]}>
+                <View
+                  style={[
+                    styles.guideIconTile,
+                    { backgroundColor: theme.yellowDim, marginRight: Spacing.cellPadding },
+                  ]}
+                >
                   <Ionicons name="trophy" size={Layout.iconLg} color={theme.yellow} />
                 </View>
                 <View style={styles.trophyText}>
-                  <Text style={[styles.trophyTitle, { color: theme.textPrimary }]}>TIẾN ĐỘ THUỘC TỪ VỰNG</Text>
+                  <Text style={[styles.trophyTitle, { color: theme.textPrimary }]}>
+                    TIẾN ĐỘ THUỘC TỪ VỰNG
+                  </Text>
                   <Text style={[styles.trophySub, { color: theme.textMuted }]}>
                     {retentionRatePct === 100
                       ? "Xuất sắc! Bạn đã thuộc 100% vốn từ hiện tại"
@@ -93,7 +111,9 @@ export default function StatsScreen() {
                   </Text>
                 </View>
                 <View style={[styles.retentionBadge, { backgroundColor: theme.greenDim }]}>
-                  <Text style={[styles.retentionBadgeText, { color: theme.green }]}>{retentionRatePct}%</Text>
+                  <Text style={[styles.retentionBadgeText, { color: theme.green }]}>
+                    {retentionRatePct}%
+                  </Text>
                 </View>
               </View>
 
@@ -103,46 +123,64 @@ export default function StatsScreen() {
                 fillColor={theme.green}
                 style={{ marginTop: Spacing.sm }}
               />
-            </DuolingoCard>
+            </AppCard>
 
             {/* Overview Stat Cards Grid */}
             <View style={styles.statsGrid}>
-              <DuolingoCard style={styles.statCardItem}>
+              <AppCard style={styles.statCardItem}>
                 <Ionicons name="flame" size={Layout.iconLg} color={theme.yellow} />
-                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>{streakCount} Ngày</Text>
-                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>Chuỗi Học Liên Tục</Text>
-              </DuolingoCard>
+                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>
+                  {streakCount} Ngày
+                </Text>
+                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>
+                  Chuỗi Học Liên Tục
+                </Text>
+              </AppCard>
 
-              <DuolingoCard style={styles.statCardItem}>
+              <AppCard style={styles.statCardItem}>
                 <Ionicons name="checkmark-circle" size={Layout.iconLg} color={theme.green} />
-                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>{learnedCount} từ</Text>
-                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>Đã Ghi Nhớ Thuộc</Text>
-              </DuolingoCard>
+                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>
+                  {learnedCount} từ
+                </Text>
+                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>
+                  Đã Ghi Nhớ Thuộc
+                </Text>
+              </AppCard>
 
-              <DuolingoCard style={styles.statCardItem}>
+              <AppCard style={styles.statCardItem}>
                 <Ionicons name="time" size={Layout.iconLg} color={theme.yellow} />
-                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>{dueCount} từ</Text>
-                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>Cần Ôn Tập Ngay</Text>
-              </DuolingoCard>
+                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>
+                  {dueCount} từ
+                </Text>
+                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>
+                  Cần Ôn Tập Ngay
+                </Text>
+              </AppCard>
 
-              <DuolingoCard style={styles.statCardItem}>
+              <AppCard style={styles.statCardItem}>
                 <Ionicons name="sparkles" size={Layout.iconLg} color={theme.blue} />
-                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>{newCardsCount} từ</Text>
-                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>Từ Mới Chưa Học</Text>
-              </DuolingoCard>
+                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>
+                  {newCardsCount} từ
+                </Text>
+                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>
+                  Từ Mới Chưa Học
+                </Text>
+              </AppCard>
             </View>
 
             {/* Weekly Activity Bar Chart */}
             <SectionTitle>HOẠT ĐỘNG 7 NGÀY GẦN ĐÂY</SectionTitle>
 
-            <DuolingoCard style={styles.chartCard}>
+            <AppCard style={styles.chartCard}>
               <View style={styles.chartRow}>
                 {weeklyActivity.map((day) => {
                   const heightPct = Math.min(100, Math.max(12, (day.count / maxWeeklyCount) * 100));
 
                   return (
                     <View key={day.dateStr} style={styles.barColumn}>
-                      <Text style={[styles.barCountText, { color: theme.textMuted }]}>{day.count > 0 ? day.count : ""}</Text>
+                      <Text style={[styles.barCountText, { color: theme.textMuted }]}>
+                        {day.count > 0 ? day.count : ""}
+                      </Text>
 
                       <View style={[styles.barTrack, { backgroundColor: theme.cardBottom }]}>
                         <View
@@ -160,14 +198,20 @@ export default function StatsScreen() {
                         />
                       </View>
 
-                      <Text style={[styles.barDayText, { color: day.isToday ? theme.textPrimary : theme.textMuted }, day.isToday && styles.barDayToday]}>
+                      <Text
+                        style={[
+                          styles.barDayText,
+                          { color: day.isToday ? theme.textPrimary : theme.textMuted },
+                          day.isToday && styles.barDayToday,
+                        ]}
+                      >
                         {day.dayName}
                       </Text>
                     </View>
                   );
                 })}
               </View>
-            </DuolingoCard>
+            </AppCard>
 
             {/* Achievements Badges Gallery Section */}
             <BadgesGallery streakCount={streakCount} learnedCards={learnedCount} />
@@ -203,7 +247,11 @@ const styles = StyleSheet.create({
   levelTitleRow: { flexDirection: "row", alignItems: "baseline", gap: Spacing.xs },
   levelTitleCn: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold },
   levelTitleVi: { fontSize: Typography.caption.fontSize, fontWeight: Typography.weight.semibold },
-  xpText: { fontSize: Typography.caption1.fontSize, fontWeight: Typography.weight.extraBold, marginTop: 2 },
+  xpText: {
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: 2,
+  },
 
   trophyBanner: { padding: Spacing.md, marginBottom: Spacing.md },
   trophyRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
@@ -235,7 +283,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.cellPadding, marginBottom: Spacing.md },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.cellPadding,
+    marginBottom: Spacing.md,
+  },
   statCardItem: { width: "48%", padding: Spacing.md, alignItems: "flex-start" },
   statCardVal: {
     fontSize: Typography.titleMD.fontSize,
@@ -269,6 +322,10 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   barFill: { width: "100%", borderRadius: Radii.full },
-  barDayText: { fontSize: Typography.caption1.fontSize, marginTop: Spacing.xs, fontWeight: Typography.weight.semibold },
+  barDayText: {
+    fontSize: Typography.caption1.fontSize,
+    marginTop: Spacing.xs,
+    fontWeight: Typography.weight.semibold,
+  },
   barDayToday: { fontWeight: Typography.weight.extraBold },
 });

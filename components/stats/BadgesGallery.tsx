@@ -5,7 +5,7 @@ import { useStore, Card } from "../../store/useStore";
 import { ALL_BADGES } from "../../store/slices/userProgressSlice";
 import { Spacing, Typography, Layout, Radii } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { DuolingoCard } from "../ui/DuolingoCard";
+import { AppCard } from "../ui/AppCard";
 import { SectionTitle } from "../ui/SectionTitle";
 import { computeLearnedCount } from "../../lib/deckUtils";
 
@@ -60,7 +60,7 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
           }
 
           return (
-            <DuolingoCard
+            <AppCard
               key={badge.id}
               style={StyleSheet.flatten([
                 styles.badgeCompactCard,
@@ -112,7 +112,8 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
                   {isUnlocked ? "ĐÃ MỞ" : progressText}
                 </Text>
               </View>
-            </DuolingoCard>
+            </AppCard>
+
           );
         })}
       </ScrollView>

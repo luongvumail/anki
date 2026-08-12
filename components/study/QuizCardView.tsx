@@ -12,7 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { QuizQuestion } from "../../lib/quizGenerator";
 import { Spacing, Radii, Typography, Layout, BorderWidths } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { DuolingoButton } from "../ui/DuolingoButton";
+import { AppButton } from "../ui/AppButton";
+
 import { AudioButton } from "../ui/AudioButton";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
 import { useQuizCard, WeakTagType } from "../../hooks/useQuizCard";
@@ -44,22 +45,30 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
     bounceAnim,
     playTTS,
     handleSelectOption,
-    handleCheck,
     handleContinue,
   } = useQuizCard(question, onAnswer, isFastRepairMode);
 
   const chosenOption = selectedIndex !== null ? question.options[selectedIndex] : null;
   const isCorrect = chosenOption === question.correctAnswer;
-  const fsrsEval = isChecked ? calculateQuizSRS(isCorrect, false, responseTimeMs, question.card.srs) : null;
+  const fsrsEval = isChecked
+    ? calculateQuizSRS(isCorrect, false, responseTimeMs, question.card.srs)
+    : null;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Fast Repair Mode Countdown Header */}
         {isFastRepairMode && (
-          <View style={[styles.timerHeader, { backgroundColor: theme.cardBg, borderColor: theme.yellow }]}>
+          <View
+            style={[
+              styles.timerHeader,
+              { backgroundColor: theme.cardBg, borderColor: theme.yellow },
+            ]}
+          >
             <Ionicons name="flash" size={Layout.iconMd} color={theme.yellow} />
-            <Text style={[styles.timerTitle, { color: theme.yellow }]}>SỬA LỖI PHẢN XẠ NHANH (5s):</Text>
+            <Text style={[styles.timerTitle, { color: theme.yellow }]}>
+              SỬA LỖI PHẢN XẠ NHANH (5s):
+            </Text>
             <View style={[styles.timerBadge, { backgroundColor: theme.yellowDim }]}>
               <Text style={[styles.timerText, { color: theme.yellow }]}>{timeLeft}s</Text>
             </View>
@@ -79,7 +88,9 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
             { transform: [{ translateX: shakeAnim }, { scale: bounceAnim }] },
           ]}
         >
-          <Text style={[styles.questionPromptText, { color: theme.textMuted }]}>{question.prompt}</Text>
+          <Text style={[styles.questionPromptText, { color: theme.textMuted }]}>
+            {question.prompt}
+          </Text>
 
           {/* Target Text (Character or Cloze) */}
           {question.type === "cloze" ? (
@@ -88,7 +99,9 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                 {question.clozeSentence?.replace("___", " [ ? ] ")}
               </Text>
               {question.clozeTranslation ? (
-                <Text style={[styles.clozeTranslationText, { color: theme.textMuted }]}>"{question.clozeTranslation}"</Text>
+                <Text style={[styles.clozeTranslationText, { color: theme.textMuted }]}>
+                  "{question.clozeTranslation}"
+                </Text>
               ) : null}
             </View>
           ) : question.type === "listening" ? (
@@ -98,13 +111,22 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                 isPlaying={speaking}
                 size="lg"
               />
-              <Text style={[styles.listeningHintText, { color: theme.textMuted }]}>Bấm nút loa để nghe lại âm thanh</Text>
+              <Text style={[styles.listeningHintText, { color: theme.textMuted }]}>
+                Bấm nút loa để nghe lại âm thanh
+              </Text>
             </View>
           ) : (
             <View style={styles.targetCharContainer}>
-              <Text style={[styles.targetCharText, { color: theme.textPrimary }]}>{question.card.character}</Text>
+              <Text style={[styles.targetCharText, { color: theme.textPrimary }]}>
+                {question.card.character}
+              </Text>
               {question.type === "pinyin_choice" ? (
-                <Text style={[styles.targetSubText, { color: getPinyinToneColor(question.card.pinyin) }]}>
+                <Text
+                  style={[
+                    styles.targetSubText,
+                    { color: getPinyinToneColor(question.card.pinyin) },
+                  ]}
+                >
                   {question.card.pinyin}
                 </Text>
               ) : null}
@@ -162,7 +184,9 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                 ]}
               >
                 <View style={[styles.letterBox, { backgroundColor: letterBg }]}>
-                  <Text style={[styles.letterText, { color: letterColor }]}>{OPTION_LETTERS[idx]}</Text>
+                  <Text style={[styles.letterText, { color: letterColor }]}>
+                    {OPTION_LETTERS[idx]}
+                  </Text>
                 </View>
 
                 <Text style={[styles.optionText, { color: theme.textPrimary }]} numberOfLines={2}>
@@ -180,8 +204,6 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
           })}
         </View>
       </ScrollView>
-
-
 
       {/* Bottom Drawer Result Result (CORRECT / INCORRECT) */}
       {isChecked && (
@@ -205,21 +227,25 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
             </View>
             <View style={{ flex: 1 }}>
               <Text
-                style={[
-                  styles.resultTitleText,
-                  { color: isCorrect ? theme.green : theme.red },
-                ]}
+                style={[styles.resultTitleText, { color: isCorrect ? theme.green : theme.red }]}
               >
                 {isCorrect ? "CHÍNH XÁC! XUẤT SẮC!" : "RẤT TIẾC, CHƯA ĐÚNG!"}
               </Text>
               {!isCorrect && (
                 <Text style={[styles.correctAnswerLabelText, { color: theme.textMuted }]}>
-                  Đáp án đúng: <Text style={{ fontWeight: "800", color: theme.textPrimary }}>{question.correctAnswer}</Text>
+                  Đáp án đúng:{" "}
+                  <Text style={{ fontWeight: "800", color: theme.textPrimary }}>
+                    {question.correctAnswer}
+                  </Text>
                 </Text>
               )}
               {fsrsEval && (
                 <View style={[styles.speedBadgeRow, { backgroundColor: theme.bgSoft }]}>
-                  <Ionicons name="timer-outline" size={13} color={isCorrect ? theme.green : theme.red} />
+                  <Ionicons
+                    name="timer-outline"
+                    size={13}
+                    color={isCorrect ? theme.green : theme.red}
+                  />
                   <Text style={[styles.speedBadgeText, { color: theme.textPrimary }]}>
                     {(responseTimeMs / 1000).toFixed(1)}s • {fsrsEval.feedbackLabel}
                   </Text>
@@ -228,7 +254,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
             </View>
           </View>
 
-          <DuolingoButton
+          <AppButton
             title="TIẾP THEO"
             variant={isCorrect ? "primary" : "error"}
             size="lg"
@@ -240,7 +266,6 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -412,4 +437,3 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.bold,
   },
 });
-

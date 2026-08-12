@@ -2,7 +2,7 @@ import React from "react";
 import { Tabs } from "expo-router";
 import { StyleSheet, Platform, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Spacing, Typography, Layout, BorderWidths } from "../../constants/theme";
+import { Spacing, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { GlobalAccountModal } from "../../components/home/GlobalAccountModal";
 

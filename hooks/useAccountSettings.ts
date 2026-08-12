@@ -9,7 +9,6 @@ import {
 } from "../lib/notificationService";
 
 export function useAccountSettings() {
-  const userId = useStore((s) => s.userId);
   const setUserId = useStore((s) => s.setUserId);
   const currentUser = auth.currentUser;
 
@@ -50,15 +49,18 @@ export function useAccountSettings() {
     });
   }, []);
 
-  const handleChangePassword = useCallback(async (currentPass: string, newPass: string) => {
-    if (!currentUser) throw new Error("Chưa đăng nhập");
-    setLoadingPass(true);
-    try {
-      await updatePassword(currentUser, newPass);
-    } finally {
-      setLoadingPass(false);
-    }
-  }, [currentUser]);
+  const handleChangePassword = useCallback(
+    async (currentPass: string, newPass: string) => {
+      if (!currentUser) throw new Error("Chưa đăng nhập");
+      setLoadingPass(true);
+      try {
+        await updatePassword(currentUser, newPass);
+      } finally {
+        setLoadingPass(false);
+      }
+    },
+    [currentUser],
+  );
 
   const handleSendResetEmail = useCallback(async () => {
     if (!currentUser?.email) throw new Error("Không tìm thấy địa chỉ email");

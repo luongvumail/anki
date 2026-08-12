@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,9 @@ import {
   TextInputProps,
   ViewStyle,
   TextStyle,
-} from 'react-native';
-import { Typography, Spacing, Radii, BorderWidths } from '../../constants/theme';
-import { useTheme } from '../../hooks/useTheme';
+} from "react-native";
+import { Typography, Spacing, Radii, BorderWidths } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
 interface FormFieldProps extends TextInputProps {
   label: string;
@@ -32,7 +32,7 @@ export const FormField = React.memo(function FormField({
   onBlur,
   ...props
 }: FormFieldProps) {
-  const [isFocused, setIsFocused] = useState(false);
+  const [, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const { theme } = useTheme();
 
@@ -47,7 +47,6 @@ export const FormField = React.memo(function FormField({
           },
         ]}
       >
-
         <TextInput
           ref={inputRef}
           style={[styles.input, { color: theme.textPrimary }, inputStyle]}
@@ -80,14 +79,14 @@ const styles = StyleSheet.create({
     fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.bold,
     letterSpacing: 1.1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: Spacing.sm,
     marginLeft: Spacing.xs,
   },
   inputWrapper: {
     borderRadius: Radii.card,
     minHeight: Spacing.minTouchTarget,
-    justifyContent: 'center',
+    justifyContent: "center",
     borderWidth: BorderWidths.default,
   },
   input: {

@@ -4,9 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { Spacing, Typography, Layout, Radii } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { SectionTitle } from "../ui/SectionTitle";
-import { DuolingoCard } from "../ui/DuolingoCard";
+import { AppCard } from "../ui/AppCard";
 
-export const StudyGuideSection = React.memo(() => {
+export const StudyGuideSection = React.memo(function StudyGuideSection() {
   const { theme } = useTheme();
 
   return (
@@ -15,7 +15,8 @@ export const StudyGuideSection = React.memo(() => {
 
       <View style={styles.guideListContainer}>
         {/* Step 1: FSRS 4.5/5 Algorithm */}
-        <DuolingoCard style={styles.guideCard}>
+        <AppCard style={styles.guideCard}>
+
           <View style={styles.guideHeaderRow}>
             <View style={[styles.guideIconTile, { backgroundColor: theme.blueDim }]}>
               <Ionicons name="analytics" size={Layout.iconLg} color={theme.blue} />
@@ -28,10 +29,10 @@ export const StudyGuideSection = React.memo(() => {
           <Text style={[styles.guideDesc, { color: theme.textMuted }]}>
             Ứng dụng thuật toán FSRS tiên tiến nhất để tự động tính toán khả năng phục hồi trí nhớ (Retrievability), xếp lịch ôn tập tối ưu trước khi từ vựng bị quên và đưa từ vựng vào ghi nhớ dài hạn.
           </Text>
-        </DuolingoCard>
+        </AppCard>
 
         {/* Step 2: TikTok Swipe & 3-Stage Study Loop */}
-        <DuolingoCard style={styles.guideCard}>
+        <AppCard style={styles.guideCard}>
           <View style={styles.guideHeaderRow}>
             <View style={[styles.guideIconTile, { backgroundColor: theme.blueDim }]}>
               <Ionicons name="git-network" size={Layout.iconLg} color={theme.blue} />
@@ -58,10 +59,10 @@ export const StudyGuideSection = React.memo(() => {
               </Text>
             </View>
           </View>
-        </DuolingoCard>
+        </AppCard>
 
         {/* Step 3: Adaptive Quiz & Speed Evaluation */}
-        <DuolingoCard style={styles.guideCard}>
+        <AppCard style={styles.guideCard}>
           <View style={styles.guideHeaderRow}>
             <View style={[styles.guideIconTile, { backgroundColor: theme.greenDim }]}>
               <Ionicons name="help-circle" size={Layout.iconLg} color={theme.green} />
@@ -83,10 +84,10 @@ export const StudyGuideSection = React.memo(() => {
               </Text>
             </View>
           </View>
-        </DuolingoCard>
+        </AppCard>
 
         {/* Step 4: Arcade Practice Hub */}
-        <DuolingoCard style={styles.guideCard}>
+        <AppCard style={styles.guideCard}>
           <View style={styles.guideHeaderRow}>
             <View style={[styles.guideIconTile, { backgroundColor: theme.yellowDim }]}>
               <Ionicons name="game-controller" size={Layout.iconLg} color={theme.yellow} />
@@ -113,10 +114,10 @@ export const StudyGuideSection = React.memo(() => {
               </Text>
             </View>
           </View>
-        </DuolingoCard>
+        </AppCard>
 
         {/* Step 5: AI Automatic Creation */}
-        <DuolingoCard style={styles.guideCard}>
+        <AppCard style={styles.guideCard}>
           <View style={styles.guideHeaderRow}>
             <View style={[styles.guideIconTile, { backgroundColor: theme.blueDim }]}>
               <Ionicons name="sparkles" size={Layout.iconLg} color={theme.blue} />
@@ -129,10 +130,10 @@ export const StudyGuideSection = React.memo(() => {
           <Text style={[styles.guideDesc, { color: theme.textMuted }]}>
             Nhập chữ Hán, Pinyin hoặc chủ đề ➔ AI tự động trích xuất Pinyin, Nghĩa Tiếng Việt, Phân tích Cấu trúc bộ thủ chiết tự và tạo Câu ví dụ chuẩn ngữ cảnh.
           </Text>
-        </DuolingoCard>
+        </AppCard>
 
         {/* Step 6: Level & Badges */}
-        <DuolingoCard style={styles.guideCard}>
+        <AppCard style={styles.guideCard}>
           <View style={styles.guideHeaderRow}>
             <View style={[styles.guideIconTile, { backgroundColor: theme.yellowDim }]}>
               <Ionicons name="trophy" size={Layout.iconLg} color={theme.yellow} />
@@ -145,7 +146,8 @@ export const StudyGuideSection = React.memo(() => {
           <Text style={[styles.guideDesc, { color: theme.textMuted }]}>
             Tích lũy XP qua bài học để thăng hạng qua 6 cấp danh hiệu Hán ngữ chuẩn và chinh phục Bộ 14 Huy hiệu thành tích cá nhân.
           </Text>
-        </DuolingoCard>
+        </AppCard>
+
       </View>
     </>
   );

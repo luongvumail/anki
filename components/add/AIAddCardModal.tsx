@@ -11,10 +11,16 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import {
+  Spacing,
+  Radii,
+  Typography,
+  Layout,
+  triggerHaptic,
+} from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { DuolingoButton } from "../ui/DuolingoButton";
-import { DuolingoCard } from "../ui/DuolingoCard";
+import { AppButton } from "../ui/AppButton";
+import { AppCard } from "../ui/AppCard";
 import { DeckPicker } from "./DeckPicker";
 import { CardPreview } from "./CardPreview";
 import { useAICardGenerator } from "../../hooks/useAICardGenerator";
@@ -25,11 +31,7 @@ export interface AIAddCardModalProps {
   initialDeckId?: string;
 }
 
-export function AIAddCardModal({
-  visible,
-  onClose,
-  initialDeckId,
-}: AIAddCardModalProps) {
+export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardModalProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const {
@@ -58,7 +60,12 @@ export function AIAddCardModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg },
+        ]}
+      >
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -72,8 +79,12 @@ export function AIAddCardModal({
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>THÊM TỪ VỰNG BẰNG AI</Text>
-            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Tự động tạo Pinyin, Nghĩa & Ví dụ</Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+              THÊM TỪ VỰNG BẰNG AI
+            </Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>
+              Tự động tạo Pinyin, Nghĩa & Ví dụ
+            </Text>
           </View>
 
           <View style={{ width: Layout.avatarMd }} />
@@ -90,10 +101,15 @@ export function AIAddCardModal({
           />
 
           {/* AI Prompt Input Section */}
-          <DuolingoCard style={styles.inputCard}>
-            <Text style={[styles.inputLabel, { color: theme.textMuted }]}>Nhập từ Hán, Pinyin hoặc chủ đề:</Text>
+          <AppCard style={styles.inputCard}>
+            <Text style={[styles.inputLabel, { color: theme.textMuted }]}>
+              Nhập từ Hán, Pinyin hoặc chủ đề:
+            </Text>
             <TextInput
-              style={[styles.promptInput, { backgroundColor: theme.bgSoft, color: theme.textPrimary }]}
+              style={[
+                styles.promptInput,
+                { backgroundColor: theme.bgSoft, color: theme.textPrimary },
+              ]}
               placeholder="Ví dụ: 苹果, Du lịch, Ăn uống, HSK 3..."
               placeholderTextColor={theme.textMuted}
               value={prompt}
@@ -101,8 +117,7 @@ export function AIAddCardModal({
               autoCapitalize="none"
             />
 
-
-            <DuolingoButton
+            <AppButton
               title={loading ? "AI ĐANG TẠO..." : "TẠO TỪ VỰNG BẰNG AI"}
               variant="blue"
               size="lg"
@@ -117,7 +132,7 @@ export function AIAddCardModal({
                 )
               }
             />
-          </DuolingoCard>
+          </AppCard>
 
           {/* Error Banner */}
           {errorMessage ? (
@@ -135,14 +150,10 @@ export function AIAddCardModal({
               </Text>
 
               {generatedCards.map((card, idx) => (
-                <CardPreview
-                  key={idx}
-                  cardData={card}
-                  onRemove={() => toggleSelectCard(idx)}
-                />
+                <CardPreview key={idx} cardData={card} onRemove={() => toggleSelectCard(idx)} />
               ))}
 
-              <DuolingoButton
+              <AppButton
                 title={`NẠP ${selectedIndices.size} TỪ VÀO BỘ THẺ`}
                 variant="primary"
                 size="lg"

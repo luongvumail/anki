@@ -2,7 +2,14 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../hooks/useTheme";
-import { ThemeMode, triggerHaptic, Spacing, Radii, Typography, Layout, BorderWidths } from "../../constants/theme";
+import {
+  ThemeMode,
+  triggerHaptic,
+  Spacing,
+  Radii,
+  Typography,
+  Layout,
+} from "../../constants/theme";
 
 interface ThemeSwitcherProps {
   style?: object;
@@ -23,7 +30,9 @@ export function ThemeSwitcher({ style }: ThemeSwitcherProps) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.isDark ? theme.bg : theme.bgSoft }, style]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.isDark ? theme.bg : theme.bgSoft }, style]}
+    >
       {options.map((opt) => {
         const isActive = themeMode === opt.mode;
         return (
@@ -61,7 +70,6 @@ export function ThemeSwitcher({ style }: ThemeSwitcherProps) {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {

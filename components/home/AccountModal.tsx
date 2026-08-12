@@ -16,8 +16,8 @@ import { useTheme } from "../../hooks/useTheme";
 import { FormField } from "../ui/FormField";
 import { WheelTimePicker } from "./WheelTimePicker";
 import { SectionTitle } from "../ui/SectionTitle";
-import { DuolingoCard } from "../ui/DuolingoCard";
-import { DuolingoButton } from "../ui/DuolingoButton";
+import { AppCard } from "../ui/AppCard";
+import { AppButton } from "../ui/AppButton";
 import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 
 interface AccountModalProps {
@@ -126,39 +126,53 @@ export function AccountModal({
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>TÀI KHOẢN & CÀI ĐẶT</Text>
-            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Quản lý thông tin & Cấu hình ứng dụng</Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
+              TÀI KHOẢN & CÀI ĐẶT
+            </Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>
+              Quản lý thông tin & Cấu hình ứng dụng
+            </Text>
           </View>
 
           <View style={{ width: Layout.avatarMd }} />
         </View>
 
-
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* User Account Info Header */}
-          <DuolingoCard style={styles.userInfoCard}>
+          <AppCard style={styles.userInfoCard}>
             <View style={styles.userRow}>
               <View style={[styles.avatarCircle, { backgroundColor: theme.blueDim }]}>
                 <Ionicons name="person" size={Layout.iconXl} color={theme.blue} />
               </View>
               <View style={styles.userTextCol}>
-                <Text style={[styles.userName, { color: theme.textPrimary }]}>{displayName || "Học viên Anki"}</Text>
-                <Text style={[styles.userEmail, { color: theme.textMuted }]}>{email || "chua_cap_nhat@email.com"}</Text>
+                <Text style={[styles.userName, { color: theme.textPrimary }]}>
+                  {displayName || "Học viên Anki"}
+                </Text>
+                <Text style={[styles.userEmail, { color: theme.textMuted }]}>
+                  {email || "chua_cap_nhat@email.com"}
+                </Text>
               </View>
             </View>
-          </DuolingoCard>
+          </AppCard>
 
           {/* Theme Settings Section */}
-          <SectionTitle>GIAO DIỆN</SectionTitle>
-          <DuolingoCard style={styles.settingCard}>
+          <SectionTitle style={{ marginTop: Spacing.md, marginBottom: 2 }}>GIAO DIỆN</SectionTitle>
+          <AppCard style={styles.settingCard}>
             <ThemeSwitcher />
-          </DuolingoCard>
+          </AppCard>
 
           {/* Daily Reminder Settings Section */}
-          <SectionTitle>NHẮC NHỞ HỌC TẬP</SectionTitle>
-          <DuolingoCard style={styles.settingCard}>
+          <SectionTitle style={{ marginTop: Spacing.md, marginBottom: 2 }}>
+            NHẮC NHỞ HỌC TẬP
+          </SectionTitle>
+          <AppCard style={styles.settingCard}>
             <View style={styles.reminderToggleRow}>
-              <Text style={[styles.reminderTitle, { color: theme.textPrimary }]}>Thông báo mỗi ngày</Text>
+              <Text style={[styles.reminderTitle, { color: theme.textPrimary }]}>
+                Thông báo mỗi ngày
+              </Text>
               <Switch
                 value={reminderEnabled}
                 onValueChange={(val) => {
@@ -180,11 +194,13 @@ export function AccountModal({
                 />
               </View>
             )}
-          </DuolingoCard>
+          </AppCard>
 
           {/* Account Security Section */}
-          <SectionTitle>BẢO MẬT & MẬT KHẨU</SectionTitle>
-          <DuolingoCard style={styles.settingCard}>
+          <SectionTitle style={{ marginTop: Spacing.md, marginBottom: 2 }}>
+            BẢO MẬT & MẬT KHẨU
+          </SectionTitle>
+          <AppCard style={styles.settingCard}>
             <FormField
               label="Mật khẩu hiện tại"
               placeholder="••••••••"
@@ -201,7 +217,7 @@ export function AccountModal({
               secureTextEntry
             />
 
-            <DuolingoButton
+            <AppButton
               title={loadingPass ? "ĐANG ĐỔI..." : "ĐỔI MẬT KHẨU"}
               variant="primary"
               size="md"
@@ -210,15 +226,19 @@ export function AccountModal({
               style={{ marginTop: Spacing.sm }}
             />
 
-            <TouchableOpacity style={styles.resetEmailBtn} onPress={handleResetSubmit} disabled={loadingReset}>
+            <TouchableOpacity
+              style={styles.resetEmailBtn}
+              onPress={handleResetSubmit}
+              disabled={loadingReset}
+            >
               <Text style={[styles.resetEmailText, { color: theme.blue }]}>
                 {loadingReset ? "Đang gửi..." : "Gửi email đặt lại mật khẩu"}
               </Text>
             </TouchableOpacity>
-          </DuolingoCard>
+          </AppCard>
 
           {/* Sign Out Action */}
-          <DuolingoButton
+          <AppButton
             title="ĐĂNG XUẤT TÀI KHOẢN"
             variant="error"
             size="lg"
@@ -227,7 +247,7 @@ export function AccountModal({
               onSignOut();
               onClose();
             }}
-            style={{ marginTop: Spacing.xl, marginBottom: Spacing.xl }}
+            style={{ marginTop: Spacing.lg, marginBottom: Spacing.lg }}
           />
         </ScrollView>
       </View>
@@ -271,12 +291,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.pageMargin,
-    paddingTop: Spacing.md,
+    paddingTop: Spacing.sm,
   },
 
   userInfoCard: {
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
+    padding: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   userRow: {
     flexDirection: "row",
@@ -303,9 +323,10 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.semibold,
   },
   settingCard: {
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
+    padding: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
+
   reminderToggleRow: {
     flexDirection: "row",
     alignItems: "center",

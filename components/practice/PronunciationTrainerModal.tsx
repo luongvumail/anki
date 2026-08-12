@@ -11,9 +11,15 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import {
+  Spacing,
+  Radii,
+  Typography,
+  Layout,
+  triggerHaptic,
+} from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { DuolingoButton } from "../ui/DuolingoButton";
+import { AppButton } from "../ui/AppButton";
 import { AudioButton } from "../ui/AudioButton";
 import { ProgressBar } from "../ui/ProgressBar";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
@@ -67,7 +73,12 @@ export function PronunciationTrainerModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg },
+        ]}
+      >
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -82,7 +93,9 @@ export function PronunciationTrainerModal({
 
           <View style={styles.headerTitleContainer}>
             <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>LUYỆN PHÁT ÂM AI</Text>
-            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Chấm điểm & Sửa lỗi Pinyin</Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>
+              Chấm điểm & Sửa lỗi Pinyin
+            </Text>
           </View>
 
           <View style={{ width: Layout.avatarMd }} />
@@ -98,18 +111,19 @@ export function PronunciationTrainerModal({
           </Text>
         </View>
 
-
         {isDone ? (
           /* Completion Screen */
           <View style={styles.doneContainer}>
             <View style={[styles.doneIconCircle, { backgroundColor: theme.yellowDim }]}>
               <Ionicons name="trophy" size={Layout.fabSize} color={theme.yellow} />
             </View>
-            <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>HOÀN THÀNH BÀI PHÁT ÂM!</Text>
+            <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>
+              HOÀN THÀNH BÀI PHÁT ÂM!
+            </Text>
             <Text style={[styles.doneSub, { color: theme.textMuted }]}>
               Bạn đã hoàn thành 5 từ vựng luyện giọng nói với AI. Thêm 100 XP tích lũy!
             </Text>
-            <DuolingoButton
+            <AppButton
               title="HOÀN THÀNH"
               variant="primary"
               size="lg"
@@ -123,19 +137,23 @@ export function PronunciationTrainerModal({
         ) : currentCard ? (
           /* Active Card Screen */
           <View style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              contentContainerStyle={styles.scrollBody}
+              showsVerticalScrollIndicator={false}
+            >
               {/* Card Hero Box */}
               <View style={[styles.heroCard, { backgroundColor: theme.cardBg }]}>
-                <Text style={[styles.heroChar, { color: theme.textPrimary }]}>{currentCard.character}</Text>
+                <Text style={[styles.heroChar, { color: theme.textPrimary }]}>
+                  {currentCard.character}
+                </Text>
                 <Text
-                  style={[
-                    styles.heroPinyin,
-                    { color: getPinyinToneColor(currentCard.pinyin) },
-                  ]}
+                  style={[styles.heroPinyin, { color: getPinyinToneColor(currentCard.pinyin) }]}
                 >
                   {currentCard.pinyin}
                 </Text>
-                <Text style={[styles.heroMeaning, { color: theme.textMuted }]}>{currentCard.translation}</Text>
+                <Text style={[styles.heroMeaning, { color: theme.textMuted }]}>
+                  {currentCard.translation}
+                </Text>
 
                 {/* Listen Model Speaker */}
                 <View style={[styles.speakerBox, { backgroundColor: theme.bgSoft }]}>
@@ -144,7 +162,9 @@ export function PronunciationTrainerModal({
                     isPlaying={speaking}
                     size="md"
                   />
-                  <Text style={[styles.speakerLabel, { color: theme.textMuted }]}>Bấm để nghe phát âm mẫu</Text>
+                  <Text style={[styles.speakerLabel, { color: theme.textMuted }]}>
+                    Bấm để nghe phát âm mẫu
+                  </Text>
                 </View>
               </View>
 
@@ -211,12 +231,7 @@ export function PronunciationTrainerModal({
                       style={[
                         styles.scoreText,
                         {
-                          color:
-                            score >= 90
-                              ? theme.green
-                              : score >= 60
-                                ? theme.yellow
-                                : theme.red,
+                          color: score >= 90 ? theme.green : score >= 60 ? theme.yellow : theme.red,
                         },
                       ]}
                     >
@@ -225,10 +240,13 @@ export function PronunciationTrainerModal({
                   </View>
 
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.feedbackTitle, { color: theme.textPrimary }]}>{feedback}</Text>
+                    <Text style={[styles.feedbackTitle, { color: theme.textPrimary }]}>
+                      {feedback}
+                    </Text>
                     {recognizedText ? (
                       <Text style={[styles.recognizedText, { color: theme.textMuted }]}>
-                        Âm nhận diện: "<Text style={{ color: theme.textPrimary }}>{recognizedText}</Text>"
+                        Âm nhận diện: "
+                        <Text style={{ color: theme.textPrimary }}>{recognizedText}</Text>"
                       </Text>
                     ) : null}
                   </View>
@@ -251,14 +269,19 @@ export function PronunciationTrainerModal({
                 {/* User Playback & Next Action Buttons */}
                 <View style={styles.actionRow}>
                   {userAudioUri ? (
-                    <TouchableOpacity style={[styles.listenUserBtn, { backgroundColor: theme.blueDim }]} onPress={playUserRecording}>
+                    <TouchableOpacity
+                      style={[styles.listenUserBtn, { backgroundColor: theme.blueDim }]}
+                      onPress={playUserRecording}
+                    >
                       <Ionicons name="play" size={Layout.iconSm} color={theme.blue} />
-                      <Text style={[styles.listenUserText, { color: theme.blue }]}>Nghe lại bản thu</Text>
+                      <Text style={[styles.listenUserText, { color: theme.blue }]}>
+                        Nghe lại bản thu
+                      </Text>
                     </TouchableOpacity>
                   ) : null}
 
                   {score < 90 ? (
-                    <DuolingoButton
+                    <AppButton
                       title="ĐỌC LẠI"
                       variant="secondary"
                       size="md"
@@ -267,7 +290,7 @@ export function PronunciationTrainerModal({
                     />
                   ) : null}
 
-                  <DuolingoButton
+                  <AppButton
                     title="TỪ TIẾP THEO"
                     variant="primary"
                     size="md"

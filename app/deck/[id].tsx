@@ -1,12 +1,5 @@
 import React, { useCallback } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-} from "react-native";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -14,8 +7,8 @@ import { Card } from "../../store/useStore";
 import { Spacing, Radii, Typography, Layout, BorderWidths } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
-import { DuolingoCard } from "../../components/ui/DuolingoCard";
-import { DuolingoButton } from "../../components/ui/DuolingoButton";
+import { AppCard } from "../../components/ui/AppCard";
+import { AppButton } from "../../components/ui/AppButton";
 import { AudioButton } from "../../components/ui/AudioButton";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
@@ -49,7 +42,7 @@ export default function DeckDetailScreen() {
   const renderCardItem = useCallback(
     ({ item }: { item: Card }) => {
       return (
-        <DuolingoCard
+        <AppCard
           style={styles.cardItem}
           onPress={() => {
             router.push(`/card/${item.id}?deckId=${id}`);
@@ -58,7 +51,9 @@ export default function DeckDetailScreen() {
           <View style={styles.cardItemRow}>
             <View style={styles.cardMainInfo}>
               <View style={styles.charRow}>
-                <Text style={[styles.cardCharacter, { color: theme.textPrimary }]}>{item.character}</Text>
+                <Text style={[styles.cardCharacter, { color: theme.textPrimary }]}>
+                  {item.character}
+                </Text>
                 <Text style={[styles.cardPinyin, { color: theme.blue }]}>{item.pinyin}</Text>
               </View>
               <Text style={[styles.cardMeaning, { color: theme.textMuted }]} numberOfLines={1}>
@@ -77,16 +72,25 @@ export default function DeckDetailScreen() {
 
             <AudioButton onPress={() => speak(item.character)} size="sm" />
           </View>
-        </DuolingoCard>
+        </AppCard>
       );
     },
-    [id, speak, theme]
+    [id, speak, theme],
   );
 
   if (!deck) {
     return (
       <View style={[styles.container, { backgroundColor: theme.bg }]}>
-        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg, borderBottomColor: theme.cardBorder }]}>
+        <View
+          style={[
+            styles.headerBar,
+            {
+              paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight),
+              backgroundColor: theme.bg,
+              borderBottomColor: theme.cardBorder,
+            },
+          ]}
+        >
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={Layout.iconLg} color={theme.textPrimary} />
           </TouchableOpacity>
@@ -102,7 +106,16 @@ export default function DeckDetailScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Top Header Bar */}
-      <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg, borderBottomColor: theme.cardBorder }]}>
+      <View
+        style={[
+          styles.headerBar,
+          {
+            paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight),
+            backgroundColor: theme.bg,
+            borderBottomColor: theme.cardBorder,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => {
@@ -135,16 +148,22 @@ export default function DeckDetailScreen() {
         ListHeaderComponent={
           <>
             {/* Hero Progress Banner */}
-            <DuolingoCard style={styles.heroBannerCard}>
+            <AppCard style={styles.heroBannerCard}>
               <View style={styles.heroHeaderRow}>
                 <View style={styles.heroTitleCol}>
-                  <Text style={[styles.deckTitleText, { color: theme.textPrimary }]}>{deck.name}</Text>
+                  <Text style={[styles.deckTitleText, { color: theme.textPrimary }]}>
+                    {deck.name}
+                  </Text>
                   {deck.description ? (
-                    <Text style={[styles.deckDescText, { color: theme.textMuted }]}>{deck.description}</Text>
+                    <Text style={[styles.deckDescText, { color: theme.textMuted }]}>
+                      {deck.description}
+                    </Text>
                   ) : null}
                 </View>
                 <View style={[styles.masteryBadge, { backgroundColor: theme.greenDim }]}>
-                  <Text style={[styles.masteryText, { color: theme.green }]}>{masteryPct}% Thuộc</Text>
+                  <Text style={[styles.masteryText, { color: theme.green }]}>
+                    {masteryPct}% Thuộc
+                  </Text>
                 </View>
               </View>
 
@@ -157,12 +176,16 @@ export default function DeckDetailScreen() {
 
               <View style={styles.statsRow}>
                 <View style={styles.statColItem}>
-                  <Text style={[styles.statNumVal, { color: theme.textPrimary }]}>{deckCards.length}</Text>
+                  <Text style={[styles.statNumVal, { color: theme.textPrimary }]}>
+                    {deckCards.length}
+                  </Text>
                   <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Tổng số từ</Text>
                 </View>
                 <View style={[styles.statColDivider, { backgroundColor: theme.cardBorder }]} />
                 <View style={styles.statColItem}>
-                  <Text style={[styles.statNumVal, { color: theme.yellow }]}>{deck.dueCount || 0}</Text>
+                  <Text style={[styles.statNumVal, { color: theme.yellow }]}>
+                    {deck.dueCount || 0}
+                  </Text>
                   <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Cần ôn tập</Text>
                 </View>
                 <View style={[styles.statColDivider, { backgroundColor: theme.cardBorder }]} />
@@ -171,12 +194,14 @@ export default function DeckDetailScreen() {
                   <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Cực yếu</Text>
                 </View>
               </View>
-            </DuolingoCard>
+            </AppCard>
 
             {/* Action Buttons Row */}
             <View style={styles.heroActionRow}>
-              <DuolingoButton
-                title={deck.dueCount && deck.dueCount > 0 ? `ÔN TẬP (${deck.dueCount})` : "HỌC BÀI NGAY"}
+              <AppButton
+                title={
+                  deck.dueCount && deck.dueCount > 0 ? `ÔN TẬP (${deck.dueCount})` : "HỌC BÀI NGAY"
+                }
                 variant="primary"
                 size="lg"
                 onPress={() => router.push(`/study/${id}`)}
@@ -199,7 +224,12 @@ export default function DeckDetailScreen() {
 
             {/* Weak Cards Banner Warning */}
             {weakCards.length > 0 && (
-              <DuolingoCard style={StyleSheet.flatten([styles.weakWarningCard, { backgroundColor: theme.redDim, borderColor: theme.red }])}>
+              <AppCard
+                style={StyleSheet.flatten([
+                  styles.weakWarningCard,
+                  { backgroundColor: theme.redDim, borderColor: theme.red },
+                ])}
+              >
                 <View style={styles.weakWarningHeader}>
                   <Ionicons name="alert-circle" size={Layout.iconMd} color={theme.red} />
                   <Text style={[styles.weakWarningTitle, { color: theme.red }]}>
@@ -207,16 +237,29 @@ export default function DeckDetailScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.weakWarningSub, { color: theme.textPrimary }]}>
-                  Thuật toán SRS ghi nhận các từ vựng này có thời gian suy nghĩ &gt;4 giây hoặc bị trả lời sai nhiều lần. Hãy bấm "ÔN TẬP" để luyện lại ngay!
+                  Thuật toán SRS ghi nhận các từ vựng này có thời gian suy nghĩ &gt;4 giây hoặc bị
+                  trả lời sai nhiều lần. Hãy bấm "ÔN TẬP" để luyện lại ngay!
                 </Text>
-              </DuolingoCard>
+              </AppCard>
             )}
 
             {/* Vocab List Section Title & Search Input */}
-            <SectionTitle>DANH SÁCH TỪ VỰNG ({filteredCards.length}/{deckCards.length})</SectionTitle>
+            <SectionTitle>
+              DANH SÁCH TỪ VỰNG ({filteredCards.length}/{deckCards.length})
+            </SectionTitle>
 
-            <View style={[styles.searchBarBox, { backgroundColor: theme.bgSoft, borderColor: theme.cardBorder }]}>
-              <Ionicons name="search" size={Layout.iconMd} color={theme.textMuted} style={{ marginRight: Spacing.xs }} />
+            <View
+              style={[
+                styles.searchBarBox,
+                { backgroundColor: theme.bgSoft, borderColor: theme.cardBorder },
+              ]}
+            >
+              <Ionicons
+                name="search"
+                size={Layout.iconMd}
+                color={theme.textMuted}
+                style={{ marginRight: Spacing.xs }}
+              />
               <TextInput
                 style={[styles.searchInput, { color: theme.textPrimary }]}
                 placeholder="Tìm kiếm theo Chữ Hán, Pinyin hoặc Nghĩa..."
@@ -240,15 +283,19 @@ export default function DeckDetailScreen() {
               <SkeletonCard lines={2} />
             </View>
           ) : deckCards.length === 0 ? (
-            <DuolingoCard style={styles.emptyCard}>
-              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>Bộ thẻ chưa có từ vựng nào</Text>
+            <AppCard style={styles.emptyCard}>
+              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+                Bộ thẻ chưa có từ vựng nào
+              </Text>
               <Text style={[styles.emptySub, { color: theme.textMuted }]}>
                 Bấm nút "+" màu xanh phía góc dưới để nạp từ vựng bằng AI tự động!
               </Text>
-            </DuolingoCard>
+            </AppCard>
           ) : (
-            <DuolingoCard style={styles.emptyCard}>
-              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>Không tìm thấy từ vựng</Text>
+            <AppCard style={styles.emptyCard}>
+              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+                Không tìm thấy từ vựng
+              </Text>
               <Text style={[styles.emptySub, { color: theme.textMuted }]}>
                 Không có từ nào khớp với từ khóa "{searchQuery}"
               </Text>
@@ -256,9 +303,11 @@ export default function DeckDetailScreen() {
                 style={[styles.resetSearchBtn, { backgroundColor: theme.blueDim }]}
                 onPress={() => setSearchQuery("")}
               >
-                <Text style={[styles.resetSearchText, { color: theme.blue }]}>Xóa bộ lọc tìm kiếm</Text>
+                <Text style={[styles.resetSearchText, { color: theme.blue }]}>
+                  Xóa bộ lọc tìm kiếm
+                </Text>
               </TouchableOpacity>
-            </DuolingoCard>
+            </AppCard>
           )
         }
         ListFooterComponent={

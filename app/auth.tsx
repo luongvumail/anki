@@ -27,9 +27,9 @@ import {
   triggerHaptic,
 } from "../constants/theme";
 import { useTheme } from "../hooks/useTheme";
-import { DuolingoButton } from "../components/ui/DuolingoButton";
+import { AppButton } from "../components/ui/AppButton";
 import { AuthField } from "../components/ui/AuthField";
-import { DuolingoMascot } from "../components/ui/DuolingoMascot";
+import { AppMascot } from "../components/ui/AppMascot";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
@@ -119,8 +119,7 @@ export default function AuthScreen() {
       >
         {/* Header / Branding */}
         <View style={styles.header}>
-          <DuolingoMascot size={88} useAppLogo />
-
+          <AppMascot size={88} useAppLogo />
 
           <Text style={[styles.appName, { color: theme.textPrimary }]}>Anki Chinese</Text>
           <Text style={[styles.tagline, { color: theme.textMuted }]}>
@@ -169,7 +168,7 @@ export default function AuthScreen() {
         )}
 
         {/* 3D Primary Button */}
-        <DuolingoButton
+        <AppButton
           title={loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
           variant="primary"
           size="lg"

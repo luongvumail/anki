@@ -30,7 +30,7 @@ interface PathNodeItemProps {
 }
 
 const PathNodeItem = React.memo(
-  ({ deck, offset, dueCount, isPriority, isCompleted, pulseAnim, onSelect }: PathNodeItemProps) => {
+  function PathNodeItem({ deck, offset, dueCount, isPriority, isCompleted, pulseAnim, onSelect }: PathNodeItemProps) {
     const { theme } = useTheme();
     const [pressed, setPressed] = useState(false);
 

@@ -6,8 +6,8 @@ const proxyUrl = process.env.EXPO_PUBLIC_AI_PROXY_URL || "";
 const appToken = process.env.EXPO_PUBLIC_APP_TOKEN || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// gemini-3.5-flash: latest GA model, fast & capable (July 2026)
-// gemini-3.1-flash-lite: cheapest fallback ($0.25/$1.50 per 1M tokens)
+// gemini-3.5-flash: latest GA model, fast & capable
+// gemini-3.1-flash-lite: cheapest fallback
 const CANDIDATE_MODELS = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
 /**

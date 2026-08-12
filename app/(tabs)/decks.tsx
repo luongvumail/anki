@@ -15,14 +15,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useStore } from "../../store/useStore";
 import { getFirestoreErrorMessage } from "../../lib/errorHandler";
-import { Spacing, Radii, Typography, Layout, BorderWidths, VECTOR_DECK_ICONS, triggerHaptic } from "../../constants/theme";
+import {
+  Spacing,
+  Radii,
+  Typography,
+  Layout,
+  VECTOR_DECK_ICONS,
+  triggerHaptic,
+} from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { DeckIcon } from "../../components/ui/DeckIcon";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { FormField } from "../../components/ui/FormField";
-import { DuolingoCard } from "../../components/ui/DuolingoCard";
-import { DuolingoButton } from "../../components/ui/DuolingoButton";
-import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
+import { AppCard } from "../../components/ui/AppCard";
+import { AppButton } from "../../components/ui/AppButton";
+import { AppHeader } from "../../components/ui/AppHeader";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
 import { DeckCardItem } from "../../components/deck/DeckCardItem";
@@ -58,7 +65,7 @@ export default function DecksScreen() {
   useFocusEffect(
     useCallback(() => {
       getStreakCount().then(setStreakCount);
-    }, [])
+    }, []),
   );
 
   const deckItemsStats = useMemo(() => {
@@ -128,7 +135,7 @@ export default function DecksScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <DuolingoHeader streakCount={streakCount} />
+      <AppHeader streakCount={streakCount} />
 
       <FlatList
         data={deckItemsStats}
@@ -174,13 +181,15 @@ export default function DecksScreen() {
               <SkeletonCard lines={2} />
             </View>
           ) : (
-            <DuolingoCard style={styles.emptyCard}>
+            <AppCard style={styles.emptyCard}>
               <Ionicons name="book-outline" size={Layout.avatarXl} color={theme.textMuted} />
-              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>CHƯA CÓ BỘ TỪ VỰNG NÀO</Text>
+              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+                CHƯA CÓ BỘ TỪ VỰNG NÀO
+              </Text>
               <Text style={[styles.emptySub, { color: theme.textMuted }]}>
                 Tạo bộ từ đầu tiên để bắt đầu hành trình chinh phục Hán Tự ngay hôm nay!
               </Text>
-              <DuolingoButton
+              <AppButton
                 title="TẠO BỘ TỪ MỚI"
                 icon={<Ionicons name="add" size={Layout.iconMd} color="#FFFFFF" />}
                 variant="primary"
@@ -188,12 +197,17 @@ export default function DecksScreen() {
                 onPress={() => setShowCreate(true)}
                 style={{ marginTop: Spacing.lg }}
               />
-            </DuolingoCard>
+            </AppCard>
           )
         }
       />
 
-      <Modal visible={showCreate} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowCreate(false)}>
+      <Modal
+        visible={showCreate}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowCreate(false)}
+      >
         <View
           style={[
             styles.modalContainer,
@@ -213,15 +227,19 @@ export default function DecksScreen() {
 
             <View style={styles.headerTitleContainer}>
               <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>TẠO BỘ THẺ MỚI</Text>
-              <Text style={[styles.headerSub, { color: theme.textMuted }]}>Tạo danh mục từ vựng Hán ngữ mới</Text>
+              <Text style={[styles.headerSub, { color: theme.textMuted }]}>
+                Tạo danh mục từ vựng Hán ngữ mới
+              </Text>
             </View>
 
             <View style={{ width: Layout.avatarMd }} />
           </View>
 
-
-          <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
-            <DuolingoCard style={{ padding: Spacing.md }}>
+          <ScrollView
+            contentContainerStyle={styles.modalScroll}
+            showsVerticalScrollIndicator={false}
+          >
+            <AppCard style={{ padding: Spacing.md }}>
               <FormField
                 label="Tên bộ thẻ (Bắt buộc)"
                 value={deckName}
@@ -235,7 +253,7 @@ export default function DecksScreen() {
                 onChangeText={setDeckDesc}
                 placeholder="Ví dụ: 150 từ vựng căn bản..."
               />
-            </DuolingoCard>
+            </AppCard>
 
             <SectionTitle>CHỌN BIỂU TƯỢNG BỘ THẺ</SectionTitle>
             <View style={styles.iconGrid}>
@@ -260,8 +278,7 @@ export default function DecksScreen() {
               })}
             </View>
 
-
-            <DuolingoButton
+            <AppButton
               title={creating ? "ĐANG TẠO..." : "TẠO BỘ THẺ"}
               variant="primary"
               size="lg"
@@ -292,8 +309,16 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   screenHeaderTitleBox: { flex: 1 },
-  screenTitle: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold, letterSpacing: 0.5 },
-  screenSubtitle: { fontSize: Typography.caption.fontSize, fontWeight: Typography.weight.semibold, marginTop: 2 },
+  screenTitle: {
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    letterSpacing: 0.5,
+  },
+  screenSubtitle: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.semibold,
+    marginTop: 2,
+  },
   addDeckHeaderBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -303,9 +328,22 @@ const styles = StyleSheet.create({
     borderRadius: Radii.full,
     borderWidth: 0,
   },
-  addDeckHeaderBtnText: { fontSize: Typography.caption1.fontSize, fontWeight: Typography.weight.extraBold, color: "#FFFFFF" },
-  emptyCard: { alignItems: "center", justifyContent: "center", padding: Spacing.xl, marginTop: Spacing.md },
-  emptyTitle: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold, marginTop: Spacing.md },
+  addDeckHeaderBtnText: {
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    color: "#FFFFFF",
+  },
+  emptyCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.xl,
+    marginTop: Spacing.md,
+  },
+  emptyTitle: {
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.md,
+  },
   emptySub: { fontSize: Typography.caption.fontSize, marginTop: Spacing.xs, textAlign: "center" },
   modalContainer: { flex: 1 },
   modalHeader: {
@@ -332,8 +370,17 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold },
 
-  modalScroll: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md, paddingBottom: Spacing.xxl },
-  iconGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.cellPadding, marginBottom: Spacing.md },
+  modalScroll: {
+    paddingHorizontal: Spacing.pageMargin,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xxl,
+  },
+  iconGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.cellPadding,
+    marginBottom: Spacing.md,
+  },
   iconPickerItem: {
     width: Layout.btnHeightXl,
     height: Layout.btnHeightXl,
@@ -342,4 +389,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-

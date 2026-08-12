@@ -1,6 +1,6 @@
 ---
 name: Anki Chinese Learning Design System
-description: Ultra-clean, borderless, unified design system with subtle background surface contrast, 2 button tiers (Primary & Secondary), and zero visual clutter for Light, Dark, and System Theme.
+description: Ultra-clean, unified design system with full-width surface sections, ambient elevation contrast, 2 button tiers (Primary & Secondary), and zero visual clutter for Light, Dark, and System Theme.
 colors:
   # Light Palette
   bg-light: "#F8FAFC"
@@ -18,11 +18,12 @@ colors:
   text-primary-dark: "#F8FAFC"
   text-muted-dark: "#94A3B8"
 
-  # Core Accents (Unified)
+  # Core Accents
   blue: "#0EA5E9"
   green: "#10B981"
   red: "#EF4444"
   amber: "#F59E0B"
+  purple: "#8B5CF6"
 
 typography:
   hanzi-hero: { fontFamily: System, fontSize: 64px, fontWeight: 800, lineHeight: 72px }
@@ -38,6 +39,7 @@ rounded:
   sm: 8px
   md: 12px
   lg: 16px
+  xl: 24px
   full: 999px
 
 spacing:
@@ -54,10 +56,15 @@ borderWidths:
 
 components:
   card-surface:
-    rounded: "{rounded.lg}"
+    rounded: "{rounded.xl}"
     padding: 16px
     borderWidth: 0px
     backgroundColor: "{colors.card-bg-light}"
+  detail-section-box:
+    width: "100%"
+    alignSelf: "stretch"
+    rounded: "{rounded.lg}"
+    padding: 12px
   button-primary:
     backgroundColor: "{colors.blue}"
     rounded: "{rounded.lg}"
@@ -71,14 +78,22 @@ components:
 # Anki Chinese Learning — Minimal & Unified Design Spec
 
 ## Overview
-Anki Chinese adopts a minimal, highly unified design aesthetic. It eliminates explicit colored borders, 3D bottom effects, and visual clutter. Cards rely on subtle surface background contrast (`cardBg` vs `bg`), while buttons are consolidated into 2 primary tiers (Primary Accent & Secondary Soft).
+Anki Chinese adopts a minimal, highly unified design aesthetic. It eliminates explicit colored borders, 3D bottom effects, and visual clutter. Cards rely on subtle surface background contrast (`cardBg` vs `bg`), while detail section blocks fill 100% full width (`alignSelf: "stretch"`) to ensure uniform layout alignment regardless of content length.
 
 ---
 
-## Design Principles
+## Key Layout Rules & Specifications
 
-1. **Zero Border Colors**: Cards and containers use pure surface fills without explicit border outlines or 3D bottom strokes.
-2. **Unified 2-Tier Buttons**:
+1. **Full-Width Section Stretch**:
+   - Both **CẤU TRÚC TỪ & BỘ THỦ** (`radicalBreakdownBox`) and **CÂU VÍ DỤ** (`exampleContainer`) use `width: "100%"` and `alignSelf: "stretch"`.
+   - The parent ScrollView container (`centeredScrollContent` & `detailSheetContainer`) uses `alignItems: "stretch"` to guarantee equal full-width layout across all flashcard detail cards.
+
+2. **Zero Border Colors**:
+   - Cards and containers use pure surface fills without explicit border outlines or 3D bottom strokes.
+
+3. **Unified 2-Tier Buttons**:
    - **Primary**: Solid accent fill (`theme.blue` / `theme.green`) with crisp white text.
    - **Secondary**: Soft surface fill (`theme.bgSoft`) with primary text color (`theme.textPrimary`).
-3. **Subtle Surface Contrast**: Surfaces use smooth ambient elevation shadows or soft background fills instead of stark lines.
+
+4. **Subtle Surface Contrast**:
+   - Surfaces use smooth ambient elevation shadows or soft background fills (`theme.bgSoft`, `theme.purpleDim`) instead of stark lines.

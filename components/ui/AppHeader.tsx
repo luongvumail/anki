@@ -7,7 +7,7 @@ import { Radii, Spacing, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { useStore } from "../../store/useStore";
 
-interface AppHeaderProps {
+export interface AppHeaderProps {
   userName?: string;
   courseName?: string;
   streakCount?: number;
@@ -67,6 +67,7 @@ export function AppHeader({
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   headerContainer: {

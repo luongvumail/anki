@@ -1,24 +1,25 @@
-# Anki - Hệ Thống Học Từ Vựng Tiếng Trung Tích Hợp AI & Chuẩn Thiết Kế Duolingo 3D
+# Anki - Hệ Thống Học Từ Vựng Tiếng Trung Tích Hợp AI & Chuẩn Thiết Kế Clean Surface
 
-Ứng dụng học từ vựng tiếng Trung thông minh dựa trên phương pháp lặp lại ngắt quãng khoa học (**Spaced Repetition System - SRS SuperMemo-2**), kết hợp với trí tuệ nhân tạo (**Google AI**) và hệ thống Gamification chuẩn thiết kế **Duolingo 3D Tactile Design System**.
+Ứng dụng học từ vựng tiếng Trung thông minh dựa trên phương pháp lặp lại ngắt quãng khoa học (**Spaced Repetition System - SRS SuperMemo-2 / FSRS**), kết hợp với trí tuệ nhân tạo (**Google Gemini AI**) và hệ thống giao diện **Clean Surface Design System**.
 
 ---
 
-## 🌟 Điểm Nổi Bật Về Giao Diện & Trải Nghiệm (Duolingo 3D Design)
+## 🌟 Điểm Nổi Bật Về Giao Diện & Trải Nghiệm (Design System)
 
-- **Hệ thống Nút Bấm 3D Tactile (`DuolingoButton.tsx`):** Nút bấm lún 3D đặc trưng Duolingo với phản hồi cảm ứng lực (Haptics), hỗ trợ 3 kích thước chuẩn mực (`size="lg"` [52px], `size="md"` [44px], `size="sm"` [36px]) cùng màu sắc nhận diện thương hiệu rực rỡ.
-- **Nút Tròn Nổi AI Kéo Di Chuyển (`FloatingAddButton.tsx`):** Nút tròn AI 3D màu xanh lá Duolingo (`52x52px`) cho phép người dùng **chạm giữ và kéo di chuyển tự do đến mọi vị trí trên màn hình** mà không lo che nội dung.
+- **Giao Diện Flashcard Full-Width Chi Tiết (`FlashcardView.tsx`):** Thiết kế tối giản, loại bỏ viền thừa. Khối **CẤU TRÚC TỪ & BỘ THỦ** và khối **CÂU VÍ DỤ** tự động giãn nở đúng 100% chiều ngang thẻ (`alignSelf: "stretch"`), tạo sự cân đối chuẩn xác dù câu ví dụ ngắn hay dài.
+- **Hệ Thống Nút Bấm 2-Tier (`AppButton.tsx`):** Tối giản với 2 cấp độ (Primary Accent & Secondary Soft), tích hợp phản hồi rung cảm ứng lực (Haptic Feedback) mượt mà.
+- **Nút Tròn Nổi AI Kéo Di Chuyển (`FloatingAddButton.tsx`):** Nút tròn AI 3D màu xanh lá (`52x52px`) cho phép người dùng **chạm giữ và kéo di chuyển tự do đến mọi vị trí trên màn hình** mà không che nội dung.
 - **Modal Nạp Từ AI Tự Động Lọc Trùng (`AIAddCardModal.tsx`):** Màn hình nạp từ vựng bằng AI tích hợp bộ lọc từ trùng lặp tự động, thông báo duy nhất và nút "THÊM TẤT CẢ" 1 chạm.
-- **Chuẩn Hoá Tương Phản Dark Mode 100%:** 100% tiêu đề & văn bản đọc sử dụng màu **Trắng Thuần (`#FFFFFF`) / Off-white Duolingo (`#F0F3F6`)**, loại bỏ hoàn toàn chữ màu xanh dương nền tối để chống mỏi mắt và tăng độ sắc nét.
+- **Chuẩn Hoá Tương Phản Dark Mode 100% & Clean Code:** 100% tiêu đề & văn bản đọc sử dụng màu sắc tương phản cao, loại bỏ mỏi mắt. Đạt chuẩn **0 Errors, 0 Warnings** trên toàn bộ hệ thống linter ESLint (`npm run lint`).
 
 ---
 
 ## 🧠 Cơ Sở Khoa Học & Thuật Toán Học Tập
 
-### 1. Thuật Toán Lặp Lại Ngắt Quãng (SuperMemo-2 SRS)
+### 1. Thuật Toán Lặp Lại Ngắt Quãng (SuperMemo-2 SRS / FSRS)
 
 - Áp dụng đường cong quên của Ebbinghaus để tự động tính toán thời điểm lật lại từ vựng chuẩn xác từng ngày.
-- Người học đánh giá thẻ dựa trên 3 mức độ: **Quên (Again)**, **Khó (Hard)**, **Dễ (Easy)**.
+- Người học đánh giá thẻ dựa trên các mức độ phản xạ để tự động điều chỉnh khoảng thời gian ôn tập.
 
 ### 2. Chế Độ Ôn Tập Phản Xạ Thích Ứng (Adaptive Quiz Mode)
 
@@ -52,7 +53,7 @@
 - **State Management:** Zustand (v5) chia nhỏ Slices (`deckSlice`, `cardSlice`, `userProgressSlice`).
 - **Database & Auth:** Firebase Web SDK v12 (Authentication & Cloud Firestore).
 - **AI Engine:** Google Generative AI SDK (Gemini 2.5 / 1.5 Flash).
-- **Styling & Theme:** Vanilla CSS StyleSheet + Duolingo Design System Tokens (`theme.ts`).
+- **Styling & Theme:** Vanilla CSS StyleSheet + App Design System Tokens (`DESIGN.md`, `theme.ts`).
 - **Audio & Haptics:** Expo Speech, Expo Haptics, Expo Notifications.
 
 ---
@@ -67,16 +68,18 @@ Anki/
 │   ├── deck/[id].tsx         # Màn hình Chi tiết Bộ thẻ & Danh sách từ vựng
 │   ├── study/[deckId].tsx    # Màn hình Ôn tập Flashcard & Quiz SRS
 │   └── _layout.tsx           # Root Layout & Bottom Tab configuration
-├── components/               # Các Reusable Component chuẩn Duolingo
+├── components/               # Các Reusable Component chuẩn App
 │   ├── add/                  # AIAddCardModal, CardPreview, DeckPicker
 │   ├── home/                 # ActiveDeckHeroCard, AccountModal, ZigZagSkillPath
 │   ├── practice/             # SpeedMatchModal, SentenceBuilderModal
 │   ├── stats/                # BadgesGallery
 │   ├── study/                # FlashcardView, QuizCardView, SessionDoneScreen
-│   └── ui/                   # DuolingoButton, DuolingoCard, DuolingoHeader, FloatingAddButton, SectionTitle, ProgressBar
+│   └── ui/                   # AppButton, AppCard, AppHeader, FloatingAddButton, SectionTitle, ProgressBar
 ├── constants/                # Design Tokens: Colors, Typography, Spacing, Radii (theme.ts)
 ├── lib/                      # Services (Firebase, AI, SRS Algorithm, Quiz Generator, Notifications)
 ├── store/                    # Zustand Global Store & Slices (`userProgressSlice.ts`)
+├── DESIGN.md                 # Single source of truth cho Design Tokens & Specs
+├── README.md                 # Tài liệu hướng dẫn & tổng quan dự án
 ├── package.json              # Dependencies & Terminal Scripts
 └── tsconfig.json             # TypeScript Configuration
 ```

@@ -1,11 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  RefreshControl,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,9 +7,9 @@ import { getStreakCount } from "../../lib/reviewTracker";
 import { useStore } from "../../store/useStore";
 import { Spacing, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { DuolingoButton } from "../../components/ui/DuolingoButton";
-import { DuolingoCard } from "../../components/ui/DuolingoCard";
-import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
+import { AppButton } from "../../components/ui/AppButton";
+import { AppCard } from "../../components/ui/AppCard";
+import { AppHeader } from "../../components/ui/AppHeader";
 import { ZigZagSkillPath } from "../../components/home/ZigZagSkillPath";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
@@ -48,7 +42,7 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       getStreakCount().then(setStreakCount);
-    }, [])
+    }, []),
   );
 
   const onRefresh = async () => {
@@ -60,7 +54,7 @@ export default function DashboardScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header Bar with Personalized User Greeting */}
-      <DuolingoHeader streakCount={streakCount} />
+      <AppHeader streakCount={streakCount} />
 
       <ScrollView
         contentContainerStyle={[
@@ -68,11 +62,7 @@ export default function DashboardScreen() {
           { paddingBottom: Math.max(insets.bottom + 80, 100) },
         ]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={theme.green}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.green} />
         }
         showsVerticalScrollIndicator={false}
       >
@@ -82,17 +72,21 @@ export default function DashboardScreen() {
             <SkeletonCard lines={2} />
           </View>
         ) : decks.length === 0 ? (
-          <DuolingoCard style={styles.emptyCard}>
-            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>Chưa có bộ thẻ nào!</Text>
-            <Text style={[styles.emptySub, { color: theme.textMuted }]}>Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng.</Text>
-            <DuolingoButton
+          <AppCard style={styles.emptyCard}>
+            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
+              Chưa có bộ thẻ nào!
+            </Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
+              Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng.
+            </Text>
+            <AppButton
               title="TẠO BỘ THẺ MỚI"
               icon={<Ionicons name="add-circle" size={Layout.iconMd} color="#FFFFFF" />}
               variant="primary"
               onPress={() => router.push("/(tabs)/decks")}
               style={{ marginTop: Spacing.md }}
             />
-          </DuolingoCard>
+          </AppCard>
         ) : (
           /* REAL DECKS ZIGZAG SKILL PATH (1 NODE = 1 DECK) */
           <ZigZagSkillPath
@@ -115,12 +109,8 @@ export default function DashboardScreen() {
 
       {/* AI Add Card Full Overlay Modal */}
       {showAIAddModal && (
-        <AIAddCardModal
-          visible={showAIAddModal}
-          onClose={() => setShowAIAddModal(false)}
-        />
+        <AIAddCardModal visible={showAIAddModal} onClose={() => setShowAIAddModal(false)} />
       )}
-
     </View>
   );
 }

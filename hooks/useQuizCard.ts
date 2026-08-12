@@ -39,6 +39,7 @@ export function useQuizCard(
   useEffect(() => {
     startTimeRef.current = Date.now();
     responseTimeMsRef.current = 0;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIndex(null);
     setIsChecked(false);
     setTimeLeft(5);
@@ -72,6 +73,7 @@ export function useQuizCard(
   useEffect(() => {
     if (isFastRepairMode && timeLeft === 0 && !isChecked) {
       responseTimeMsRef.current = 5000;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsChecked(true);
       triggerHaptic("error");
       Animated.spring(drawerAnim, {

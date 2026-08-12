@@ -5,8 +5,8 @@ import { router } from "expo-router";
 import { Spacing, Radii, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { DeckIcon } from "../ui/DeckIcon";
-import { DuolingoCard } from "../ui/DuolingoCard";
-import { DuolingoButton } from "../ui/DuolingoButton";
+import { AppCard } from "../ui/AppCard";
+import { AppButton } from "../ui/AppButton";
 import { ProgressBar } from "../ui/ProgressBar";
 import { Deck } from "../../store/slices/types";
 
@@ -22,12 +22,12 @@ interface DeckCardItemProps {
   onDelete: (deckId: string, name: string) => void;
 }
 
-export const DeckCardItem = React.memo(({ itemStats, onDelete }: DeckCardItemProps) => {
+export const DeckCardItem = React.memo(function DeckCardItem({ itemStats, onDelete }: DeckCardItemProps) {
   const { deck, total, due, masteryPct } = itemStats;
   const { theme } = useTheme();
 
   return (
-    <DuolingoCard style={styles.deckCardItem} onPress={() => router.push(`/deck/${deck.id}`)}>
+    <AppCard style={styles.deckCardItem} onPress={() => router.push(`/deck/${deck.id}`)}>
       <View style={styles.deckHeaderRow}>
         <View style={[styles.deckIconBox, { backgroundColor: theme.blueDim }]}>
           <DeckIcon name={deck.icon || "book-outline"} size={Layout.iconLg} color={theme.blue} />
@@ -70,7 +70,7 @@ export const DeckCardItem = React.memo(({ itemStats, onDelete }: DeckCardItemPro
         <Text style={[styles.masteryPctText, { color: theme.green }]}>{masteryPct}% Thuộc</Text>
       </View>
 
-      <DuolingoButton
+      <AppButton
         title={due > 0 ? `HỌC BÀI NGAY (${due} THẺ DỰ ĐỊNH)` : "XEM DANH SÁCH TỪ VỰNG"}
         variant={due > 0 ? "primary" : "secondary"}
         size="lg"
@@ -83,9 +83,10 @@ export const DeckCardItem = React.memo(({ itemStats, onDelete }: DeckCardItemPro
         }}
         style={{ marginTop: Spacing.md }}
       />
-    </DuolingoCard>
+    </AppCard>
   );
 });
+
 
 const styles = StyleSheet.create({
   deckCardItem: { padding: Spacing.md, marginBottom: Spacing.cellPadding },

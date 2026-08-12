@@ -28,8 +28,6 @@ interface FlashcardViewProps {
 }
 
 export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
-  if (!card) return null;
-
   const { width } = useWindowDimensions();
   const { theme } = useTheme();
   const cardWidth = width - Spacing.pageMargin * 2;
@@ -48,7 +46,7 @@ export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
   // Reset swipe animation position when card changes
   React.useEffect(() => {
     swipeAnim.setValue(0);
-  }, [card.id, swipeAnim]);
+  }, [card?.id, swipeAnim]);
 
   // TikTok-Style Vertical Swipe Animation & Tap PanResponder
   const panResponder = useRef(
@@ -122,6 +120,8 @@ export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
     extrapolate: "clamp",
   });
 
+  if (!card) return null;
+
   return (
     <View style={styles.container}>
       <Animated.View
@@ -131,8 +131,13 @@ export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
           {
             width: cardWidth,
             backgroundColor: theme.cardBg,
-            borderColor: theme.cardBorder,
+            borderColor: theme.isDark ? theme.cardBorder : "rgba(15, 23, 42, 0.12)",
             borderBottomColor: theme.cardBottom,
+            shadowColor: theme.isDark ? "#000000" : "#0F172A",
+            shadowOpacity: theme.isDark ? 0.3 : 0.16,
+            shadowRadius: theme.isDark ? 16 : 24,
+            shadowOffset: { width: 0, height: 8 },
+            elevation: theme.isDark ? 4 : 10,
             opacity: swipeOpacity,
             transform: [{ translateY: swipeAnim }],
           },
@@ -144,6 +149,7 @@ export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
           onPress={handleToggleDetail}
         >
           <ScrollView
+            style={styles.scrollViewStyle}
             contentContainerStyle={styles.centeredScrollContent}
             showsVerticalScrollIndicator={false}
             bounces={false}
@@ -206,22 +212,40 @@ export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
                 {/* Example Sentences */}
                 {card.examples && card.examples.length > 0 ? (
                   <View style={[styles.exampleContainer, { backgroundColor: theme.bgSoft }]}>
-                    <Text style={[styles.exampleHeader, { color: theme.textMuted }]}>
-                      CÂU VÍ DỤ
-                    </Text>
-                    <Text style={[styles.exampleCn, { color: theme.textPrimary }]}>
-                      {card.examples[0].chinese}
-                    </Text>
-                    {card.examples[0].pinyin ? (
-                      <Text style={[styles.examplePy, { color: theme.blue }]}>
-                        {card.examples[0].pinyin}
+                    <View style={styles.exampleHeaderRow}>
+                      <Ionicons name="book-outline" size={16} color={theme.textMuted} />
+                      <Text style={[styles.exampleHeaderTitle, { color: theme.textMuted }]}>
+                        CÂU VÍ DỤ
                       </Text>
-                    ) : null}
-                    {card.examples[0].vietnamese ? (
-                      <Text style={[styles.exampleVi, { color: theme.textMuted }]}>
-                        {card.examples[0].vietnamese}
-                      </Text>
-                    ) : null}
+                    </View>
+                    {card.examples.map((ex, idx) => (
+                      <View
+                        key={idx}
+                        style={[
+                          styles.exampleItem,
+                          idx > 0 && {
+                            marginTop: Spacing.sm,
+                            paddingTop: Spacing.sm,
+                            borderTopWidth: 1,
+                            borderTopColor: theme.cardBorder,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.exampleCn, { color: theme.textPrimary }]}>
+                          {ex.chinese}
+                        </Text>
+                        {ex.pinyin ? (
+                          <Text style={[styles.examplePy, { color: theme.blue }]}>
+                            {ex.pinyin}
+                          </Text>
+                        ) : null}
+                        {ex.vietnamese ? (
+                          <Text style={[styles.exampleVi, { color: theme.textMuted }]}>
+                            {ex.vietnamese}
+                          </Text>
+                        ) : null}
+                      </View>
+                    ))}
                   </View>
                 ) : null}
               </Animated.View>
@@ -268,26 +292,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: BorderWidths.thin,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 6,
-    overflow: "hidden",
   },
   centerStageContainer: {
     flex: 1,
     width: "100%",
-    alignItems: "center",
+    alignSelf: "stretch",
+    alignItems: "stretch",
     justifyContent: "center",
+  },
+  scrollViewStyle: {
+    width: "100%",
+    alignSelf: "stretch",
   },
   centeredScrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "stretch",
     width: "100%",
     paddingVertical: Spacing.sm,
   },
   hanziWrapper: {
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -302,26 +327,30 @@ const styles = StyleSheet.create({
   },
   detailSheetContainer: {
     width: "100%",
+    alignSelf: "stretch",
     marginTop: Spacing.sm,
-    alignItems: "center",
+    alignItems: "stretch",
   },
   detailPinyin: {
     fontSize: Typography.title3.fontSize + 2,
     fontWeight: Typography.weight.bold,
     marginTop: Spacing.xs,
     textAlign: "center",
+    alignSelf: "center",
   },
   detailTranslation: {
     fontSize: Typography.callout.fontSize + 1,
     marginTop: Spacing.xs,
     fontWeight: Typography.weight.extraBold,
     textAlign: "center",
+    alignSelf: "center",
   },
   badgesRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     alignItems: "center",
+    alignSelf: "center",
     gap: Spacing.xs,
     marginTop: Spacing.sm,
   },
@@ -336,6 +365,7 @@ const styles = StyleSheet.create({
   },
   radicalBreakdownBox: {
     width: "100%",
+    alignSelf: "stretch",
     borderRadius: Radii.lg,
     padding: Spacing.md,
     marginTop: Spacing.sm,
@@ -360,17 +390,26 @@ const styles = StyleSheet.create({
   },
   exampleContainer: {
     width: "100%",
+    alignSelf: "stretch",
     borderRadius: Radii.lg,
     padding: Spacing.md,
     marginTop: Spacing.sm,
     alignItems: "center",
   },
-  exampleHeader: {
+  exampleHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  exampleHeaderTitle: {
     fontSize: Typography.caption2.fontSize,
     fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.8,
-    marginBottom: Spacing.xs,
-    textAlign: "center",
+  },
+  exampleItem: {
+    width: "100%",
+    alignItems: "center",
   },
   exampleCn: {
     fontSize: Typography.subhead.fontSize,

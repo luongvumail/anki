@@ -1,6 +1,5 @@
 import React, { useRef, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
 
 const ITEM_HEIGHT = 48;

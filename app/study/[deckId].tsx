@@ -10,7 +10,7 @@ import { FlashcardView } from "../../components/study/FlashcardView";
 import { QuizCardView } from "../../components/study/QuizCardView";
 import { SessionDoneScreen } from "../../components/study/SessionDoneScreen";
 import { ProgressBar } from "../../components/ui/ProgressBar";
-import { DuolingoButton } from "../../components/ui/DuolingoButton";
+import { AppButton } from "../../components/ui/AppButton";
 import { useStudySession } from "../../hooks/useStudySession";
 
 export default function StudyScreen() {
@@ -21,7 +21,7 @@ export default function StudyScreen() {
 
   const deck = useMemo(
     () => (Array.isArray(decks) ? decks.find((d) => d.id === deckId) : undefined),
-    [decks, deckId]
+    [decks, deckId],
   );
 
   const {
@@ -48,7 +48,7 @@ export default function StudyScreen() {
         [
           { text: "Tiếp tục học", style: "cancel" },
           { text: "Thoát", style: "destructive", onPress: () => router.back() },
-        ]
+        ],
       );
     } else {
       router.back();
@@ -58,14 +58,34 @@ export default function StudyScreen() {
   if (!isLoading && deckCards.length === 0) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.bg }]}>
-        <Ionicons name="book-outline" size={Layout.avatarLg} color={theme.textMuted} style={{ marginBottom: Spacing.md }} />
-        <Text style={{ fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold, color: theme.textPrimary, marginBottom: Spacing.xs }}>
+        <Ionicons
+          name="book-outline"
+          size={Layout.avatarLg}
+          color={theme.textMuted}
+          style={{ marginBottom: Spacing.md }}
+        />
+        <Text
+          style={{
+            fontSize: Typography.titleMD.fontSize,
+            fontWeight: Typography.weight.extraBold,
+            color: theme.textPrimary,
+            marginBottom: Spacing.xs,
+          }}
+        >
           Bộ thẻ này chưa có từ vựng!
         </Text>
-        <Text style={{ fontSize: Typography.caption.fontSize, color: theme.textMuted, textAlign: "center", marginBottom: Spacing.xl, paddingHorizontal: Spacing.xl }}>
+        <Text
+          style={{
+            fontSize: Typography.caption.fontSize,
+            color: theme.textMuted,
+            textAlign: "center",
+            marginBottom: Spacing.xl,
+            paddingHorizontal: Spacing.xl,
+          }}
+        >
           Vui lòng quay lại danh sách bộ thẻ và thêm thẻ từ vựng trước khi bắt đầu học.
         </Text>
-        <DuolingoButton
+        <AppButton
           title="QUAY LẠI"
           variant="primary"
           size="md"
@@ -103,8 +123,10 @@ export default function StudyScreen() {
   }
 
   const previewProgress = targetCards.length > 0 ? (previewIndex + 1) / targetCards.length : 0;
-  const validationProgress = questions.length > 0 ? (session.currentIndex + 1) / questions.length : 0;
-  const repairProgress = repairQuestions.length > 0 ? (repairIndex + 1) / repairQuestions.length : 0;
+  const validationProgress =
+    questions.length > 0 ? (session.currentIndex + 1) / questions.length : 0;
+  const repairProgress =
+    repairQuestions.length > 0 ? (repairIndex + 1) / repairQuestions.length : 0;
 
   const currentValidationQuestion = questions[session.currentIndex];
   const currentRepairQuestion = repairQuestions[repairIndex];
@@ -112,7 +134,15 @@ export default function StudyScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Dynamic Top Header with Progress Bar */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight),
+            backgroundColor: theme.bg,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.closeHeaderBtn}
           onPress={() => {
@@ -125,7 +155,12 @@ export default function StudyScreen() {
 
         <View style={styles.headerCenter}>
           <Text style={[styles.deckHeaderTitle, { color: theme.textMuted }]}>
-            {deck?.name || "BỘ THẺ HỌC TẬP"} • {stage === "preview" ? "XEM THẺ CHUẨN BỊ" : stage === "validation" ? "BÀI KIỂM TRA PHẢN XẠ" : "SỬA LỖI NHANH"}
+            {deck?.name || "BỘ THẺ HỌC TẬP"} •{" "}
+            {stage === "preview"
+              ? "XEM THẺ CHUẨN BỊ"
+              : stage === "validation"
+                ? "BÀI KIỂM TRA PHẢN XẠ"
+                : "SỬA LỖI NHANH"}
           </Text>
           <ProgressBar
             progress={
@@ -137,11 +172,7 @@ export default function StudyScreen() {
             }
             height={Spacing.sm}
             fillColor={
-              stage === "preview"
-                ? theme.blue
-                : stage === "validation"
-                  ? theme.green
-                  : theme.yellow
+              stage === "preview" ? theme.blue : stage === "validation" ? theme.green : theme.yellow
             }
           />
         </View>
@@ -167,11 +198,7 @@ export default function StudyScreen() {
             }
             size={Layout.iconSm}
             color={
-              stage === "preview"
-                ? theme.blue
-                : stage === "validation"
-                  ? theme.green
-                  : theme.yellow
+              stage === "preview" ? theme.blue : stage === "validation" ? theme.green : theme.yellow
             }
           />
           <Text
@@ -211,7 +238,6 @@ export default function StudyScreen() {
             />
           ) : null
         ) : stage === "validation" ? (
-
           currentValidationQuestion ? (
             <QuizCardView
               key={`qz-${currentValidationQuestion.card.id}-${session.currentIndex}`}
@@ -266,6 +292,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
   },
-  stageBadgeText: { fontSize: Typography.caption2.fontSize, fontWeight: Typography.weight.extraBold, letterSpacing: 0.5 },
+  stageBadgeText: {
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    letterSpacing: 0.5,
+  },
   stageContentContainer: { flex: 1, overflow: "hidden" },
 });
