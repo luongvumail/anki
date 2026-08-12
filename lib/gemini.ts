@@ -2,17 +2,67 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { APP_CONFIG } from "../constants/config";
 
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
+const proxyUrl = process.env.EXPO_PUBLIC_AI_PROXY_URL || "";
+const appToken = process.env.EXPO_PUBLIC_APP_TOKEN || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // gemini-3.5-flash: latest GA model, fast & capable (July 2026)
 // gemini-3.1-flash-lite: cheapest fallback ($0.25/$1.50 per 1M tokens)
 const CANDIDATE_MODELS = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
+/**
+ * Sends request to Cloudflare Worker proxy if EXPO_PUBLIC_AI_PROXY_URL is configured.
+ */
+async function generateViaProxy(
+  modelName: string,
+  prompt: string,
+  responseMimeType?: string,
+  temperature = 0.1
+): Promise<string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (appToken) {
+    headers["X-App-Token"] = appToken;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
+  try {
+    const response = await fetch(proxyUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: modelName,
+        prompt,
+        responseMimeType,
+        temperature,
+      }),
+      signal: controller.signal,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `Proxy error: HTTP ${response.status}`);
+    }
+    return data.text ?? "";
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function generateWithFallback(prompt: string): Promise<string> {
   let lastError: unknown = null;
   for (const modelName of CANDIDATE_MODELS) {
     try {
       if (__DEV__) console.log(`[Gemini] Attempting generation with model: ${modelName}`);
+      if (proxyUrl) {
+        const text = await generateViaProxy(modelName, prompt, "application/json", 0.1);
+        if (__DEV__) console.log(`[Gemini/Proxy] Success using model: ${modelName}`);
+        return text;
+      }
+
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: {
@@ -41,6 +91,12 @@ async function generateWithFallbackText(prompt: string): Promise<string> {
   for (const modelName of CANDIDATE_MODELS) {
     try {
       if (__DEV__) console.log(`[Gemini/text] Attempting with model: ${modelName}`);
+      if (proxyUrl) {
+        const text = await generateViaProxy(modelName, prompt, undefined, 0.3);
+        if (__DEV__) console.log(`[Gemini/text/Proxy] Success using model: ${modelName}`);
+        return text;
+      }
+
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: { temperature: 0.3 },
@@ -156,7 +212,42 @@ Trả về JSON (CHỈ JSON, không markdown):
 
   const text = await generateWithFallback(prompt);
   const jsonText = extractCleanJson(text);
-  return JSON.parse(jsonText) as CardData;
+  if (!jsonText) {
+    throw new Error("AI không phản hồi dữ liệu JSON hợp lệ.");
+  }
+  const parsed = JSON.parse(jsonText);
+  return validateSingleCardData(parsed);
+}
+
+/**
+ * Runtime schema validator for CardData objects.
+ */
+export function validateSingleCardData(raw: unknown): CardData {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Dữ liệu AI trả về không hợp lệ.");
+  }
+  const item = raw as Record<string, unknown>;
+  return {
+    character: typeof item.character === "string" ? item.character : "",
+    traditional: typeof item.traditional === "string" ? item.traditional : undefined,
+    pinyin: typeof item.pinyin === "string" ? item.pinyin : "",
+    hanviet: typeof item.hanviet === "string" ? item.hanviet : undefined,
+    translation: typeof item.translation === "string" ? item.translation : "",
+    examples: Array.isArray(item.examples)
+      ? item.examples.map((ex: unknown) => {
+          const e = ex && typeof ex === "object" ? (ex as Record<string, unknown>) : {};
+          return {
+            chinese: typeof e.chinese === "string" ? e.chinese : "",
+            pinyin: typeof e.pinyin === "string" ? e.pinyin : "",
+            vietnamese: typeof e.vietnamese === "string" ? e.vietnamese : "",
+          };
+        })
+      : [],
+    radical: typeof item.radical === "string" ? item.radical : undefined,
+    strokeCount: typeof item.strokeCount === "number" ? item.strokeCount : undefined,
+    hskLevel: typeof item.hskLevel === "number" ? item.hskLevel : undefined,
+    tags: Array.isArray(item.tags) ? item.tags.filter((t): t is string => typeof t === "string") : [],
+  };
 }
 
 /**
@@ -205,11 +296,11 @@ Trả về JSON array (CHỈ JSON array, không markdown), với mỗi phần t�
   try {
     const text = await generateWithFallback(prompt);
     const jsonText = extractCleanJson(text);
-    const results = JSON.parse(jsonText) as CardData[];
-    if (!Array.isArray(results) || results.length !== inputs.length) {
-      throw new Error(`Expected ${inputs.length} results, got ${results.length}`);
+    const rawResults = JSON.parse(jsonText);
+    if (!Array.isArray(rawResults) || rawResults.length !== inputs.length) {
+      throw new Error(`Expected ${inputs.length} results, got ${Array.isArray(rawResults) ? rawResults.length : "non-array"}`);
     }
-    return results;
+    return rawResults.map(validateSingleCardData);
   } catch (err) {
     // Fallback: parallel individual calls if batch fails
     console.warn("[Gemini] Batch failed, falling back to parallel individual calls:", err);
@@ -240,6 +331,9 @@ Trả về JSON:
 
   const text = await generateWithFallback(prompt);
   const jsonText = extractCleanJson(text);
+  if (!jsonText) {
+    throw new Error("AI không phản hồi dữ liệu JSON hợp lệ.");
+  }
   return JSON.parse(jsonText);
 }
 

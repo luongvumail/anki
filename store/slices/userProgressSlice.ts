@@ -9,27 +9,18 @@ import { APP_CONFIG } from "../../constants/config";
 const ASYNC_KEY_XP = "@anki_user_xp";
 const ASYNC_KEY_BADGES = "@anki_user_badges";
 
-export function getLevelInfo(xp: number) {
-  let level = Math.floor(xp / APP_CONFIG.XP_PER_LEVEL) + 1;
-  let title = "初学者"; // Người mới bắt đầu
-  let titleVi = "Người mới bắt đầu";
+const LEVEL_TIERS = [
+  { minLevel: 81, title: "汉字宗师", titleVi: "Tông sư Hán tự" },
+  { minLevel: 51, title: "汉语达人", titleVi: "Cao thủ Hán ngữ" },
+  { minLevel: 31, title: "通语者", titleVi: "Thông thạo Ngữ cảnh" },
+  { minLevel: 16, title: "积词人", titleVi: "Tích lũy Từ vựng" },
+  { minLevel: 6, title: "识字生", titleVi: "Học viên Nhận chữ" },
+  { minLevel: 1, title: "初学者", titleVi: "Người mới bắt đầu" },
+] as const;
 
-  if (level >= 81) {
-    title = "汉字宗师";
-    titleVi = "Tông sư Hán tự";
-  } else if (level >= 51) {
-    title = "汉语达人";
-    titleVi = "Cao thủ Hán ngữ";
-  } else if (level >= 31) {
-    title = "通语者";
-    titleVi = "Thông thạo Ngữ cảnh";
-  } else if (level >= 16) {
-    title = "积词人";
-    titleVi = "Tích lũy Từ vựng";
-  } else if (level >= 6) {
-    title = "识字生";
-    titleVi = "Học viên Nhận chữ";
-  }
+export function getLevelInfo(xp: number) {
+  const level = Math.floor(xp / APP_CONFIG.XP_PER_LEVEL) + 1;
+  const tier = LEVEL_TIERS.find((t) => level >= t.minLevel) ?? LEVEL_TIERS[LEVEL_TIERS.length - 1];
 
   const currentLevelXP = (level - 1) * APP_CONFIG.XP_PER_LEVEL;
   const nextLevelXP = level * APP_CONFIG.XP_PER_LEVEL;
@@ -37,8 +28,8 @@ export function getLevelInfo(xp: number) {
 
   return {
     level,
-    title,
-    titleVi,
+    title: tier.title,
+    titleVi: tier.titleVi,
     currentLevelXP,
     nextLevelXP,
     progress,
@@ -193,6 +184,7 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
     try {
       let xp = 0;
       let unlockedBadgeIds: string[] = [];
+      let loadedFromFirestore = false;
 
       const uid = auth.currentUser?.uid;
       if (uid) {
@@ -200,15 +192,16 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
           const snap = await getDoc(userProgressRef(uid));
           if (snap.exists()) {
             const data = snap.data();
-            xp = data.xp || 0;
+            xp = data.xp ?? 0;
             unlockedBadgeIds = data.unlockedBadgeIds || [];
+            loadedFromFirestore = true;
           }
         } catch (fsErr) {
-          console.warn("[userProgressSlice] Firestore read failed, using local storage:", fsErr);
+          console.warn("[userProgressSlice] Firestore read failed, falling back to local storage:", fsErr);
         }
       }
 
-      if (xp === 0 && unlockedBadgeIds.length === 0) {
+      if (!loadedFromFirestore) {
         const xpStr = await AsyncStorage.getItem(ASYNC_KEY_XP);
         const badgesJson = await AsyncStorage.getItem(ASYNC_KEY_BADGES);
         xp = xpStr ? parseInt(xpStr, 10) : 0;

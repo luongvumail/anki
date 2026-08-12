@@ -3,6 +3,7 @@ import { useStore } from "../store/useStore";
 import { generateCardDataBatch, generateCardData, CardData } from "../lib/gemini";
 import { triggerHaptic } from "../constants/theme";
 import { createDefaultSRSState } from "../lib/srs";
+import { getGeminiErrorMessage } from "../lib/errorHandler";
 
 export function useAICardGenerator(
   initialDeckId?: string,
@@ -40,15 +41,14 @@ export function useAICardGenerator(
 
       if (results && results.length > 0) {
         setGeneratedCards(results);
-        setSelectedIndices(new Set(results.map((_: CardData, i: number) => i)));
+        setSelectedIndices(new Set(results.map((_, i) => i)));
         triggerHaptic("success");
       } else {
         setErrorMessage("AI không tạo được từ vựng từ từ khóa này. Vui lòng thử từ khóa khác.");
         triggerHaptic("error");
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(msg || "Lỗi khi gọi AI. Vui lòng kiểm tra kết nối mạng.");
+      setErrorMessage(getGeminiErrorMessage(err));
       triggerHaptic("error");
     } finally {
       setLoading(false);
@@ -74,29 +74,31 @@ export function useAICardGenerator(
       return;
     }
 
-    const cardsToSave = generatedCards.filter((_: CardData, i: number) => selectedIndices.has(i));
+    const cardsToSave = generatedCards.filter((_, i) => selectedIndices.has(i));
     if (cardsToSave.length === 0) return;
 
     setLoading(true);
     triggerHaptic("medium");
 
     try {
-      for (const cardData of cardsToSave) {
-        await addCard({
-          deckId: selectedDeckId,
-          character: cardData.character || "",
-          traditional: cardData.traditional,
-          pinyin: cardData.pinyin || "",
-          hanviet: cardData.hanviet,
-          translation: cardData.translation || "",
-          examples: cardData.examples || [],
-          radical: cardData.radical,
-          strokeCount: cardData.strokeCount,
-          hskLevel: cardData.hskLevel,
-          tags: cardData.tags || ["AI-Generated"],
-          srs: createDefaultSRSState(),
-        });
-      }
+      await Promise.all(
+        cardsToSave.map((cardData) =>
+          addCard({
+            deckId: selectedDeckId,
+            character: cardData.character || "",
+            traditional: cardData.traditional,
+            pinyin: cardData.pinyin || "",
+            hanviet: cardData.hanviet,
+            translation: cardData.translation || "",
+            examples: cardData.examples || [],
+            radical: cardData.radical,
+            strokeCount: cardData.strokeCount,
+            hskLevel: cardData.hskLevel,
+            tags: cardData.tags || ["AI-Generated"],
+            srs: createDefaultSRSState(),
+          })
+        )
+      );
 
       triggerHaptic("success");
       if (onClose) onClose();

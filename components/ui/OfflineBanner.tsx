@@ -8,20 +8,37 @@ export const OfflineBanner = React.memo(function OfflineBanner() {
   const slideAnim = React.useRef(new Animated.Value(-60)).current;
 
   useEffect(() => {
-    // Basic connectivity state check
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    let unsubscribe: (() => void) | null = null;
 
-    if (typeof window !== "undefined" && window.addEventListener) {
-      window.addEventListener("online", handleOnline);
-      window.addEventListener("offline", handleOffline);
+    // Try @react-native-community/netinfo if present
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const NetInfo = require("@react-native-community/netinfo");
+      if (NetInfo && typeof NetInfo.addEventListener === "function") {
+        unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
+          setIsOffline(state.isConnected === false);
+        });
+      }
+    } catch {
+      // Fallback for Web or environments without NetInfo
+      const handleOnline = () => setIsOffline(false);
+      const handleOffline = () => setIsOffline(true);
+
+      if (typeof window !== "undefined" && window.addEventListener) {
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+        if (typeof navigator !== "undefined" && "onLine" in navigator) {
+          setIsOffline(!navigator.onLine);
+        }
+        unsubscribe = () => {
+          window.removeEventListener("online", handleOnline);
+          window.removeEventListener("offline", handleOffline);
+        };
+      }
     }
 
     return () => {
-      if (typeof window !== "undefined" && window.removeEventListener) {
-        window.removeEventListener("online", handleOnline);
-        window.removeEventListener("offline", handleOffline);
-      }
+      if (unsubscribe) unsubscribe();
     };
   }, []);
 

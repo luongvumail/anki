@@ -5,16 +5,17 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   query,
   orderBy,
   limit,
   startAfter,
   QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { auth } from "../../lib/firebase";
+import { auth, db } from "../../lib/firebase";
 import { createDefaultSRSState, SRSGrade, calculateSRS } from "../../lib/srs";
 import { Card } from "./types";
-import { getUserId, cardsRef, cardRef, decksRef } from "./firestoreHelpers";
+import { getUserId, cardsRef, cardRef, decksRef, sanitizeForFirestore } from "./firestoreHelpers";
 import { UISlice } from "./uiSlice";
 import { DeckSlice } from "./deckSlice";
 import { computeDueCount, computeNewCount } from "../../lib/deckUtils";
@@ -24,6 +25,12 @@ import { getFirestoreErrorMessage } from "../../lib/errorHandler";
 import { APP_CONFIG } from "../../constants/config";
 
 export const PAGE_SIZE = APP_CONFIG.PAGE_SIZE;
+
+function fireAndForget(actionName: string, asyncFn: () => Promise<void>): void {
+  asyncFn().catch((err) => {
+    console.error(`[cardSlice:${actionName}] Firestore async sync failed:`, err);
+  });
+}
 
 export interface CardSlice {
   cards: Record<string, Card[]>; // deckId → cards
@@ -147,9 +154,11 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     );
 
     if (duplicate) {
-      console.log(
-        `[cardSlice] Duplicate found for "${cardData.character}" in deck ${cardData.deckId}. Updating card ${duplicate.id} instead of creating duplicate.`,
-      );
+      if (__DEV__) {
+        console.log(
+          `[cardSlice] Duplicate found for "${cardData.character}" in deck ${cardData.deckId}. Updating card ${duplicate.id} instead of creating duplicate.`,
+        );
+      }
       await get().updateCard(duplicate.id, cardData.deckId, {
         character: cardData.character,
         traditional: cardData.traditional,
@@ -195,19 +204,15 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     }));
 
     // Async background persistence to Firestore
-    (async () => {
-      try {
-        await setDoc(ref, card);
-        const deckDocRef = doc(decksRef(uid), cardData.deckId);
-        await updateDoc(deckDocRef, {
-          cardCount: realCardCount,
-          dueCount: realDueCount,
-          newCount: realNewCount,
-        });
-      } catch (err) {
-        console.error("[addCard] Firestore async sync failed:", err);
-      }
-    })();
+    fireAndForget("addCard", async () => {
+      await setDoc(ref, sanitizeForFirestore(card));
+      const deckDocRef = doc(decksRef(uid), cardData.deckId);
+      await updateDoc(deckDocRef, {
+        cardCount: realCardCount,
+        dueCount: realDueCount,
+        newCount: realNewCount,
+      });
+    });
   },
 
   updateCard: async (cardId, deckId, updates) => {
@@ -229,16 +234,13 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     }));
 
     // Async background persistence to Firestore
-    (async () => {
-      try {
-        await updateDoc(cardRef(uid, deckId, cardId), {
-          ...updates,
-          updatedAt: new Date().toISOString(),
-        });
-      } catch (err) {
-        console.error("[updateCard] Firestore async sync failed:", err);
-      }
-    })();
+    fireAndForget("updateCard", async () => {
+      const cleanUpdates = sanitizeForFirestore({
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+      await updateDoc(cardRef(uid, deckId, cardId), cleanUpdates);
+    });
   },
 
   deleteCard: async (cardId, deckId) => {
@@ -263,19 +265,15 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     }));
 
     // Async background persistence to Firestore
-    (async () => {
-      try {
-        await deleteDoc(cardRef(uid, deckId, cardId));
-        const deckDocRef = doc(decksRef(uid), deckId);
-        await updateDoc(deckDocRef, {
-          cardCount: realCardCount,
-          dueCount: realDueCount,
-          newCount: realNewCount,
-        });
-      } catch (err) {
-        console.error("[deleteCard] Firestore async sync failed:", err);
-      }
-    })();
+    fireAndForget("deleteCard", async () => {
+      await deleteDoc(cardRef(uid, deckId, cardId));
+      const deckDocRef = doc(decksRef(uid), deckId);
+      await updateDoc(deckDocRef, {
+        cardCount: realCardCount,
+        dueCount: realDueCount,
+        newCount: realNewCount,
+      });
+    });
   },
 
   clearDeckCards: async (deckId) => {
@@ -301,18 +299,22 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       ),
     }));
 
-    // Perform parallel bulk deletion in Firestore
-    try {
-      await Promise.all(existingCards.map((c) => deleteDoc(cardRef(uid, deckId, c.id))));
+    // Perform batched bulk deletion in Firestore (max 500 items per batch)
+    fireAndForget("clearDeckCards", async () => {
+      const BATCH_SIZE = 500;
+      for (let i = 0; i < existingCards.length; i += BATCH_SIZE) {
+        const batch = writeBatch(db);
+        const chunk = existingCards.slice(i, i + BATCH_SIZE);
+        chunk.forEach((c) => batch.delete(cardRef(uid, deckId, c.id)));
+        await batch.commit();
+      }
       const deckDocRef = doc(decksRef(uid), deckId);
       await updateDoc(deckDocRef, {
         cardCount: 0,
         dueCount: 0,
         newCount: 0,
       });
-    } catch (e: unknown) {
-      console.warn("[clearDeckCards] Firestore bulk delete warning:", e);
-    }
+    });
   },
 
   gradeCard: async (card, grade) => {
@@ -343,25 +345,26 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       ),
     }));
 
-    // Async background persistence to Firestore
-    (async () => {
-      try {
-        const snap = await getDocs(cardsRef(uid, deckId));
-        const resets = snap.docs.map((d) =>
-          updateDoc(d.ref, { srs: createDefaultSRSState(), updatedAt: now }),
+    // Async background persistence to Firestore using local cards (no re-fetching getDocs)
+    fireAndForget("resetDeckProgress", async () => {
+      const BATCH_SIZE = 500;
+      const defaultSRS = createDefaultSRSState();
+      for (let i = 0; i < existingCards.length; i += BATCH_SIZE) {
+        const batch = writeBatch(db);
+        const chunk = existingCards.slice(i, i + BATCH_SIZE);
+        chunk.forEach((c) =>
+          batch.update(cardRef(uid, deckId, c.id), { srs: defaultSRS, updatedAt: now }),
         );
-        await Promise.all(resets);
-
-        const deckDocRef = doc(decksRef(uid), deckId);
-        await updateDoc(deckDocRef, {
-          dueCount: snap.docs.length,
-          newCount: snap.docs.length,
-          updatedAt: now,
-        });
-      } catch (err) {
-        console.error("[resetDeckProgress] Firestore async sync failed:", err);
+        await batch.commit();
       }
-    })();
+
+      const deckDocRef = doc(decksRef(uid), deckId);
+      await updateDoc(deckDocRef, {
+        dueCount: cardCount,
+        newCount: cardCount,
+        updatedAt: now,
+      });
+    });
   },
 
   findExistingCard: (character, deckId) => {
@@ -384,3 +387,4 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     return undefined;
   },
 });
+

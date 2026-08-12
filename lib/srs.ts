@@ -1,5 +1,16 @@
 import { APP_CONFIG } from "../constants/config";
 
+export const SRS_CONFIG = {
+  AGAIN_EASE_PENALTY: 0.2,
+  HARD_EASE_PENALTY: 0.15,
+  EASY_EASE_BONUS: 0.15,
+  EASY_INTERVAL_MULTIPLIER: 1.3,
+  INITIAL_GOOD_INTERVAL: 1,
+  SECOND_GOOD_INTERVAL: 3,
+  INITIAL_EASY_INTERVAL: 1,
+  SECOND_EASY_INTERVAL: 6,
+} as const;
+
 export const SRS_GRADES = {
   AGAIN: 1, // Quên — reset interval = 0, Ease Factor -0.20
   HARD: 2,  // Khó — interval = 1d, Ease Factor -0.15
@@ -31,7 +42,7 @@ export function createDefaultSRSState(): SRSState {
 export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
   let repetitions = current?.repetitions ?? 0;
   let interval = current?.interval ?? 0;
-  let easeFactor = current?.easeFactor ?? 2.5;
+  let easeFactor = current?.easeFactor ?? APP_CONFIG.DEFAULT_EASE_FACTOR;
 
   if (easeFactor < APP_CONFIG.MIN_EASE_FACTOR) easeFactor = APP_CONFIG.MIN_EASE_FACTOR;
 
@@ -39,18 +50,18 @@ export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
     // Quên: Reset streak, ôn lại ngay trong phiên (interval = 0)
     repetitions = 0;
     interval = 0;
-    easeFactor -= 0.2;
+    easeFactor -= SRS_CONFIG.AGAIN_EASE_PENALTY;
   } else if (grade === SRS_GRADES.HARD) {
     // Khó (vừa mới sai / làm lại trong phiên): interval = 1d
     repetitions = Math.max(0, repetitions - 1);
     interval = 1;
-    easeFactor -= 0.15;
+    easeFactor -= SRS_CONFIG.HARD_EASE_PENALTY;
   } else if (grade === SRS_GRADES.GOOD) {
     // Tốt (Đúng lần đầu nhưng do dự > 3.5s): tăng mượt 1d -> 3d -> interval * EF
     if (repetitions === 0) {
-      interval = 1;
+      interval = SRS_CONFIG.INITIAL_GOOD_INTERVAL;
     } else if (repetitions === 1) {
-      interval = 3;
+      interval = SRS_CONFIG.SECOND_GOOD_INTERVAL;
     } else {
       interval = Math.ceil(interval * easeFactor);
     }
@@ -59,14 +70,14 @@ export function calculateSRS(grade: SRSGrade, current: SRSState): SRSState {
   } else if (grade === SRS_GRADES.EASY) {
     // Dễ (Đúng lần đầu & Phản xạ nhanh <= 3.5s): tăng tốc 1d -> 6d -> interval * EF * 1.3
     if (repetitions === 0) {
-      interval = 1;
+      interval = SRS_CONFIG.INITIAL_EASY_INTERVAL;
     } else if (repetitions === 1) {
-      interval = 6;
+      interval = SRS_CONFIG.SECOND_EASY_INTERVAL;
     } else {
-      interval = Math.ceil(interval * easeFactor * 1.3);
+      interval = Math.ceil(interval * easeFactor * SRS_CONFIG.EASY_INTERVAL_MULTIPLIER);
     }
     repetitions += 1;
-    easeFactor += 0.15;
+    easeFactor += SRS_CONFIG.EASY_EASE_BONUS;
   }
 
   if (easeFactor < APP_CONFIG.MIN_EASE_FACTOR) easeFactor = APP_CONFIG.MIN_EASE_FACTOR;
