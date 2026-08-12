@@ -33,7 +33,8 @@ async function callGeminiWithRetry(url, payload, maxRetries = 2) {
 
 async function handleWorkerRequest(request, env) {
   // Safe environment variable resolution (works in both Module & Service Worker modes)
-  const geminiApiKey = env?.GEMINI_API_KEY || (typeof GEMINI_API_KEY !== "undefined" ? GEMINI_API_KEY : "");
+  const geminiApiKey =
+    env?.GEMINI_API_KEY || (typeof GEMINI_API_KEY !== "undefined" ? GEMINI_API_KEY : "");
   const appSecret = env?.APP_SECRET || (typeof APP_SECRET !== "undefined" ? APP_SECRET : "");
 
   // 1. Handle CORS Preflight (OPTIONS request)
@@ -58,7 +59,7 @@ async function handleWorkerRequest(request, env) {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
         },
-      }
+      },
     );
   }
 
@@ -166,16 +167,13 @@ async function handleWorkerRequest(request, env) {
       },
     });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err.message || "Failed to process request" }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
+    return new Response(JSON.stringify({ error: err.message || "Failed to process request" }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   }
 }
 

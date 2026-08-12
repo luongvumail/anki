@@ -2,10 +2,13 @@ import { useState, useRef, useMemo, useCallback } from "react";
 import { Animated } from "react-native";
 import { useStore, Card } from "../store/useStore";
 import { getReviewHistory, getStreakCount, getLocalDateString } from "../lib/reviewTracker";
+import { computeLearnedCount, getDeckMasteryPct } from "../lib/deckUtils";
 import { isDue } from "../lib/srs";
 import { getLevelInfo } from "../store/slices/userProgressSlice";
 
+
 export interface DayActivity {
+
   dateStr: string;
   dayName: string;
   count: number;
@@ -96,7 +99,7 @@ export function useStats() {
   }, [allCardsList]);
 
   const learnedCount = useMemo(() => {
-    return allCardsList.filter((c) => c.srs && c.srs.repetitions > 0).length;
+    return computeLearnedCount(allCardsList);
   }, [allCardsList]);
 
   const newCardsCount = useMemo(() => {
@@ -104,9 +107,9 @@ export function useStats() {
   }, [allCardsList]);
 
   const retentionRatePct = useMemo(() => {
-    if (totalCardsCount === 0) return 0;
-    return Math.round((learnedCount / totalCardsCount) * 100);
-  }, [totalCardsCount, learnedCount]);
+    return getDeckMasteryPct(totalCardsCount, dueCount, allCardsList);
+  }, [totalCardsCount, dueCount, allCardsList]);
+
 
   const weeklyActivity = useMemo(() => {
     const days = getLast7Days();

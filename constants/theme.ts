@@ -58,16 +58,16 @@ export const LightTheme: ColorPalette = {
   bg: '#F8FAFC',
   bgSoft: '#F1F5F9',
   cardBg: '#FFFFFF',
-  cardBorder: '#E2E8F0',
-  cardBottom: '#E2E8F0',
+  cardBorder: 'rgba(0, 0, 0, 0.06)',
+  cardBottom: 'transparent',
 
   textPrimary: '#0F172A',
   textMuted: '#64748B',
   textSubhead: '#475569',
   textInverse: '#FFFFFF',
 
-  inputBg: '#FFFFFF',
-  inputBorder: '#CBD5E1',
+  inputBg: '#F1F5F9',
+  inputBorder: 'transparent',
   divider: '#F1F5F9',
   overlay: 'rgba(15, 23, 42, 0.6)',
 
@@ -102,18 +102,19 @@ export const DarkTheme: ColorPalette = {
   mode: 'dark',
 
   bg: '#0F172A',
-  bgSoft: '#1E293B',
+  bgSoft: '#334155',
   cardBg: '#1E293B',
-  cardBorder: '#334155',
-  cardBottom: '#334155',
+  cardBorder: 'rgba(255, 255, 255, 0.08)',
+  cardBottom: 'transparent',
+
 
   textPrimary: '#F8FAFC',
   textMuted: '#94A3B8',
   textSubhead: '#CBD5E1',
   textInverse: '#0F172A',
 
-  inputBg: '#1E293B',
-  inputBorder: '#334155',
+  inputBg: '#334155',
+  inputBorder: 'transparent',
   divider: '#334155',
   overlay: 'rgba(15, 23, 42, 0.85)',
 
@@ -164,12 +165,12 @@ export const Colors = {
     bg: '#131F24',
     bgSoft: '#1F2C34',
     bgSoftDark: '#1F2C34',
-    border: '#2B3D4F',
+    border: 'transparent',
     text: '#F0F3F6',
     textMuted: '#777777',
     cardBg: '#1F2C34',
-    cardBorder: '#2B3D4F',
-    cardBottom: '#18242B',
+    cardBorder: 'transparent',
+    cardBottom: 'transparent',
     disabledBg: '#2B3D4F',
     disabledText: '#526575',
   },
@@ -216,9 +217,9 @@ export const Colors = {
     inverse: '#131F24',
   },
   border: {
-    separator: '#2B3D4F',
+    separator: 'transparent',
     default: 'transparent',
-    strong: '#2B3D4F',
+    strong: 'transparent',
     active: '#1CB0F6',
   },
 };
@@ -277,10 +278,11 @@ export const Layout = {
 
 export const BorderWidths = {
   none: 0,
-  thin: 1,
-  default: 2,
-  card3D: 4,
+  thin: 0,
+  default: 0,
+  card3D: 0,
 };
+
 
 export const Animations = {
   timingShort: 200,

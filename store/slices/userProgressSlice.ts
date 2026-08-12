@@ -55,6 +55,14 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
     target: 7,
   },
   {
+    id: "streak_14",
+    title: "Thói Quản Bền Vững",
+    description: "Duy trì chuỗi 14 ngày học liên tục",
+    icon: "shield-checkmark",
+    category: "streak",
+    target: 14,
+  },
+  {
     id: "streak_30",
     title: "Chiến Binh Kiên Trì",
     description: "Duy trì chuỗi 30 ngày học liên tục",
@@ -63,12 +71,36 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
     target: 30,
   },
   {
+    id: "streak_60",
+    title: "Khí Phách Hán Ngữ",
+    description: "Duy trì chuỗi 60 ngày học liên tục",
+    icon: "medal",
+    category: "streak",
+    target: 60,
+  },
+  {
     id: "streak_100",
     title: "Huyền Thoại Bất Tận",
     description: "Duy trì chuỗi 100 ngày học liên tục",
     icon: "ribbon",
     category: "streak",
     target: 100,
+  },
+  {
+    id: "streak_180",
+    title: "Thép Đã Tôi Thế Đấy",
+    description: "Duy trì chuỗi 180 ngày học liên tục",
+    icon: "diamond",
+    category: "streak",
+    target: 180,
+  },
+  {
+    id: "streak_365",
+    title: "Thánh Chuỗi Bất Tử",
+    description: "Chinh phục 365 ngày học liên tục (1 Năm)",
+    icon: "trophy",
+    category: "streak",
+    target: 365,
   },
 
   // Vocab Category
@@ -81,28 +113,60 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
     target: 20,
   },
   {
+    id: "vocab_50",
+    title: "Khởi Đầu Vững Chắc",
+    description: "Ghi nhớ thuộc 50 từ vựng",
+    icon: "flower",
+    category: "vocab",
+    target: 50,
+  },
+  {
     id: "vocab_100",
     title: "Vốn Từ Nền Tảng",
     description: "Ghi nhớ thuộc 100 từ vựng",
-    icon: "flower",
+    icon: "book",
     category: "vocab",
     target: 100,
   },
   {
-    id: "vocab_300",
-    title: "Bàn Đạp HSK 3",
-    description: "Ghi nhớ thuộc 300 từ vựng",
-    icon: "book",
+    id: "vocab_250",
+    title: "Chinh Phục HSK 2",
+    description: "Ghi nhớ thuộc 250 từ vựng",
+    icon: "library",
     category: "vocab",
-    target: 300,
+    target: 250,
+  },
+  {
+    id: "vocab_500",
+    title: "Cột Mốc HSK 3",
+    description: "Ghi nhớ thuộc 500 từ vựng",
+    icon: "school",
+    category: "vocab",
+    target: 500,
   },
   {
     id: "vocab_1000",
-    title: "Kho Từ Vạn Chữ",
+    title: "Thông Thạo HSK 4",
     description: "Ghi nhớ thuộc 1,000 từ vựng",
     icon: "planet",
     category: "vocab",
     target: 1000,
+  },
+  {
+    id: "vocab_2500",
+    title: "Bậc Thầy HSK 5",
+    description: "Ghi nhớ thuộc 2,500 từ vựng",
+    icon: "sparkles",
+    category: "vocab",
+    target: 2500,
+  },
+  {
+    id: "vocab_5000",
+    title: "Đại Tông Sư Vạn Chữ",
+    description: "Ghi nhớ thuộc 5,000 từ vựng cao cấp",
+    icon: "star",
+    category: "vocab",
+    target: 5000,
   },
 
   // Speed Category
@@ -126,9 +190,17 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
     id: "speed_40",
     title: "Bậc Thầy Tốc Độ",
     description: "Ghép đúng 40 cặp từ trong Game 60s",
-    icon: "trophy",
+    icon: "hardware-chip",
     category: "speed",
     target: 40,
+  },
+  {
+    id: "speed_60",
+    title: "Thần Tốc Vô Song",
+    description: "Ghép đúng 60 cặp từ trong Game 60s",
+    icon: "rocket",
+    category: "speed",
+    target: 60,
   },
 
   // AI Creation Category
@@ -156,7 +228,16 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
     category: "ai",
     target: 200,
   },
+  {
+    id: "ai_500",
+    title: "Trí Tuệ Tối Thượng",
+    description: "Tạo 500 từ vựng bằng AI",
+    icon: "infinite",
+    category: "ai",
+    target: 500,
+  },
 ];
+
 
 async function syncProgressToFirestore(xp: number, unlockedBadgeIds: string[]) {
   const uid = auth.currentUser?.uid;

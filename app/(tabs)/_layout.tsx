@@ -18,9 +18,9 @@ export default function TabLayout() {
             styles.tabBar,
             {
               backgroundColor: theme.bg,
-              borderTopColor: theme.cardBorder,
             },
           ],
+
           tabBarActiveTintColor: theme.blue,
           tabBarInactiveTintColor: theme.textMuted,
           tabBarLabelStyle: styles.tabLabel,
@@ -71,11 +71,17 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    borderTopWidth: BorderWidths.default,
+    borderTopWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 8,
     height: Platform.OS === "ios" ? 86 : 66,
     paddingBottom: Platform.OS === "ios" ? 26 : Spacing.sm,
     paddingTop: Spacing.xs,
   },
+
   tabItem: {
     paddingTop: Spacing.xs,
   },

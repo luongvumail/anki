@@ -50,7 +50,8 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
       : 0;
 
   const mascotExpression = accuracy >= 80 ? "celebrate" : accuracy >= 50 ? "happy" : "thinking";
-  const mascotSpeech = accuracy >= 80 ? "Xuất sắc! 太棒了!" : accuracy >= 50 ? "Khá tốt! 加油!" : "Cần ôn thêm!";
+  const mascotSpeech =
+    accuracy >= 80 ? "Xuất sắc! 太棒了!" : accuracy >= 50 ? "Khá tốt! 加油!" : "Cần ôn thêm!";
   const doneTitle = accuracy >= 50 ? "HOÀN THÀNH BÀI HỌC!" : "CẦN ÔN TẬP THÊM!";
   const doneSub =
     accuracy >= 80
@@ -71,7 +72,11 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
       ]}
     >
       <Animated.View style={[styles.innerContent, { opacity: fadeAnim }]}>
-        <DuolingoMascot expression={mascotExpression} size={Layout.avatarXl} speechBubbleText={mascotSpeech} />
+        <DuolingoMascot
+          expression={mascotExpression}
+          size={Layout.avatarXl}
+          speechBubbleText={mascotSpeech}
+        />
         <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>{doneTitle}</Text>
         <Text style={[styles.doneSub, { color: theme.textMuted }]}>{doneSub}</Text>
 
@@ -144,7 +149,11 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     alignItems: "center",
   },
-  statVal: { fontSize: Typography.titleLG.fontSize, fontWeight: Typography.weight.extraBold, marginTop: 2 },
+  statVal: {
+    fontSize: Typography.titleLG.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: 2,
+  },
   statLabel: {
     fontSize: Typography.caption2.fontSize,
     fontWeight: Typography.weight.bold,

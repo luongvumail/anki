@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
+import { View, Text, StyleSheet, Animated, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Radii, Spacing, Typography, BorderWidths, Animations } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
@@ -10,12 +10,14 @@ interface DuolingoMascotProps {
   expression?: MascotExpression;
   size?: number;
   speechBubbleText?: string;
+  useAppLogo?: boolean;
 }
 
 export function DuolingoMascot({
   expression = "waving",
   size = 72,
   speechBubbleText,
+  useAppLogo = false,
 }: DuolingoMascotProps) {
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const { theme } = useTheme();
@@ -66,23 +68,39 @@ export function DuolingoMascot({
         </View>
       ) : null}
 
-      <Animated.View
-        style={[
-          styles.mascotAvatar,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: bg,
-            transform: [{ translateY: bounceAnim }],
-          },
-        ]}
-      >
-        <Ionicons name={icon} size={size * 0.5} color="#FFFFFF" />
-      </Animated.View>
+      {useAppLogo ? (
+        <Animated.Image
+          source={require("../../assets/icon.png")}
+          style={[
+            {
+              width: size,
+              height: size,
+              borderRadius: Radii.lg,
+              transform: [{ translateY: bounceAnim }],
+            },
+          ]}
+          resizeMode="contain"
+        />
+      ) : (
+        <Animated.View
+          style={[
+            styles.mascotAvatar,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              backgroundColor: bg,
+              transform: [{ translateY: bounceAnim }],
+            },
+          ]}
+        >
+          <Ionicons name={icon} size={size * 0.5} color="#FFFFFF" />
+        </Animated.View>
+      )}
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   mascotContainer: {

@@ -1,4 +1,11 @@
-import { calculateSRS, createDefaultSRSState, SRS_GRADES, isDue, SRS_CONFIG } from "../srs";
+import {
+  calculateSRS,
+  createDefaultSRSState,
+  SRS_GRADES,
+  isDue,
+  FSRSState,
+  calculateQuizSRS,
+} from "../srs";
 
 function assertStrictEqual<T>(actual: T, expected: T, message?: string) {
   if (actual !== expected) {
@@ -13,39 +20,53 @@ function assertOk(value: unknown, message?: string) {
 }
 
 export function runSRSTests() {
-  // Test 1: default state
+  // Test 1: Default FSRS state creation
   const defaultState = createDefaultSRSState();
   assertStrictEqual(defaultState.repetitions, 0, "repetitions should be 0");
   assertStrictEqual(defaultState.interval, 0, "interval should be 0");
-  assertStrictEqual(defaultState.easeFactor, 2.5, "easeFactor should be 2.5");
+  assertStrictEqual(defaultState.state, FSRSState.New, "state should be New (0)");
+  assertOk(defaultState.stability > 0, "stability should be initialized");
+  assertStrictEqual(defaultState.difficulty, 5.0, "difficulty should be 5.0");
   assertOk(typeof defaultState.dueDate === "string", "dueDate should be string");
 
-  // Test 2: AGAIN grade
-  const initial = { repetitions: 3, interval: 10, easeFactor: 2.5, dueDate: new Date().toISOString() };
+  // Test 2: AGAIN grade (Forget)
+  const initial = createDefaultSRSState();
   const nextAgain = calculateSRS(SRS_GRADES.AGAIN, initial);
   assertStrictEqual(nextAgain.repetitions, 0, "AGAIN resets reps");
-  assertStrictEqual(nextAgain.interval, 0, "AGAIN resets interval");
-  assertStrictEqual(nextAgain.easeFactor, 2.5 - SRS_CONFIG.AGAIN_EASE_PENALTY, "AGAIN lowers ease factor");
+  assertStrictEqual(nextAgain.interval, 0, "AGAIN resets interval for immediate review");
+  assertStrictEqual(nextAgain.state, FSRSState.Learning, "New card gets Learning state on AGAIN");
 
-  // Test 3: HARD grade
-  const nextHard = calculateSRS(SRS_GRADES.HARD, initial);
-  assertStrictEqual(nextHard.repetitions, 2, "HARD reduces reps by 1");
-  assertStrictEqual(nextHard.interval, 1, "HARD sets interval to 1");
+  // Test 3: GOOD grade (Recall)
+  const firstGood = calculateSRS(SRS_GRADES.GOOD, initial);
+  assertStrictEqual(firstGood.repetitions, 1, "GOOD increases reps");
+  assertOk(firstGood.interval >= 1, "GOOD interval should be >= 1 day");
+  assertStrictEqual(firstGood.state, FSRSState.Review, "GOOD moves card to Review state");
 
-  // Test 4: GOOD grade
-  const firstGood = calculateSRS(SRS_GRADES.GOOD, createDefaultSRSState());
-  assertStrictEqual(firstGood.repetitions, 1);
-  assertStrictEqual(firstGood.interval, 1);
-
-  const secondGood = calculateSRS(SRS_GRADES.GOOD, firstGood);
-  assertStrictEqual(secondGood.repetitions, 2);
-  assertStrictEqual(secondGood.interval, 3);
-
-  // Test 5: EASY grade
-  const firstEasy = calculateSRS(SRS_GRADES.EASY, createDefaultSRSState());
+  // Test 4: EASY grade (Fast recall boost)
+  const firstEasy = calculateSRS(SRS_GRADES.EASY, initial);
   assertStrictEqual(firstEasy.repetitions, 1);
-  assertStrictEqual(firstEasy.interval, 1);
-  assertStrictEqual(firstEasy.easeFactor, 2.65);
+  assertOk(firstEasy.stability > firstGood.stability, "EASY stability should be higher than GOOD stability");
+
+  // Test 5: Quiz Speed Evaluation
+  // Fast response (<= 2500ms) -> EASY
+  const fastEval = calculateQuizSRS(true, false, 1200, initial);
+  assertStrictEqual(fastEval.grade, SRS_GRADES.EASY, "Fast response should yield EASY grade");
+  assertStrictEqual(fastEval.speedCategory, "fast");
+
+  // Normal response (3000ms) -> GOOD
+  const normalEval = calculateQuizSRS(true, false, 3000, initial);
+  assertStrictEqual(normalEval.grade, SRS_GRADES.GOOD, "Normal response should yield GOOD grade");
+  assertStrictEqual(normalEval.speedCategory, "normal");
+
+  // Slow response (6000ms) -> HARD
+  const slowEval = calculateQuizSRS(true, false, 6000, initial);
+  assertStrictEqual(slowEval.grade, SRS_GRADES.HARD, "Slow response should yield HARD grade");
+  assertStrictEqual(slowEval.speedCategory, "slow");
+
+  // Incorrect response -> AGAIN
+  const wrongEval = calculateQuizSRS(false, false, 1500, initial);
+  assertStrictEqual(wrongEval.grade, SRS_GRADES.AGAIN, "Incorrect answer should yield AGAIN grade");
+  assertStrictEqual(wrongEval.speedCategory, "wrong");
 
   // Test 6: isDue comparison
   const pastDate = new Date();
@@ -56,4 +77,5 @@ export function runSRSTests() {
   futureDate.setDate(futureDate.getDate() + 5);
   assertStrictEqual(isDue({ repetitions: 1, interval: 5, easeFactor: 2.5, dueDate: futureDate.toISOString() }), false);
 }
+
 

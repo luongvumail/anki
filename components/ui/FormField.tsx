@@ -43,11 +43,11 @@ export const FormField = React.memo(function FormField({
         style={[
           styles.inputWrapper,
           {
-            backgroundColor: theme.inputBg,
-            borderColor: !!error ? theme.red : isFocused ? theme.blue : theme.inputBorder,
+            backgroundColor: theme.bgSoft,
           },
         ]}
       >
+
         <TextInput
           ref={inputRef}
           style={[styles.input, { color: theme.textPrimary }, inputStyle]}

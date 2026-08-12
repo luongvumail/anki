@@ -193,19 +193,32 @@ export default function DecksScreen() {
         }
       />
 
-      <Modal visible={showCreate} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowCreate(false)}>
+      <Modal visible={showCreate} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowCreate(false)}>
         <View
           style={[
             styles.modalContainer,
-            { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg },
+            { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg },
           ]}
         >
-          <View style={[styles.modalHeader, { borderBottomColor: theme.cardBorder }]}>
-            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>TẠO BỘ THẺ MỚI</Text>
-            <TouchableOpacity onPress={() => setShowCreate(false)}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => {
+                triggerHaptic("selection");
+                setShowCreate(false);
+              }}
+            >
               <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
             </TouchableOpacity>
+
+            <View style={styles.headerTitleContainer}>
+              <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>TẠO BỘ THẺ MỚI</Text>
+              <Text style={[styles.headerSub, { color: theme.textMuted }]}>Tạo danh mục từ vựng Hán ngữ mới</Text>
+            </View>
+
+            <View style={{ width: Layout.avatarMd }} />
           </View>
+
 
           <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
             <DuolingoCard style={{ padding: Spacing.md }}>
@@ -233,8 +246,7 @@ export default function DecksScreen() {
                     key={iconName}
                     style={[
                       styles.iconPickerItem,
-                      { backgroundColor: theme.bgSoft, borderBottomColor: theme.cardBottom },
-                      isSelected && { backgroundColor: theme.blueDim, borderBottomColor: theme.blueDark },
+                      { backgroundColor: isSelected ? theme.blueDim : theme.bgSoft },
                     ]}
                     onPress={() => setSelectedIcon(iconName)}
                   >
@@ -247,6 +259,7 @@ export default function DecksScreen() {
                 );
               })}
             </View>
+
 
             <DuolingoButton
               title={creating ? "ĐANG TẠO..." : "TẠO BỘ THẺ"}
@@ -300,10 +313,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: BorderWidths.thin,
+    paddingBottom: Spacing.cellPadding,
+  },
+  closeBtn: {
+    padding: Spacing.sm,
+  },
+  headerTitleContainer: {
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
+  },
+  headerSub: {
+    fontSize: Typography.caption1.fontSize,
+    marginTop: 2,
+    fontWeight: Typography.weight.semibold,
   },
   modalTitle: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold },
+
   modalScroll: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md, paddingBottom: Spacing.xxl },
   iconGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.cellPadding, marginBottom: Spacing.md },
   iconPickerItem: {
@@ -312,6 +340,6 @@ const styles = StyleSheet.create({
     borderRadius: Radii.md,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: BorderWidths.thin,
   },
 });
+

@@ -1,16 +1,18 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   ScrollView,
   Animated,
+  PanResponder,
+  Pressable,
   useWindowDimensions,
 } from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import { Spacing, Radii, Typography, BorderWidths } from "../../constants/theme";
+import { Spacing, Radii, Typography, BorderWidths, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { AudioButton } from "../ui/AudioButton";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
@@ -25,204 +27,350 @@ interface FlashcardViewProps {
   showNextButton?: boolean;
 }
 
-export function FlashcardView({ card, onNext, showNextButton }: FlashcardViewProps) {
+export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
+  if (!card) return null;
+
   const { width } = useWindowDimensions();
   const { theme } = useTheme();
   const cardWidth = width - Spacing.pageMargin * 2;
 
+  const swipeAnim = useRef(new Animated.Value(0)).current;
+
   const {
+    isRevealed,
     speaking,
-    frontAnimatedStyle,
-    backAnimatedStyle,
-    handleFlip,
+    hanziAnimatedStyle,
+    detailAnimatedStyle,
+    handleToggleDetail,
     playTTS,
-  } = useFlashcardAnimation(card.character);
+  } = useFlashcardAnimation(card?.character || "");
+
+  // Reset swipe animation position when card changes
+  React.useEffect(() => {
+    swipeAnim.setValue(0);
+  }, [card.id, swipeAnim]);
+
+  // TikTok-Style Vertical Swipe Animation & Tap PanResponder
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return (
+          Math.abs(gestureState.dy) > 6 &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2
+        );
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        return (
+          Math.abs(gestureState.dy) > 6 &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2
+        );
+      },
+      onPanResponderMove: (_, gestureState) => {
+        swipeAnim.setValue(gestureState.dy);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dy, dx, vy } = gestureState;
+
+        if (dy < -50 || vy < -0.35) {
+          // Swipe UP -> Next Card
+          triggerHaptic("selection");
+          Animated.timing(swipeAnim, {
+            toValue: -600,
+            duration: 160,
+            useNativeDriver: true,
+          }).start(() => {
+            if (onNext) onNext();
+          });
+        } else if (dy > 50 || vy > 0.35) {
+          // Swipe DOWN -> Previous Card
+          triggerHaptic("selection");
+          Animated.timing(swipeAnim, {
+            toValue: 600,
+            duration: 160,
+            useNativeDriver: true,
+          }).start(() => {
+            if (onPrev) onPrev();
+          });
+        } else if (Math.abs(dy) < 8 && Math.abs(dx) < 8) {
+          // Tap anywhere on card -> Toggle Detail Reveal
+          Animated.spring(swipeAnim, {
+            toValue: 0,
+            friction: 8,
+            tension: 50,
+            useNativeDriver: true,
+          }).start();
+          handleToggleDetail();
+        } else {
+          // Snap back smoothly if threshold not met
+          Animated.spring(swipeAnim, {
+            toValue: 0,
+            friction: 8,
+            tension: 50,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  // Fluid TikTok swipe opacity interpolation
+  const swipeOpacity = swipeAnim.interpolate({
+    inputRange: [-400, 0, 400],
+    outputRange: [0.3, 1, 0.3],
+    extrapolate: "clamp",
+  });
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity activeOpacity={1} onPress={handleFlip} style={{ width: cardWidth, height: 380 }}>
-        {/* Front Face */}
-        <Animated.View
-          style={[
-            styles.cardFace,
-            styles.cardFront,
-            frontAnimatedStyle,
-            {
-              width: cardWidth,
-              backgroundColor: theme.cardBg,
-              borderColor: theme.cardBorder,
-              borderBottomColor: theme.cardBottom,
-            },
-          ]}
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.fullCardContainer,
+          {
+            width: cardWidth,
+            backgroundColor: theme.cardBg,
+            borderColor: theme.cardBorder,
+            borderBottomColor: theme.cardBottom,
+            opacity: swipeOpacity,
+            transform: [{ translateY: swipeAnim }],
+          },
+        ]}
+      >
+        {/* Main Content Area (Click Anywhere to Toggle Detail) */}
+        <Pressable
+          style={styles.centerStageContainer}
+          onPress={handleToggleDetail}
         >
-          <Text style={[styles.frontCharacter, { color: theme.textPrimary }]}>{card.character}</Text>
+          <ScrollView
+            contentContainerStyle={styles.centeredScrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {/* Always Centered Hanzi Header */}
+            <Animated.View style={[styles.hanziWrapper, hanziAnimatedStyle]}>
+              <Text style={[styles.mainCharacter, { color: theme.textPrimary }]}>
+                {card.character}
+              </Text>
 
-          <View style={styles.audioRow}>
-            <AudioButton onPress={playTTS} isPlaying={speaking} size="md" />
-          </View>
-
-          <Text style={[styles.tapToFlipHint, { color: theme.textMuted }]}>Chạm vào thẻ để xem nghĩa & chi tiết</Text>
-        </Animated.View>
-
-        {/* Back Face */}
-        <Animated.View
-          style={[
-            styles.cardFace,
-            styles.cardBack,
-            backAnimatedStyle,
-            {
-              width: cardWidth,
-              backgroundColor: theme.cardBg,
-              borderColor: theme.cardBorder,
-              borderBottomColor: theme.cardBottom,
-            },
-          ]}
-        >
-          <ScrollView contentContainerStyle={styles.backScrollContent} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.backCharacter, { color: theme.textPrimary }]}>{card.character}</Text>
-            <Text
-              style={[
-                styles.backPinyin,
-                { color: getPinyinToneColor(card.pinyin) },
-              ]}
-            >
-              {card.pinyin}
-            </Text>
-            <Text style={[styles.backTranslation, { color: theme.textPrimary }]}>{card.translation}</Text>
-
-            {card.hanviet ? (
-              <View style={[styles.tagBadge, { backgroundColor: theme.blueDim }]}>
-                <Text style={[styles.tagText, { color: theme.blue }]}>Hán Việt: {card.hanviet}</Text>
+              <View style={styles.audioRow}>
+                <AudioButton onPress={playTTS} isPlaying={speaking} size="md" />
               </View>
-            ) : null}
+            </Animated.View>
 
-            {card.radical ? (
-              <View style={[styles.radicalBox, { backgroundColor: theme.purpleDim }]}>
-                <Ionicons name="shapes" size={14} color={theme.purple} />
-                <Text style={[styles.radicalText, { color: theme.purple }]}>Bộ thủ: {card.radical}</Text>
-              </View>
-            ) : null}
+            {/* Expanded Detail Sheet (Centered inside card) */}
+            {isRevealed && (
+              <Animated.View style={[styles.detailSheetContainer, detailAnimatedStyle]}>
+                {/* Pinyin */}
+                <Text
+                  style={[
+                    styles.detailPinyin,
+                    { color: getPinyinToneColor(card.pinyin) },
+                  ]}
+                >
+                  {card.pinyin}
+                </Text>
 
-            {card.examples && card.examples.length > 0 ? (
-              <View style={[styles.exampleContainer, { backgroundColor: theme.bgSoft }]}>
-                <Text style={[styles.exampleHeader, { color: theme.textMuted }]}>CÂU VÍ DỤ</Text>
-                <Text style={[styles.exampleCn, { color: theme.textPrimary }]}>{card.examples[0].chinese}</Text>
-                {card.examples[0].pinyin ? <Text style={[styles.examplePy, { color: theme.blue }]}>{card.examples[0].pinyin}</Text> : null}
-                {card.examples[0].vietnamese ? <Text style={[styles.exampleVi, { color: theme.textMuted }]}>{card.examples[0].vietnamese}</Text> : null}
-              </View>
-            ) : null}
+                {/* Translation */}
+                <Text style={[styles.detailTranslation, { color: theme.textPrimary }]}>
+                  {card.translation}
+                </Text>
 
-            {showNextButton && onNext ? (
-              <TouchableOpacity style={[styles.nextCardBtn, { backgroundColor: theme.green }]} onPress={onNext}>
-                <Text style={styles.nextCardBtnText}>TIẾP THEO</Text>
-                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-            ) : null}
+                {/* Hán Việt Tag */}
+                {card.hanviet ? (
+                  <View style={styles.badgesRow}>
+                    <View style={[styles.tagBadge, { backgroundColor: theme.blueDim }]}>
+                      <Text style={[styles.tagText, { color: theme.blue }]}>
+                        Hán Việt: {card.hanviet}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                {/* Word Structure & Radical Breakdown Box */}
+                {card.radical ? (
+                  <View style={[styles.radicalBreakdownBox, { backgroundColor: theme.purpleDim }]}>
+                    <View style={styles.radicalBreakdownHeader}>
+                      <Ionicons name="git-network-outline" size={16} color={theme.purple} />
+                      <Text style={[styles.radicalBreakdownTitle, { color: theme.purple }]}>
+                        CẤU TRÚC TỪ & BỘ THỦ
+                      </Text>
+                    </View>
+                    <Text style={[styles.radicalBreakdownText, { color: theme.textPrimary }]}>
+                      {card.radical}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Example Sentences */}
+                {card.examples && card.examples.length > 0 ? (
+                  <View style={[styles.exampleContainer, { backgroundColor: theme.bgSoft }]}>
+                    <Text style={[styles.exampleHeader, { color: theme.textMuted }]}>
+                      CÂU VÍ DỤ
+                    </Text>
+                    <Text style={[styles.exampleCn, { color: theme.textPrimary }]}>
+                      {card.examples[0].chinese}
+                    </Text>
+                    {card.examples[0].pinyin ? (
+                      <Text style={[styles.examplePy, { color: theme.blue }]}>
+                        {card.examples[0].pinyin}
+                      </Text>
+                    ) : null}
+                    {card.examples[0].vietnamese ? (
+                      <Text style={[styles.exampleVi, { color: theme.textMuted }]}>
+                        {card.examples[0].vietnamese}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
+              </Animated.View>
+            )}
           </ScrollView>
-        </Animated.View>
-      </TouchableOpacity>
+        </Pressable>
+      </Animated.View>
+
+      {/* Fixed Footer Guidance */}
+      <View style={styles.footerGuidanceContainer}>
+        {!isRevealed && (
+          <Text style={[styles.tapHintSmallText, { color: theme.textMuted }]}>
+            Chạm vào thẻ để xem nghĩa & chi tiết
+          </Text>
+        )}
+
+        <View style={styles.swipeHintFooter}>
+          <Ionicons name="swap-vertical" size={13} color={theme.textMuted} />
+          <Text style={[styles.swipeHintFooterText, { color: theme.textMuted }]}>
+            Vuốt lên để xem tiếp • Vuốt xuống để quay lại
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
 
+
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: Spacing.pageMargin,
+    paddingVertical: Spacing.md,
   },
-  cardWrapper: {
+  fullCardContainer: {
+    flex: 1,
     width: "100%",
-    height: 440,
-  },
-  cardFace: {
-    width: "100%",
-    height: "100%",
     borderRadius: Radii.xl,
     padding: Spacing.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: BorderWidths.thin,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
+    overflow: "hidden",
+  },
+  centerStageContainer: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  centeredScrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    position: "absolute",
-    borderWidth: BorderWidths.thin,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    width: "100%",
+    paddingVertical: Spacing.sm,
   },
-  cardFront: {
-    zIndex: 2,
+  hanziWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
   },
-  cardBack: {
-    zIndex: 1,
-  },
-  frontCharacter: {
-    fontSize: Typography.hanziHero.fontSize,
+  mainCharacter: {
+    fontSize: Typography.hanziHero.fontSize + 4,
     fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
   audioRow: {
-    marginTop: Spacing.md,
-  },
-  tapToFlipHint: {
-    fontSize: Typography.caption.fontSize,
-    marginTop: Spacing.xl,
-    fontWeight: Typography.weight.semibold,
-  },
-  backScrollContent: {
+    marginTop: Spacing.xs,
     alignItems: "center",
-    paddingVertical: Spacing.sm,
   },
-  backCharacter: {
-    fontSize: Typography.hanziCard.fontSize,
-    fontWeight: Typography.weight.extraBold,
+  detailSheetContainer: {
+    width: "100%",
+    marginTop: Spacing.sm,
+    alignItems: "center",
   },
-  backPinyin: {
-    fontSize: Typography.title3.fontSize,
+  detailPinyin: {
+    fontSize: Typography.title3.fontSize + 2,
     fontWeight: Typography.weight.bold,
     marginTop: Spacing.xs,
+    textAlign: "center",
   },
-  backTranslation: {
-    fontSize: Typography.callout.fontSize,
-    marginTop: Spacing.sm,
+  detailTranslation: {
+    fontSize: Typography.callout.fontSize + 1,
+    marginTop: Spacing.xs,
     fontWeight: Typography.weight.extraBold,
     textAlign: "center",
+  },
+  badgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   tagBadge: {
     paddingHorizontal: Spacing.cellPadding,
     paddingVertical: Spacing.xs,
     borderRadius: Radii.md,
-    marginTop: Spacing.cellPadding,
   },
   tagText: {
     fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.bold,
   },
-  radicalBox: {
+  radicalBreakdownBox: {
+    width: "100%",
+    borderRadius: Radii.lg,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+    alignItems: "center",
+  },
+  radicalBreakdownHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radii.md,
-    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
-  radicalText: {
-    fontSize: Typography.caption.fontSize,
+  radicalBreakdownTitle: {
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    letterSpacing: 0.8,
+  },
+  radicalBreakdownText: {
+    fontSize: Typography.caption.fontSize + 1,
     fontWeight: Typography.weight.semibold,
+    textAlign: "center",
+    lineHeight: 18,
   },
   exampleContainer: {
     width: "100%",
     borderRadius: Radii.lg,
     padding: Spacing.md,
-    marginTop: Spacing.cellPadding,
+    marginTop: Spacing.sm,
     alignItems: "center",
   },
   exampleHeader: {
-    fontSize: Typography.text.caption2.fontSize,
+    fontSize: Typography.caption2.fontSize,
     fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.8,
     marginBottom: Spacing.xs,
+    textAlign: "center",
   },
   exampleCn: {
     fontSize: Typography.subhead.fontSize,
@@ -239,18 +387,29 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: "center",
   },
-  nextCardBtn: {
+  footerGuidanceContainer: {
+    alignItems: "center",
+    marginTop: Spacing.xs,
+    paddingTop: Spacing.xs,
+  },
+  tapHintSmallText: {
+    fontSize: Typography.caption2.fontSize, // 11px small font
+    fontWeight: Typography.weight.semibold,
+    textAlign: "center",
+    marginBottom: 2,
+    opacity: 0.85,
+  },
+  swipeHintFooter: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: Radii.full,
-    marginTop: Spacing.lg,
+    gap: Spacing.xs,
   },
-  nextCardBtnText: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: Typography.weight.extraBold,
-    color: "#FFFFFF",
+  swipeHintFooterText: {
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.semibold,
   },
 });
+
+
+
+

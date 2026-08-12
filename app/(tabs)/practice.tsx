@@ -113,7 +113,8 @@ export default function PracticeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Practice Arcade Modes List */}
-        <SectionTitle>CHẾ ĐỘ LUYỆN TẬP TỰ DO</SectionTitle>
+        <SectionTitle style={{ marginTop: Spacing.xs }}>CHẾ ĐỘ LUYỆN TẬP TỰ DO</SectionTitle>
+
 
         {/* Mode 1: Speed Match */}
         <DuolingoCard style={styles.modeCard}>

@@ -72,6 +72,8 @@ export function DuolingoCard({
           styles.cardBase,
           {
             backgroundColor: vColors.bg,
+            borderColor: vColors.border || theme.cardBorder,
+            shadowOpacity: theme.isDark ? 0.3 : 0.07,
             transform: [{ scale: pressed ? 0.98 : 1 }],
             opacity: pressed ? 0.92 : 1,
             padding,
@@ -90,6 +92,8 @@ export function DuolingoCard({
         styles.cardBase,
         {
           backgroundColor: vColors.bg,
+          borderColor: vColors.border || theme.cardBorder,
+          shadowOpacity: theme.isDark ? 0.3 : 0.07,
           padding,
         },
         style,
@@ -104,11 +108,12 @@ const styles = StyleSheet.create({
   cardBase: {
     width: "100%",
     borderRadius: Radii.lg,
-    borderWidth: 0,
+    borderWidth: 1,
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
   },
 });
+

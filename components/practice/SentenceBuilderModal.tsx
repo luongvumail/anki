@@ -80,11 +80,14 @@ export function SentenceBuilderModal({
 
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.blue} />
+          <View style={{ flex: 1 }}>
+            <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.blue} />
+          </View>
           <Text style={[styles.progressText, { color: theme.textMuted }]}>
             {questions.length > 0 ? `${currentIndex + 1}/${questions.length}` : "0/0"}
           </Text>
         </View>
+
 
         {isDone ? (
           /* Completion Screen */
@@ -161,23 +164,35 @@ export function SentenceBuilderModal({
               <View style={styles.wordBankArea}>
                 <Text style={[styles.wordBankTitle, { color: theme.textMuted }]}>KHO TỪ VỰNG:</Text>
                 <View style={styles.wordWrapRow}>
-                  {wordBank.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.wordTile,
-                        { backgroundColor: theme.cardBg },
-                      ]}
-                      onPress={() => handleSelectWord(item)}
-                      disabled={isSubmitted}
-                    >
-                      <Text style={[styles.wordTileText, { color: theme.textPrimary }]}>
-                        {item.text}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  {wordBank.map((item) => {
+                    const isSelected = userSentence.some((w) => w.id === item.id);
+                    return (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[
+                          styles.wordTile,
+                          {
+                            backgroundColor: isSelected ? theme.bgSoft : theme.cardBg,
+                            opacity: isSelected ? 0.25 : 1,
+                          },
+                        ]}
+                        onPress={() => handleSelectWord(item)}
+                        disabled={isSubmitted || isSelected}
+                      >
+                        <Text
+                          style={[
+                            styles.wordTileText,
+                            { color: isSelected ? theme.textMuted : theme.textPrimary },
+                          ]}
+                        >
+                          {item.text}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
+
             </ScrollView>
 
             {/* Bottom Footer Actions */}
@@ -278,8 +293,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.cellPadding,
     paddingHorizontal: Spacing.pageMargin,
-    marginBottom: Spacing.lg,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
   },
+
   progressText: {
     fontSize: Typography.caption1.fontSize,
     fontWeight: Typography.weight.extraBold,

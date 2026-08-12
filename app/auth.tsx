@@ -2,17 +2,14 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Alert,
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -21,7 +18,14 @@ import {
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { getAuthErrorMessage } from "../lib/errorHandler";
-import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../constants/theme";
+import {
+  Spacing,
+  Radii,
+  Typography,
+  Layout,
+  BorderWidths,
+  triggerHaptic,
+} from "../constants/theme";
 import { useTheme } from "../hooks/useTheme";
 import { DuolingoButton } from "../components/ui/DuolingoButton";
 import { AuthField } from "../components/ui/AuthField";
@@ -55,11 +59,7 @@ export default function AuthScreen() {
           setLoading(false);
           return;
         }
-        const cred = await createUserWithEmailAndPassword(
-          auth,
-          email.trim(),
-          password
-        );
+        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
         await updateProfile(cred.user, { displayName: name.trim() });
         triggerHaptic("success");
       }
@@ -76,7 +76,7 @@ export default function AuthScreen() {
       triggerHaptic("warning");
       Alert.alert(
         "Quên mật khẩu",
-        'Vui lòng nhập địa chỉ email của bạn vào ô Email rồi bấm lại "Quên mật khẩu?".'
+        'Vui lòng nhập địa chỉ email của bạn vào ô Email rồi bấm lại "Quên mật khẩu?".',
       );
       return;
     }
@@ -86,7 +86,7 @@ export default function AuthScreen() {
       triggerHaptic("success");
       Alert.alert(
         "Đã gửi email khôi phục",
-        `Hướng dẫn đặt lại mật khẩu đã được gửi tới ${email.trim()}.\nVui lòng mở hộp thư để đặt lại mật khẩu.`
+        `Hướng dẫn đặt lại mật khẩu đã được gửi tới ${email.trim()}.\nVui lòng mở hộp thư để đặt lại mật khẩu.`,
       );
     } catch (e: unknown) {
       triggerHaptic("error");
@@ -119,7 +119,8 @@ export default function AuthScreen() {
       >
         {/* Header / Branding */}
         <View style={styles.header}>
-          <DuolingoMascot size={Layout.avatarXl} expression="happy" speechBubbleText="Chào mừng bạn!" />
+          <DuolingoMascot size={88} useAppLogo />
+
 
           <Text style={[styles.appName, { color: theme.textPrimary }]}>Anki Chinese</Text>
           <Text style={[styles.tagline, { color: theme.textMuted }]}>
@@ -127,52 +128,11 @@ export default function AuthScreen() {
           </Text>
         </View>
 
-        {/* Mode Switcher */}
-        <View style={[styles.segmentedControl, { backgroundColor: theme.bgSoft, borderBottomColor: theme.cardBottom }]}>
-          <TouchableOpacity
-            style={[
-              styles.segmentBtn,
-              mode === "login" && { backgroundColor: theme.cardBg },
-            ]}
-            onPress={() => toggleMode("login")}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                { color: mode === "login" ? theme.textPrimary : theme.textMuted },
-              ]}
-            >
-              Đăng nhập
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.segmentBtn,
-              mode === "register" && { backgroundColor: theme.cardBg },
-            ]}
-            onPress={() => toggleMode("register")}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                { color: mode === "register" ? theme.textPrimary : theme.textMuted },
-              ]}
-            >
-              Đăng ký
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Form Fields */}
         <View style={styles.formGroup}>
           {mode === "register" && (
             <AuthField
-              label="HỌ TÊN"
-              icon="person-outline"
-              placeholder="Họ và tên của bạn"
+              placeholder="Họ và tên"
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -180,9 +140,7 @@ export default function AuthScreen() {
           )}
 
           <AuthField
-            label="EMAIL"
-            icon="mail-outline"
-            placeholder="Địa chỉ email"
+            placeholder="Email"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -190,8 +148,6 @@ export default function AuthScreen() {
           />
 
           <AuthField
-            label="MẬT KHẨU"
-            icon="lock-closed-outline"
             placeholder="Mật khẩu"
             value={password}
             onChangeText={setPassword}
@@ -215,7 +171,6 @@ export default function AuthScreen() {
         {/* 3D Primary Button */}
         <DuolingoButton
           title={loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
-          icon={loading ? undefined : <Ionicons name={mode === "login" ? "log-in" : "person-add"} size={Layout.iconMd} color="#FFFFFF" />}
           variant="primary"
           size="lg"
           disabled={loading}

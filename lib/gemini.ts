@@ -17,7 +17,7 @@ async function generateViaProxy(
   modelName: string,
   prompt: string,
   responseMimeType?: string,
-  temperature = 0.1
+  temperature = 0.1,
 ): Promise<string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -55,14 +55,20 @@ async function generateViaProxy(
 async function generateWithModels(
   prompt: string,
   responseMimeType?: string,
-  temperature = 0.1
+  temperature = 0.1,
 ): Promise<string> {
+  let lastError: unknown = null;
+
   if (proxyUrl) {
-    if (__DEV__) console.log(`[Gemini/Proxy] Sending request via proxy`);
-    return generateViaProxy(CANDIDATE_MODELS[0], prompt, responseMimeType, temperature);
+    try {
+      if (__DEV__) console.log(`[Gemini/Proxy] Sending request via proxy`);
+      return await generateViaProxy(CANDIDATE_MODELS[0], prompt, responseMimeType, temperature);
+    } catch (proxyErr) {
+      console.warn(`[Gemini/Proxy] Proxy request failed:`, proxyErr);
+      lastError = proxyErr;
+    }
   }
 
-  let lastError: unknown = null;
   for (const modelName of CANDIDATE_MODELS) {
     try {
       if (__DEV__) console.log(`[Gemini] Attempting generation with model: ${modelName}`);
@@ -83,6 +89,7 @@ async function generateWithModels(
       lastError = err;
     }
   }
+
   throw lastError;
 }
 
@@ -120,7 +127,10 @@ async function enforceRateLimit(): Promise<void> {
  */
 function extractCleanJson(rawText: string): string {
   let cleaned = rawText.trim();
-  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+  cleaned = cleaned
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim();
 
   const firstBrace = cleaned.indexOf("{");
   const firstBracket = cleaned.indexOf("[");
@@ -227,7 +237,9 @@ export function validateSingleCardData(raw: unknown): CardData {
     radical: typeof item.radical === "string" ? item.radical : undefined,
     strokeCount: typeof item.strokeCount === "number" ? item.strokeCount : undefined,
     hskLevel: typeof item.hskLevel === "number" ? item.hskLevel : undefined,
-    tags: Array.isArray(item.tags) ? item.tags.filter((t): t is string => typeof t === "string") : [],
+    tags: Array.isArray(item.tags)
+      ? item.tags.filter((t): t is string => typeof t === "string")
+      : [],
   };
 }
 
@@ -279,7 +291,9 @@ Trả về JSON array (CHỈ JSON array, không markdown), với mỗi phần t�
     const jsonText = extractCleanJson(text);
     const rawResults = JSON.parse(jsonText);
     if (!Array.isArray(rawResults) || rawResults.length !== inputs.length) {
-      throw new Error(`Expected ${inputs.length} results, got ${Array.isArray(rawResults) ? rawResults.length : "non-array"}`);
+      throw new Error(
+        `Expected ${inputs.length} results, got ${Array.isArray(rawResults) ? rawResults.length : "non-array"}`,
+      );
     }
     return rawResults.map(validateSingleCardData);
   } catch (err) {
@@ -319,8 +333,7 @@ Trả về JSON:
 }
 
 /**
- * Generates radical/component breakdown analysis for a single Chinese character or word.
- * Used to retroactively fill in the `radical` field for older cards that were created without it.
+ * Generates radical/component breakdown analysis for a single Chinese character or word via Gemini AI.
  * Returns clean plain-text Vietnamese — no markdown, no JSON.
  */
 export async function generateRadical(character: string): Promise<string> {
@@ -329,7 +342,7 @@ export async function generateRadical(character: string): Promise<string> {
 Câu 1: liệt kê bộ thủ (tên Hán-Việt + ký tự + nghĩa). Câu 2: mẹo nhớ hình ảnh.
 Không dùng markdown, không giải thích thêm, không chào hỏi.
 Ví dụ tốt: "好: bộ Nữ (女) + bộ Tử (子). Mẹ ôm con → tốt đẹp."
-Ví dụ tốt: "学: bộ Học (學) gồm 爫+冖+子, trẻ con ngồi dưới mái học bài → học tập."
+Ví dụ tốt: "学: bộ Học (學) gồm 宀+子, trẻ con ngồi dưới mái học bài → học tập."
 Phân tích từ: "${clean}"`;
 
   const raw = await generateWithFallbackText(prompt);

@@ -116,8 +116,6 @@ export function SpeedMatchModal({
 
               const isSelected = selectedTile?.id === tile.id;
 
-              const bgColor = isSelected ? theme.blueDim : theme.cardBg;
-
               return (
                 <TouchableOpacity
                   key={tile.id}
@@ -125,15 +123,23 @@ export function SpeedMatchModal({
                   onPress={() => handleTilePress(tile)}
                   style={[
                     styles.tile,
-                    { backgroundColor: bgColor },
+                    {
+                      backgroundColor: isSelected ? theme.blue : theme.cardBg,
+                      transform: [{ scale: isSelected ? 1.03 : 1 }],
+                    },
                   ]}
                 >
-                  <Text style={[styles.tileText, { color: theme.textPrimary }]}>{tile.text}</Text>
+                  <Text style={[styles.tileText, { color: isSelected ? "#FFFFFF" : theme.textPrimary }]}>
+                    {tile.text}
+                  </Text>
                   {tile.pinyin ? (
-                    <Text style={[styles.tilePinyin, { color: theme.blue }]}>{tile.pinyin}</Text>
+                    <Text style={[styles.tilePinyin, { color: isSelected ? "#E0F2FE" : theme.blue }]}>
+                      {tile.pinyin}
+                    </Text>
                   ) : null}
                 </TouchableOpacity>
               );
+
             })}
           </View>
         )}
@@ -172,9 +178,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     paddingHorizontal: Spacing.pageMargin,
-    marginBottom: Spacing.lg,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
   },
+
   statBox: {
     flexDirection: "row",
     alignItems: "center",

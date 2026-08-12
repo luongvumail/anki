@@ -1,23 +1,17 @@
 import React, { useState } from "react";
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from "react-native";
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from "react-native";
-import { Radii, Layout, Spacing, Typography, BorderWidths, triggerHaptic } from "../../constants/theme";
+  Radii,
+  Layout,
+  Spacing,
+  Typography,
+  BorderWidths,
+  triggerHaptic,
+} from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 
 export type DuolingoButtonVariant =
-  | "primary"
-  | "success"
-  | "blue"
-  | "error"
-  | "purple"
-  | "yellow"
-  | "secondary"
-  | "ghost";
+  "primary" | "success" | "blue" | "error" | "purple" | "yellow" | "secondary" | "ghost";
 
 export type DuolingoButtonSize = "lg" | "md" | "sm";
 
@@ -154,7 +148,6 @@ export function DuolingoButton({
         style,
       ]}
     >
-      {icon && icon}
       <Text
         style={[
           styles.buttonText,
@@ -167,6 +160,7 @@ export function DuolingoButton({
       >
         {title}
       </Text>
+      {icon && icon}
     </TouchableOpacity>
   );
 }

@@ -118,12 +118,14 @@ export default function RootLayout() {
             name="study/[deckId]"
             options={{
               presentation: 'fullScreenModal',
+              animation: 'none',
               contentStyle: { backgroundColor: theme.bg },
             }}
           />
-          <Stack.Screen name="deck/[id]" />
-          <Stack.Screen name="card/[id]" />
+          <Stack.Screen name="deck/[id]" options={{ animation: 'none' }} />
+          <Stack.Screen name="card/[id]" options={{ animation: 'none' }} />
         </Stack>
+
 
         {showSplash && (
           <Animated.View style={[styles.splashOverlay, { opacity: splashOpacity, backgroundColor: theme.bg }]} pointerEvents="none">

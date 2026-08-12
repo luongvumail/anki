@@ -6,6 +6,8 @@ import { useStore } from "../store/useStore";
 import { triggerHaptic } from "../constants/theme";
 import { APP_CONFIG } from "../constants/config";
 
+import { computeLearnedCount, getDeckMasteryPct } from "../lib/deckUtils";
+
 export function useDeckDetail(id: string | undefined) {
   const decks = useStore((s) => s.decks);
   const cards = useStore((s) => s.cards);
@@ -35,7 +37,7 @@ export function useDeckDetail(id: string | undefined) {
   }, [deckCards, searchQuery]);
 
   const learnedCardsCount = useMemo(() => {
-    return deckCards.filter((c) => c.srs && c.srs.repetitions > 0).length;
+    return computeLearnedCount(deckCards);
   }, [deckCards]);
 
   const weakCards = useMemo(() => {
@@ -43,9 +45,9 @@ export function useDeckDetail(id: string | undefined) {
   }, [deckCards]);
 
   const masteryPct = useMemo(() => {
-    if (deckCards.length === 0) return 0;
-    return Math.round((learnedCardsCount / deckCards.length) * 100);
-  }, [deckCards.length, learnedCardsCount]);
+    return getDeckMasteryPct(deckCards.length, 0, deckCards);
+  }, [deckCards]);
+
 
   useEffect(() => {
     if (id) fetchCards(id);

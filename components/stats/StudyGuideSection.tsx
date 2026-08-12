@@ -14,82 +14,72 @@ export const StudyGuideSection = React.memo(() => {
       <SectionTitle>HƯỚNG DẪN SỬ DỤNG & QUY TRÌNH HỌC</SectionTitle>
 
       <View style={styles.guideListContainer}>
-        {/* Step 1: SRS SM-2 Algorithm */}
+        {/* Step 1: FSRS 4.5/5 Algorithm */}
         <DuolingoCard style={styles.guideCard}>
           <View style={styles.guideHeaderRow}>
-            <View style={[styles.guideIconTile, { backgroundColor: theme.purpleDim }]}>
-              <Ionicons name="analytics" size={Layout.iconLg} color={theme.purple} />
+            <View style={[styles.guideIconTile, { backgroundColor: theme.blueDim }]}>
+              <Ionicons name="analytics" size={Layout.iconLg} color={theme.blue} />
             </View>
             <View style={styles.guideHeaderText}>
-              <Text style={[styles.guideTitle, { color: theme.textPrimary }]}>1. Thuật toán Trí nhớ Ngắt quãng (SRS SM-2)</Text>
-              <Text style={[styles.guideSub, { color: theme.textMuted }]}>Tự động tính thời điểm tối ưu nhắc ôn bài</Text>
+              <Text style={[styles.guideTitle, { color: theme.textPrimary }]}>1. Thuật toán Trí nhớ FSRS 4.5/5</Text>
+              <Text style={[styles.guideSub, { color: theme.textMuted }]}>Tính độ bền (Stability) & Độ khó (Difficulty) chính xác</Text>
             </View>
           </View>
           <Text style={[styles.guideDesc, { color: theme.textMuted }]}>
-            Bộ não con người sẽ quên tới 70% từ mới sau 24h. Thuật toán SRS SM-2 tự động tính toán thời gian phản xạ (ms) và số lần ôn tập để xếp lịch nhắc bài trước khi từ vựng bị quên, đưa từ vựng vào trí nhớ dài hạn vĩnh viễn.
+            Ứng dụng thuật toán FSRS tiên tiến nhất để tự động tính toán khả năng phục hồi trí nhớ (Retrievability), xếp lịch ôn tập tối ưu trước khi từ vựng bị quên và đưa từ vựng vào ghi nhớ dài hạn.
           </Text>
         </DuolingoCard>
 
-        {/* Step 2: 3-Stage Study Loop */}
+        {/* Step 2: TikTok Swipe & 3-Stage Study Loop */}
         <DuolingoCard style={styles.guideCard}>
           <View style={styles.guideHeaderRow}>
             <View style={[styles.guideIconTile, { backgroundColor: theme.blueDim }]}>
               <Ionicons name="git-network" size={Layout.iconLg} color={theme.blue} />
             </View>
             <View style={styles.guideHeaderText}>
-              <Text style={[styles.guideTitle, { color: theme.textPrimary }]}>2. Lộ trình Học 3 Giai đoạn Thông minh</Text>
-              <Text style={[styles.guideSub, { color: theme.textMuted }]}>Nạp từ ➔ Kiểm tra Quiz ➔ Sửa lỗi Cắm cờ</Text>
+              <Text style={[styles.guideTitle, { color: theme.textPrimary }]}>2. Lộ trình Học 3 Giai đoạn Thích ứng</Text>
+              <Text style={[styles.guideSub, { color: theme.textMuted }]}>Thẻ vuốt TikTok ➔ Kiểm tra Quiz ➔ Vòng lặp Sửa lỗi</Text>
             </View>
           </View>
           <View style={styles.gestureGuideList}>
             <View style={styles.gestureRowItem}>
               <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.blue }}>Giai đoạn 1 (Nạp từ):</Text> Lật thẻ Flashcard xem Hán tự, Pinyin, Phát âm, Dịch nghĩa & Bộ thủ.
+                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Giai đoạn 1 (Nạp từ):</Text> Vuốt lên/xuống kiểu TikTok để học thẻ, chạm thẻ mở chi tiết Pinyin, Dịch nghĩa & Cấu trúc bộ thủ AI.
               </Text>
             </View>
             <View style={styles.gestureRowItem}>
               <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.green }}>Giai đoạn 2 (Kiểm tra):</Text> Làm bài Quiz kiểm tra kiến thức đa dạng dạng bài.
+                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Giai đoạn 2 (Kiểm tra):</Text> Làm bài Quiz kiểm tra phản xạ kiến thức đa dạng dạng bài.
               </Text>
             </View>
             <View style={styles.gestureRowItem}>
               <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.yellow }}>Giai đoạn 3 (Cắm cờ):</Text> Tự động lập vòng lặp sửa lỗi nhanh cho các câu làm sai hoặc làm chậm (&gt;4 giây).
+                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Giai đoạn 3 (Sửa lỗi):</Text> Tự động cắm cờ lập vòng lặp sửa lỗi ngay cho các câu trả lời sai hoặc phản xạ chậm.
               </Text>
             </View>
           </View>
         </DuolingoCard>
 
-        {/* Step 3: Adaptive Quiz Types */}
+        {/* Step 3: Adaptive Quiz & Speed Evaluation */}
         <DuolingoCard style={styles.guideCard}>
           <View style={styles.guideHeaderRow}>
             <View style={[styles.guideIconTile, { backgroundColor: theme.greenDim }]}>
               <Ionicons name="help-circle" size={Layout.iconLg} color={theme.green} />
             </View>
             <View style={styles.guideHeaderText}>
-              <Text style={[styles.guideTitle, { color: theme.textPrimary }]}>3. Chế độ Trắc nghiệm Thích ứng (Quiz)</Text>
-              <Text style={[styles.guideSub, { color: theme.textMuted }]}>4 Dạng bài tập biến hóa theo độ thuộc từ</Text>
+              <Text style={[styles.guideTitle, { color: theme.textPrimary }]}>3. Bài tập Quiz & Đánh giá Tốc độ Phản xạ</Text>
+              <Text style={[styles.guideSub, { color: theme.textMuted }]}>Đánh giá mức độ thuộc dựa trên thời gian chọn đáp án</Text>
             </View>
           </View>
           <View style={styles.gestureGuideList}>
             <View style={styles.gestureRowItem}>
               <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Chọn Nghĩa Tiếng Việt:</Text> Nhớ ý nghĩa cơ bản của từ vựng mới.
+                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Đánh giá phản xạ (FSRS Grade):</Text> Trả lời đúng ≤ 2.5s được xếp loại Easy (Dễ), 2.5s–5.0s loại Good (Tốt), &gt; 5.0s loại Hard (Khó).
               </Text>
             </View>
             <View style={styles.gestureRowItem}>
               <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.blue }}>Chọn Pinyin:</Text> Chuẩn hóa phiên âm & dấu thanh điệu.
-              </Text>
-            </View>
-            <View style={styles.gestureRowItem}>
-              <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.purple }}>Nghe âm thanh chọn Hán tự:</Text> Rèn phản xạ thính giác.
-              </Text>
-            </View>
-            <View style={styles.gestureRowItem}>
-              <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.green }}>Điền câu Cloze ngữ cảnh:</Text> Ứng dụng từ vựng trong câu hoàn chỉnh.
+                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Dạng bài đa dạng:</Text> Chọn nghĩa tiếng Việt, chọn Pinyin, nghe âm thanh chọn Hán tự và điền câu Cloze ngữ cảnh.
               </Text>
             </View>
           </View>
@@ -109,17 +99,17 @@ export const StudyGuideSection = React.memo(() => {
           <View style={styles.gestureGuideList}>
             <View style={styles.gestureRowItem}>
               <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.yellow }}>Ghép Từ Nhanh 60s:</Text> Thử thách ghép cặp Hán tự ↔ Nghĩa siêu tốc.
+                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Ghép Từ Nhanh 60s:</Text> Thử thách ghép cặp Hán tự ↔ Nghĩa siêu tốc tích điểm XP.
               </Text>
             </View>
             <View style={styles.gestureRowItem}>
               <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.green }}>Xếp Từ Thành Câu:</Text> Ghép câu ví dụ có kèm từ gây nhiễu rèn ngữ pháp.
+                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Xếp Từ Thành Câu:</Text> Ghép câu hoàn chỉnh với vị trí từ vựng cố định không giật layout.
               </Text>
             </View>
             <View style={styles.gestureRowItem}>
               <Text style={[styles.gestureText, { color: theme.textMuted }]}>
-                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.purple }}>Phòng Luyện Phát Âm AI:</Text> Thu âm đọc Hán tự, AI chấm điểm Pinyin & 4 thanh điệu.
+                <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.textPrimary }}>Luyện Phát Âm AI:</Text> Thu âm đọc Hán tự, AI nhận diện và chấm điểm Pinyin & 4 thanh điệu.
               </Text>
             </View>
           </View>
@@ -133,11 +123,11 @@ export const StudyGuideSection = React.memo(() => {
             </View>
             <View style={styles.guideHeaderText}>
               <Text style={[styles.guideTitle, { color: theme.textPrimary }]}>5. Nạp Từ Vựng Tự Động Bằng AI</Text>
-              <Text style={[styles.guideSub, { color: theme.textMuted }]}>Trích xuất dữ liệu từ vựng thông minh</Text>
+              <Text style={[styles.guideSub, { color: theme.textMuted }]}>Tự động tạo Pinyin, Dịch nghĩa & Phân tích Bộ thủ</Text>
             </View>
           </View>
           <Text style={[styles.guideDesc, { color: theme.textMuted }]}>
-            Nhập từ Hán hoặc câu văn Tiếng Trung ➔ AI tự động trích xuất Pinyin, Nghĩa Tiếng Việt, Phân tích Bộ thủ siêu ngắn gọn và tạo Câu ví dụ chuẩn ngữ cảnh trong 1 giây.
+            Nhập chữ Hán, Pinyin hoặc chủ đề ➔ AI tự động trích xuất Pinyin, Nghĩa Tiếng Việt, Phân tích Cấu trúc bộ thủ chiết tự và tạo Câu ví dụ chuẩn ngữ cảnh.
           </Text>
         </DuolingoCard>
 
@@ -153,13 +143,14 @@ export const StudyGuideSection = React.memo(() => {
             </View>
           </View>
           <Text style={[styles.guideDesc, { color: theme.textMuted }]}>
-            Tích lũy XP qua bài học để thăng hạng qua 6 cấp danh hiệu Hán ngữ chuẩn (từ <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.yellow }}>初学者</Text> tới <Text style={{ fontWeight: Typography.weight.extraBold, color: theme.purple }}>汉字宗师</Text>) và chinh phục Bộ 14 Huy hiệu thành tích cá nhân.
+            Tích lũy XP qua bài học để thăng hạng qua 6 cấp danh hiệu Hán ngữ chuẩn và chinh phục Bộ 14 Huy hiệu thành tích cá nhân.
           </Text>
         </DuolingoCard>
       </View>
     </>
   );
 });
+
 
 const styles = StyleSheet.create({
   guideListContainer: { gap: Spacing.md, marginBottom: Spacing.md },

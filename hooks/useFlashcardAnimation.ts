@@ -1,32 +1,32 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Animated } from "react-native";
 import * as Speech from "expo-speech";
 import { triggerHaptic } from "../constants/theme";
 import { APP_CONFIG } from "../constants/config";
 
-export function useFlashcardAnimation(character: string) {
-  const [isFlipped, setIsFlipped] = useState(false);
+export function useFlashcardAnimation(character: string = "") {
+  const [isRevealed, setIsRevealed] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const flipAnim = useRef(new Animated.Value(0)).current;
+  const detailAnim = useRef(new Animated.Value(0)).current;
 
-  const handleFlip = useCallback(() => {
+  // Reset animation state when character changes
+  useEffect(() => {
+    setIsRevealed(false);
+    detailAnim.setValue(0);
+  }, [character, detailAnim]);
+
+  const handleToggleDetail = useCallback(() => {
     triggerHaptic("selection");
-    if (isFlipped) {
-      Animated.spring(flipAnim, {
-        toValue: 0,
-        friction: 8,
-        tension: 10,
-        useNativeDriver: true,
-      }).start(() => setIsFlipped(false));
-    } else {
-      Animated.spring(flipAnim, {
-        toValue: 180,
-        friction: 8,
-        tension: 10,
-        useNativeDriver: true,
-      }).start(() => setIsFlipped(true));
-    }
-  }, [isFlipped, flipAnim]);
+    const nextRevealed = !isRevealed;
+    setIsRevealed(nextRevealed);
+
+    Animated.spring(detailAnim, {
+      toValue: nextRevealed ? 1 : 0,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }, [isRevealed, detailAnim]);
 
   const playTTS = useCallback(() => {
     if (!character) return;
@@ -40,30 +40,50 @@ export function useFlashcardAnimation(character: string) {
     });
   }, [character]);
 
-  const frontInterpolate = flipAnim.interpolate({
-    inputRange: [0, 180],
-    outputRange: ["0deg", "180deg"],
+  // Interpolations for smooth detail reveal while maintaining exact center positioning
+  const hanziShiftY = detailAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0],
   });
 
-  const backInterpolate = flipAnim.interpolate({
-    inputRange: [0, 180],
-    outputRange: ["180deg", "360deg"],
+  const detailTranslateY = detailAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [20, 0],
   });
 
-  const frontAnimatedStyle = {
-    transform: [{ rotateY: frontInterpolate }],
+
+  const detailOpacity = detailAnim.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0, 0.5, 1],
+  });
+
+  const hintOpacity = detailAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 0, 0],
+  });
+
+  const hanziAnimatedStyle = {
+    transform: [{ translateY: hanziShiftY }],
   };
 
-  const backAnimatedStyle = {
-    transform: [{ rotateY: backInterpolate }],
+  const detailAnimatedStyle = {
+    opacity: detailOpacity,
+    transform: [{ translateY: detailTranslateY }],
+  };
+
+  const hintAnimatedStyle = {
+    opacity: hintOpacity,
   };
 
   return {
-    isFlipped,
+    isRevealed,
     speaking,
-    frontAnimatedStyle,
-    backAnimatedStyle,
-    handleFlip,
+    hanziAnimatedStyle,
+    detailAnimatedStyle,
+    hintAnimatedStyle,
+    handleToggleDetail,
+    handleFlip: handleToggleDetail, // Alias for backward compatibility
     playTTS,
   };
 }
+

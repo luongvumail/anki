@@ -104,8 +104,10 @@ export function useSentenceBuilder(visible: boolean, cards: Card[]) {
     (item: { id: string; text: string }) => {
       if (isSubmitted) return;
       triggerHaptic("selection");
-      setWordBank((prev) => prev.filter((w) => w.id !== item.id));
-      setUserSentence((prev) => [...prev, item]);
+      setUserSentence((prev) => {
+        if (prev.some((w) => w.id === item.id)) return prev;
+        return [...prev, item];
+      });
     },
     [isSubmitted]
   );
@@ -115,10 +117,10 @@ export function useSentenceBuilder(visible: boolean, cards: Card[]) {
       if (isSubmitted) return;
       triggerHaptic("selection");
       setUserSentence((prev) => prev.filter((w) => w.id !== item.id));
-      setWordBank((prev) => [...prev, item]);
     },
     [isSubmitted]
   );
+
 
   const playTTS = useCallback((text: string) => {
     if (!text) return;

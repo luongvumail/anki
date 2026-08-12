@@ -85,13 +85,22 @@ export default function CardDetailScreen() {
       } else {
         Alert.alert("Thông báo", "AI không thể phân tích bộ thủ cho từ này. Vui lòng thử lại.");
       }
-    } catch (e) {
-      console.warn("[card/generateRadical] Failed to generate radical:", e);
-      Alert.alert("Lỗi", "Không thể kết nối AI. Vui lòng kiểm tra kết nối mạng và thử lại.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn("[card/generateRadical] Failed to generate radical:", msg);
+      if (msg.includes("User location") || msg.includes("chưa hỗ trợ trực tiếp")) {
+        Alert.alert(
+          "Giới hạn vùng AI (Region Unsupported)",
+          "Google Gemini AI chưa hỗ trợ trực tiếp vị trí mạng của bạn. Vui lòng bật VPN hoặc sử dụng các từ vựng phổ biến có sẵn từ điển chiết tự offline."
+        );
+      } else {
+        Alert.alert("Lỗi", "Không thể kết nối AI. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      }
     } finally {
       setGeneratingRadical(false);
     }
   };
+
 
   if (!card) {
     return (

@@ -199,8 +199,9 @@ export default function StudyScreen() {
       {/* Main Interactive Stage Body */}
       <View style={styles.stageContentContainer}>
         {stage === "preview" ? (
-          targetCards.length > 0 ? (
+          targetCards.length > 0 && targetCards[previewIndex] ? (
             <FlashcardView
+              key={`fc-${targetCards[previewIndex]?.id || previewIndex}`}
               card={targetCards[previewIndex]}
               currentIndex={previewIndex}
               totalCards={targetCards.length}
@@ -210,6 +211,7 @@ export default function StudyScreen() {
             />
           ) : null
         ) : stage === "validation" ? (
+
           currentValidationQuestion ? (
             <QuizCardView
               key={`qz-${currentValidationQuestion.card.id}-${session.currentIndex}`}

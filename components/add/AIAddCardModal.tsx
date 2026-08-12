@@ -93,13 +93,14 @@ export function AIAddCardModal({
           <DuolingoCard style={styles.inputCard}>
             <Text style={[styles.inputLabel, { color: theme.textMuted }]}>Nhập từ Hán, Pinyin hoặc chủ đề:</Text>
             <TextInput
-              style={[styles.promptInput, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.textPrimary }]}
+              style={[styles.promptInput, { backgroundColor: theme.bgSoft, color: theme.textPrimary }]}
               placeholder="Ví dụ: 苹果, Du lịch, Ăn uống, HSK 3..."
               placeholderTextColor={theme.textMuted}
               value={prompt}
               onChangeText={setPrompt}
               autoCapitalize="none"
             />
+
 
             <DuolingoButton
               title={loading ? "AI ĐANG TẠO..." : "TẠO TỪ VỰNG BẰNG AI"}
@@ -167,7 +168,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     paddingBottom: Spacing.cellPadding,
+    borderBottomWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3,
+    zIndex: 10,
   },
+
   closeBtn: {
     padding: Spacing.sm,
   },
@@ -185,13 +194,14 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     paddingHorizontal: Spacing.pageMargin,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.xxl,
   },
   inputCard: {
     padding: Spacing.md,
-    marginTop: Spacing.md,
     marginBottom: Spacing.md,
   },
+
   inputLabel: {
     fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.bold,

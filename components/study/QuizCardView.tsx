@@ -16,6 +16,7 @@ import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
 import { useQuizCard, WeakTagType } from "../../hooks/useQuizCard";
+import { calculateQuizSRS } from "../../lib/srs";
 
 export { WeakTagType };
 
@@ -37,6 +38,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
     isChecked,
     speaking,
     timeLeft,
+    responseTimeMs,
     drawerAnim,
     shakeAnim,
     bounceAnim,
@@ -48,6 +50,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
 
   const chosenOption = selectedIndex !== null ? question.options[selectedIndex] : null;
   const isCorrect = chosenOption === question.correctAnswer;
+  const fsrsEval = isChecked ? calculateQuizSRS(isCorrect, false, responseTimeMs, question.card.srs) : null;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -178,18 +181,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
         </View>
       </ScrollView>
 
-      {/* Primary Action Button (CHECK) */}
-      {!isChecked && (
-        <View style={styles.checkBtnWrapper}>
-          <DuolingoButton
-            title="KIỂM TRA"
-            variant="primary"
-            size="lg"
-            disabled={selectedIndex === null}
-            onPress={handleCheck}
-          />
-        </View>
-      )}
+
 
       {/* Bottom Drawer Result Result (CORRECT / INCORRECT) */}
       {isChecked && (
@@ -225,6 +217,14 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                   Đáp án đúng: <Text style={{ fontWeight: "800", color: theme.textPrimary }}>{question.correctAnswer}</Text>
                 </Text>
               )}
+              {fsrsEval && (
+                <View style={[styles.speedBadgeRow, { backgroundColor: theme.bgSoft }]}>
+                  <Ionicons name="timer-outline" size={13} color={isCorrect ? theme.green : theme.red} />
+                  <Text style={[styles.speedBadgeText, { color: theme.textPrimary }]}>
+                    {(responseTimeMs / 1000).toFixed(1)}s • {fsrsEval.feedbackLabel}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -240,6 +240,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -396,4 +397,19 @@ const styles = StyleSheet.create({
     fontSize: Typography.caption.fontSize,
     marginTop: 2,
   },
+  speedBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    alignSelf: "flex-start",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: Radii.sm,
+    marginTop: Spacing.xs,
+  },
+  speedBadgeText: {
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.bold,
+  },
 });
+

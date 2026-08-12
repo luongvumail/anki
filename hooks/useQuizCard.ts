@@ -86,48 +86,48 @@ export function useQuizCard(
   const handleSelectOption = useCallback(
     (index: number) => {
       if (isChecked) return;
-      triggerHaptic("selection");
       setSelectedIndex(index);
+
+      if (timerRef.current) clearInterval(timerRef.current);
+
+      const elapsed = Date.now() - startTimeRef.current;
+      responseTimeMsRef.current = elapsed;
+
+      const chosenOption = question.options[index];
+      const isCorrect = chosenOption === question.correctAnswer;
+
+      setIsChecked(true);
+
+      if (isCorrect) {
+        triggerHaptic("success");
+        Animated.sequence([
+          Animated.timing(bounceAnim, { toValue: 1.04, duration: 120, useNativeDriver: true }),
+          Animated.timing(bounceAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
+        ]).start();
+      } else {
+        triggerHaptic("error");
+        Animated.sequence([
+          Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+        ]).start();
+      }
+
+      Animated.spring(drawerAnim, {
+        toValue: 0,
+        tension: 65,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
     },
-    [isChecked]
+    [isChecked, question, bounceAnim, shakeAnim, drawerAnim]
   );
 
   const handleCheck = useCallback(() => {
-    if (selectedIndex === null || isChecked) return;
+    // Legacy alias
+  }, []);
 
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    const elapsed = Date.now() - startTimeRef.current;
-    responseTimeMsRef.current = elapsed;
-
-    const chosenOption = question.options[selectedIndex];
-    const isCorrect = chosenOption === question.correctAnswer;
-
-    setIsChecked(true);
-
-    if (isCorrect) {
-      triggerHaptic("success");
-      Animated.sequence([
-        Animated.timing(bounceAnim, { toValue: 1.05, duration: 150, useNativeDriver: true }),
-        Animated.timing(bounceAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-      ]).start();
-    } else {
-      triggerHaptic("error");
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-      ]).start();
-    }
-
-    Animated.spring(drawerAnim, {
-      toValue: 0,
-      tension: 65,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-  }, [selectedIndex, isChecked, question, bounceAnim, shakeAnim, drawerAnim]);
 
   const handleContinue = useCallback(() => {
     triggerHaptic("selection");
@@ -153,6 +153,7 @@ export function useQuizCard(
     isChecked,
     speaking,
     timeLeft,
+    responseTimeMs: responseTimeMsRef.current,
     drawerAnim,
     shakeAnim,
     bounceAnim,
@@ -162,3 +163,4 @@ export function useQuizCard(
     handleContinue,
   };
 }
+

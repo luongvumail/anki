@@ -90,11 +90,14 @@ export function PronunciationTrainerModal({
 
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.green} />
+          <View style={{ flex: 1 }}>
+            <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.green} />
+          </View>
           <Text style={[styles.progressText, { color: theme.textMuted }]}>
             {shuffledCards.length > 0 ? `${currentIndex + 1}/${shuffledCards.length}` : "0/0"}
           </Text>
         </View>
+
 
         {isDone ? (
           /* Completion Screen */
@@ -312,8 +315,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.cellPadding,
     paddingHorizontal: Spacing.pageMargin,
-    marginBottom: Spacing.lg,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
   },
+
   progressText: {
     fontSize: Typography.caption1.fontSize,
     fontWeight: Typography.weight.extraBold,

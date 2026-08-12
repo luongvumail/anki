@@ -41,10 +41,10 @@ export function DuolingoHeader({
         {
           paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight),
           backgroundColor: theme.bg,
-          borderBottomColor: theme.cardBorder,
         },
       ]}
     >
+
       {/* Friendly User Greeting */}
       <View>
         <Text style={[styles.courseTitleText, { color: theme.textPrimary }]}>
@@ -76,8 +76,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     paddingBottom: Spacing.sm,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3,
+    zIndex: 10,
   },
+
   courseSelector: {
     flexDirection: "row",
     alignItems: "center",

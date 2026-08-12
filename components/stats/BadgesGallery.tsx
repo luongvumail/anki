@@ -1,12 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useStore } from "../../store/useStore";
+import { useStore, Card } from "../../store/useStore";
 import { ALL_BADGES } from "../../store/slices/userProgressSlice";
 import { Spacing, Typography, Layout, Radii } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { SectionTitle } from "../ui/SectionTitle";
+import { computeLearnedCount } from "../../lib/deckUtils";
 
 interface BadgesGalleryProps {
   streakCount?: number;
@@ -19,11 +20,11 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
   const checkAndUnlockBadges = useStore((s) => s.checkAndUnlockBadges);
 
   const fallbackCards = useStore((s) => {
-    let count = 0;
-    Object.values(s.cards).forEach((list) => {
-      count += list.filter((c) => c.srs && c.srs.repetitions > 0).length;
+    let list: Card[] = [];
+    Object.values(s.cards).forEach((cardList) => {
+      list = list.concat(cardList);
     });
-    return count;
+    return computeLearnedCount(list);
   });
 
   const streakCount = propStreak ?? 0;
@@ -39,7 +40,11 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
     <View style={styles.container}>
       <SectionTitle>BỘ SƯU TẬP HUY HIỆU THÀNH TÍCH</SectionTitle>
 
-      <View style={styles.badgeGrid}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
+      >
         {ALL_BADGES.map((badge) => {
           let isUnlocked = unlockedBadgeIds.includes(badge.id);
           let progressText = "";
@@ -51,29 +56,29 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
             progressText = `${Math.min(badge.target, learnedCardsCount)}/${badge.target} từ`;
             if (learnedCardsCount >= badge.target) isUnlocked = true;
           } else {
-            progressText = isUnlocked ? "Đã đạt" : `Chưa mở`;
+            progressText = isUnlocked ? "Đạt" : `Chưa mở`;
           }
 
           return (
             <DuolingoCard
               key={badge.id}
               style={StyleSheet.flatten([
-                styles.badgeCard,
+                styles.badgeCompactCard,
                 {
                   borderColor: isUnlocked ? theme.yellow : theme.cardBorder,
-                  opacity: isUnlocked ? 1 : 0.7,
+                  opacity: isUnlocked ? 1 : 0.75,
                 },
               ])}
             >
               <View
                 style={[
-                  styles.iconBox,
+                  styles.iconBoxCompact,
                   { backgroundColor: isUnlocked ? theme.yellowDim : theme.bgSoft },
                 ]}
               >
                 <Ionicons
                   name={badge.icon as any}
-                  size={Layout.iconLg}
+                  size={Layout.iconMd}
                   color={isUnlocked ? theme.yellow : theme.textMuted}
                 />
               </View>
@@ -88,37 +93,45 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
                 {badge.title}
               </Text>
 
-              <Text style={[styles.badgeDesc, { color: theme.textMuted }]} numberOfLines={2}>
+              <Text style={[styles.badgeDesc, { color: theme.textMuted }]} numberOfLines={1}>
                 {badge.description}
               </Text>
 
-              <Text
+              <View
                 style={[
-                  styles.progressText,
-                  { color: isUnlocked ? theme.green : theme.textMuted },
+                  styles.tagCompact,
+                  { backgroundColor: isUnlocked ? theme.greenDim : theme.bgSoft },
                 ]}
               >
-                {isUnlocked ? "ĐÃ MỞ KHÓA" : progressText}
-              </Text>
+                <Text
+                  style={[
+                    styles.progressText,
+                    { color: isUnlocked ? theme.green : theme.textMuted },
+                  ]}
+                >
+                  {isUnlocked ? "ĐÃ MỞ" : progressText}
+                </Text>
+              </View>
             </DuolingoCard>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: Spacing.md },
-  badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.cellPadding },
-  badgeCard: {
-    width: "48%",
+  container: { marginTop: Spacing.xs, marginBottom: Spacing.xl },
+
+  horizontalList: { gap: Spacing.sm, paddingRight: Spacing.pageMargin },
+  badgeCompactCard: {
+    width: 135,
     padding: Spacing.sm,
     alignItems: "center",
   },
-  iconBox: {
-    width: Layout.avatarLg,
-    height: Layout.avatarLg,
+  iconBoxCompact: {
+    width: Layout.avatarMd,
+    height: Layout.avatarMd,
     borderRadius: Radii.full,
     alignItems: "center",
     justifyContent: "center",
@@ -134,9 +147,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 2,
   },
-  progressText: {
-    fontSize: Typography.caption2.fontSize,
-    fontWeight: Typography.weight.extraBold,
+  tagCompact: {
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+    borderRadius: Radii.sm,
     marginTop: Spacing.xs,
   },
+  progressText: {
+    fontSize: Typography.caption2.fontSize - 1,
+    fontWeight: Typography.weight.extraBold,
+  },
 });
+

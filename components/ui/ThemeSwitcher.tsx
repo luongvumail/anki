@@ -23,7 +23,7 @@ export function ThemeSwitcher({ style }: ThemeSwitcherProps) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bgSoft }, style]}>
+    <View style={[styles.container, { backgroundColor: theme.isDark ? theme.bg : theme.bgSoft }, style]}>
       {options.map((opt) => {
         const isActive = themeMode === opt.mode;
         return (
@@ -36,7 +36,7 @@ export function ThemeSwitcher({ style }: ThemeSwitcherProps) {
               isActive && [
                 styles.optionBtnActive,
                 {
-                  backgroundColor: theme.cardBg,
+                  backgroundColor: theme.isDark ? theme.bgSoft : theme.cardBg,
                 },
               ],
             ]}
@@ -61,6 +61,7 @@ export function ThemeSwitcher({ style }: ThemeSwitcherProps) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

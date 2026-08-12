@@ -106,9 +106,15 @@ export function AccountModal({
     >
       <View style={[styles.modalContainer, { backgroundColor: theme.bg }]}>
         {/* Top App Header */}
-        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg, borderBottomColor: theme.cardBorder }]}>
-          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>TÀI KHOẢN & CÀI ĐẶT</Text>
-
+        <View
+          style={[
+            styles.headerBar,
+            {
+              paddingTop: Math.max(insets.top, Spacing.lg),
+              backgroundColor: theme.bg,
+            },
+          ]}
+        >
           <TouchableOpacity
             style={styles.closeBtn}
             onPress={() => {
@@ -118,7 +124,15 @@ export function AccountModal({
           >
             <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
           </TouchableOpacity>
+
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>TÀI KHOẢN & CÀI ĐẶT</Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Quản lý thông tin & Cấu hình ứng dụng</Text>
+          </View>
+
+          <View style={{ width: Layout.avatarMd }} />
         </View>
+
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* User Account Info Header */}
@@ -230,12 +244,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: BorderWidths.thin,
+    paddingBottom: Spacing.cellPadding,
+    borderBottomWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3,
+    zIndex: 10,
+  },
+
+  headerTitleContainer: {
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: Typography.callout.fontSize,
     fontWeight: Typography.weight.extraBold,
+  },
+  headerSub: {
+    fontSize: Typography.caption1.fontSize,
+    marginTop: 2,
+    fontWeight: Typography.weight.semibold,
   },
   closeBtn: {
     padding: Spacing.sm,
@@ -244,6 +273,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.pageMargin,
     paddingTop: Spacing.md,
   },
+
   userInfoCard: {
     padding: Spacing.md,
     marginBottom: Spacing.md,
