@@ -15,8 +15,9 @@ import * as Speech from "expo-speech";
 import { useStore } from "../../store/useStore";
 import { isDue } from "../../lib/srs";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
 import { APP_CONFIG } from "../../constants/config";
+import { useTheme } from "../../hooks/useTheme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
@@ -27,6 +28,7 @@ import { generateRadical } from "../../lib/gemini";
 export default function CardDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id, deckId } = useLocalSearchParams<{ id: string; deckId: string }>();
+  const { theme } = useTheme();
   const cards = useStore((s) => s.cards);
   const deleteCard = useStore((s) => s.deleteCard);
   const updateCard = useStore((s) => s.updateCard);
@@ -93,10 +95,10 @@ export default function CardDetailScreen() {
 
   if (!card) {
     return (
-      <View style={styles.container}>
-        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + 8, 44) }]}>
+      <View style={[styles.container, { backgroundColor: theme.bg }]}>
+        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg, borderBottomColor: theme.cardBorder }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color={Colors.text.white} />
+            <Ionicons name="chevron-back" size={Layout.iconLg} color={theme.textPrimary} />
           </TouchableOpacity>
         </View>
         <View style={{ paddingHorizontal: Spacing.pageMargin, marginTop: Spacing.md }}>
@@ -107,19 +109,16 @@ export default function CardDetailScreen() {
     );
   }
 
-  const pinyinColor = getPinyinToneColor(card.pinyin);
-
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Clean Sub-screen Header Bar */}
-      <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + 8, 44) }]}>
+      <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg, borderBottomColor: theme.cardBorder }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={24} color={Colors.text.white} />
+          <Ionicons name="chevron-back" size={Layout.iconLg} color={theme.textPrimary} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>CHI TIẾT TỪ VỰNG</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>CHI TIẾT TỪ VỰNG</Text>
 
-        {/* Empty placeholder to balance header title centering */}
         <View style={styles.headerPlaceholder} />
       </View>
 
@@ -132,125 +131,141 @@ export default function CardDetailScreen() {
       >
         {/* Flashcard Hero Banner */}
         <DuolingoCard style={styles.heroCard}>
-          <Text style={styles.characterBig}>{card.character}</Text>
+          <Text style={[styles.characterBig, { color: theme.textPrimary }]}>{card.character}</Text>
           {card.traditional && card.traditional !== card.character ? (
-            <Text style={styles.traditionalText}>Phồn thể: {card.traditional}</Text>
+            <Text style={[styles.traditionalText, { color: theme.textMuted }]}>Phồn thể: {card.traditional}</Text>
           ) : null}
 
           <View style={styles.pinyinAudioRow}>
-            <Text style={styles.pinyinBig}>{card.pinyin}</Text>
+            <Text style={[styles.pinyinBig, { color: getPinyinToneColor(card.pinyin) }]}>{card.pinyin}</Text>
             <AudioButton onPress={speak} isPlaying={speaking} size="md" />
           </View>
 
-          <Text style={styles.translationBig}>{card.translation}</Text>
+          <Text style={[styles.translationBig, { color: theme.textPrimary }]}>{card.translation}</Text>
         </DuolingoCard>
 
-        {/* Radical Breakdown Section */}
-        {card.radical ? (
-          <DuolingoCard style={styles.radicalCard}>
-            <View style={styles.radicalRow}>
-              <Ionicons
-                name="layers-outline"
-                size={18}
-                color={Colors.duolingo.purple}
-                style={{ marginTop: 2 }}
-              />
-              <Text style={styles.radicalContent}>{card.radical}</Text>
-            </View>
-          </DuolingoCard>
-        ) : (
-          <DuolingoCard style={styles.radicalCard}>
-            <View style={styles.radicalHeader}>
-              <View style={styles.radicalHeaderLeft}>
-                <Ionicons name="layers-outline" size={18} color={Colors.duolingo.textMuted} />
-                <Text style={[styles.radicalHeaderTitle, { color: Colors.duolingo.textMuted }]}>
-                  CẤU TẠO BỘ THỦ & MẸO NHỚ
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.radicalEmpty}>
-              Thẻ này chưa có phân tích bộ thủ. Nhấn bên dưới để AI phân tích chiết tự ngay!
-            </Text>
-            <DuolingoButton
-              title={generatingRadical ? "ĐANG PHÂN TÍCH..." : "PHÂN TÍCH BỘ THỦ BẰNG AI"}
-              variant="purple"
-              size="md"
-              disabled={generatingRadical}
-              onPress={handleGenerateRadical}
-              style={{ marginTop: Spacing.sm }}
-              icon={
-                generatingRadical ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Ionicons name="sparkles-outline" size={16} color="#FFFFFF" />
-                )
-              }
-            />
-          </DuolingoCard>
-        )}
+        {/* AI Radical Breakdown */}
+        <SectionTitle>PHÂN TÍCH BỘ THỦ & CẤU TRÚC (AI)</SectionTitle>
+        <DuolingoCard style={styles.radicalCard}>
+          <View style={styles.radicalHeader}>
+          <View style={styles.radicalHeaderLeft}>
+            <Ionicons name="sparkles" size={Layout.iconMd} color={theme.purple} />
+            <Text style={[styles.radicalHeaderTitle, { color: theme.purple }]}>Bộ thủ & Chiết tự Hán tự</Text>
+          </View>
 
-        {/* SRS Learning Status Card */}
-        <SectionTitle>TRẠNG THÁI TRÍ NHỚ (SRS)</SectionTitle>
+            {!card.radical && (
+              <DuolingoButton
+                title={generatingRadical ? "ĐANG TẠO..." : "TẠO BẰNG AI"}
+                variant="purple"
+                size="sm"
+                disabled={generatingRadical}
+                onPress={handleGenerateRadical}
+                icon={
+                  generatingRadical ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Ionicons name="sparkles" size={Layout.iconSm} color="#FFFFFF" />
+                  )
+                }
+              />
+            )}
+          </View>
+
+          {card.radical ? (
+            <View style={styles.radicalRow}>
+              <Text style={[styles.radicalContent, { color: theme.textPrimary }]}>{card.radical}</Text>
+              <TouchableOpacity onPress={handleGenerateRadical} disabled={generatingRadical}>
+                <Ionicons name="refresh-circle" size={Layout.iconLg} color={theme.purple} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Text style={[styles.radicalEmpty, { color: theme.textMuted }]}>
+              Từ vựng này chưa có phân tích bộ thủ. Bấm "TẠO BẰNG AI" để phân tích ngay!
+            </Text>
+          )}
+        </DuolingoCard>
+
+        {/* SRS Parameters & Level Detail Card */}
+        <SectionTitle>THÔNG SỐ LẶP LẠI TỰ ĐỘNG (SRS)</SectionTitle>
         <DuolingoCard style={styles.detailCard}>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Trạng thái hiện tại</Text>
+            <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Trạng thái SRS</Text>
             <View
               style={[
                 styles.statusBadge,
                 {
-                  backgroundColor: isDue(card.srs)
-                    ? Colors.duolingo.red
-                    : card.srs?.repetitions > 0
-                      ? Colors.duolingo.green
-                      : Colors.duolingo.blue,
+                  backgroundColor: !card.srs || card.srs.repetitions === 0
+                    ? theme.blue
+                    : isDue(card.srs)
+                      ? theme.yellow
+                      : theme.green,
                 },
               ]}
             >
               <Text style={styles.statusBadgeText}>
-                {isDue(card.srs) ? "CẦN ÔN TẬP" : card.srs?.repetitions > 0 ? "ĐÃ THUỘC" : "TỪ MỚI"}
+                {!card.srs || card.srs.repetitions === 0
+                  ? "MỚI CHƯA HỌC"
+                  : isDue(card.srs)
+                    ? "CẦN ÔN TẬP"
+                    : "ĐÃ GHI NHỚ"}
               </Text>
             </View>
           </View>
 
-          <View style={[styles.detailRow, styles.borderTop]}>
-            <Text style={styles.detailLabel}>Số lần đã ôn thành công</Text>
-            <Text style={styles.detailVal}>{card.srs?.repetitions || 0} lần</Text>
+          <View style={[styles.detailRow, styles.borderTop, { borderTopColor: theme.cardBorder }]}>
+            <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Số lần ôn lại</Text>
+            <Text style={[styles.detailVal, { color: theme.textPrimary }]}>{card.srs?.repetitions || 0} lần</Text>
           </View>
 
-          <View style={[styles.detailRow, styles.borderTop]}>
-            <Text style={styles.detailLabel}>Khoảng cách lặp lại (Interval)</Text>
-            <Text style={styles.detailVal}>{card.srs?.interval || 0} ngày</Text>
+          <View style={[styles.detailRow, styles.borderTop, { borderTopColor: theme.cardBorder }]}>
+            <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Khoảng cách nhắc lại</Text>
+            <Text style={[styles.detailVal, { color: theme.textPrimary }]}>{card.srs?.interval || 0} ngày</Text>
           </View>
 
-          <View style={[styles.detailRow, styles.borderTop]}>
-            <Text style={styles.detailLabel}>Hệ số dễ (Ease Factor)</Text>
-            <Text style={styles.detailVal}>
-              {((card.srs?.easeFactor || 2.5) * 100).toFixed(0)}%
+          <View style={[styles.detailRow, styles.borderTop, { borderTopColor: theme.cardBorder }]}>
+            <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Hệ số dễ (Ease Factor)</Text>
+            <Text style={[styles.detailVal, { color: theme.textPrimary }]}>
+              {card.srs?.easeFactor ? card.srs.easeFactor.toFixed(2) : "2.50"}
             </Text>
           </View>
+
+          {card.hskLevel ? (
+            <View style={[styles.detailRow, styles.borderTop, { borderTopColor: theme.cardBorder }]}>
+              <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Trình độ HSK</Text>
+              <Text style={[styles.detailVal, { color: theme.blue }]}>HSK {card.hskLevel}</Text>
+            </View>
+          ) : null}
+
+          {card.strokeCount ? (
+            <View style={[styles.detailRow, styles.borderTop, { borderTopColor: theme.cardBorder }]}>
+              <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Số nét vẽ Hán tự</Text>
+              <Text style={[styles.detailVal, { color: theme.textPrimary }]}>{card.strokeCount} nét</Text>
+            </View>
+          ) : null}
         </DuolingoCard>
 
-        {/* Example Sentences */}
-        {card.examples && card.examples.length > 0 ? (
+        {/* Examples Section */}
+        {card.examples && card.examples.length > 0 && (
           <>
-            <SectionTitle>CÂU VÍ DỤ MINH HỌA</SectionTitle>
-            {card.examples.map((ex, idx) => (
-              <DuolingoCard key={idx} style={styles.exampleCard}>
-                <Text style={styles.exampleCn}>{ex.chinese}</Text>
-                {ex.pinyin ? <Text style={styles.examplePy}>{ex.pinyin}</Text> : null}
-                <Text style={styles.exampleVi}>{ex.vietnamese}</Text>
+            <SectionTitle>CÂU VÍ DỤ MẪU</SectionTitle>
+            {card.examples.map((ex, i) => (
+              <DuolingoCard key={i} style={styles.exampleCard}>
+                <Text style={[styles.exampleCn, { color: theme.textPrimary }]}>{ex.chinese}</Text>
+                <Text style={[styles.examplePy, { color: theme.blue }]}>{ex.pinyin}</Text>
+                <Text style={[styles.exampleVi, { color: theme.textMuted }]}>{ex.vietnamese}</Text>
               </DuolingoCard>
             ))}
           </>
-        ) : null}
+        )}
 
-        {/* Delete Button */}
+        {/* Danger Zone Action Button */}
         <DuolingoButton
           title="XÓA THẺ TỪ VỰNG NÀY"
           variant="error"
           size="lg"
           onPress={handleDelete}
-          style={{ marginTop: Spacing.md }}
+          style={{ marginTop: Spacing.lg }}
+          icon={<Ionicons name="trash-outline" size={Layout.iconMd} color="#FFFFFF" />}
         />
       </ScrollView>
     </View>
@@ -258,105 +273,79 @@ export default function CardDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg },
+  container: { flex: 1 },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.duolingo.bg,
   },
-
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     paddingBottom: Spacing.xs,
-    backgroundColor: Colors.duolingo.bg,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBorder,
+    borderBottomWidth: BorderWidths.default,
   },
-  backBtn: { padding: 4, width: 32 },
+  backBtn: { padding: Spacing.xs, width: Layout.avatarSm },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
     letterSpacing: 0.5,
   },
-  headerPlaceholder: { width: 32 },
+  headerPlaceholder: { width: Layout.avatarSm },
 
   scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md },
 
   heroCard: { padding: Spacing.xl, alignItems: "center", marginBottom: Spacing.lg },
-  characterBig: { fontSize: 64, fontWeight: "800", color: Colors.text.white },
-  traditionalText: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 2 },
+  characterBig: { fontSize: Typography.hanziHero.fontSize, fontWeight: Typography.weight.extraBold },
+  traditionalText: { fontSize: Typography.caption.fontSize, marginTop: 2 },
   pinyinAudioRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: Spacing.cellPadding,
     marginTop: Spacing.xs,
   },
-  pinyinBig: { fontSize: 24, fontWeight: "800", color: Colors.duolingo.blue },
-  speakerAudioBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.duolingo.blueDim,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-  },
+  pinyinBig: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold },
   translationBig: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: Colors.duolingo.green,
-    marginTop: 6,
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.sm,
     textAlign: "center",
   },
 
   detailCard: { padding: Spacing.md, marginBottom: Spacing.lg },
 
   radicalCard: { padding: Spacing.md, marginBottom: Spacing.lg },
-  radicalRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  radicalRow: { flexDirection: "row", alignItems: "flex-start", gap: Spacing.cellPadding },
   radicalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
   },
   radicalHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.sm,
     flex: 1,
   },
   radicalHeaderTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: Colors.duolingo.purple,
-  },
-  regenBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.duolingo.purpleDim,
-    alignItems: "center",
-    justifyContent: "center",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   radicalContent: {
     flex: 1,
-    fontSize: 14,
-    color: Colors.text.white,
-    fontWeight: "600",
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.semibold,
     lineHeight: 22,
   },
   radicalEmpty: {
-    fontSize: 13,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption.fontSize,
     lineHeight: 20,
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
   },
   detailRow: {
     flexDirection: "row",
@@ -364,23 +353,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: Spacing.sm,
   },
-  borderTop: { borderTopWidth: 1, borderTopColor: Colors.duolingo.cardBorder },
-  detailLabel: { fontSize: 14, color: Colors.duolingo.textMuted, fontWeight: "600" },
-  detailVal: { fontSize: 14, fontWeight: "800", color: Colors.text.white },
+  borderTop: { borderTopWidth: BorderWidths.thin },
+  detailLabel: { fontSize: Typography.caption1.fontSize, fontWeight: Typography.weight.semibold },
+  detailVal: { fontSize: Typography.caption1.fontSize, fontWeight: Typography.weight.extraBold },
 
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
   },
   statusBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    color: "#FFFFFF",
   },
 
-  exampleCard: { padding: Spacing.md, marginBottom: 10 },
-  exampleCn: { fontSize: 16, fontWeight: "800", color: Colors.text.white },
-  examplePy: { fontSize: 13, marginTop: 2, fontWeight: "600", color: Colors.duolingo.blue },
-  exampleVi: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 2 },
+  exampleCard: { padding: Spacing.md, marginBottom: Spacing.cellPadding },
+  exampleCn: { fontSize: Typography.bodyMD.fontSize, fontWeight: Typography.weight.extraBold },
+  examplePy: { fontSize: Typography.caption.fontSize, marginTop: 2, fontWeight: Typography.weight.semibold },
+  exampleVi: { fontSize: Typography.caption.fontSize, marginTop: 2 },
 });

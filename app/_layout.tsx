@@ -6,14 +6,15 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useStore } from '../store/useStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { Colors } from '../constants/theme';
 import { APP_CONFIG } from '../constants/config';
 import { OfflineBanner } from '../components/ui/OfflineBanner';
+import { useTheme } from '../hooks/useTheme';
 
 export default function RootLayout() {
   const setUserId = useStore(s => s.setUserId);
   const [showSplash, setShowSplash] = useState(true);
-  
+  const { theme, isDark } = useTheme();
+
   // Animation refs
   const splashOpacity = useRef(new Animated.Value(1)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -47,7 +48,6 @@ export default function RootLayout() {
       prevUserIdRef.current = user ? user.uid : null;
 
       if (isLoggingIn || isLoggingOut) {
-        // Ensure splash is visible and reset animation values during auth transitions
         setShowSplash(true);
         splashOpacity.setValue(1);
         logoOpacity.setValue(1);
@@ -57,7 +57,6 @@ export default function RootLayout() {
       if (user) {
         setUserId(user.uid);
         try {
-          // Pre-fetch decks and user progress (XP, badges) inside RootLayout
           await Promise.all([
             useStore.getState().fetchDecks(),
             useStore.getState().fetchUserProgress(),
@@ -72,7 +71,6 @@ export default function RootLayout() {
       }
 
       if (isLoggingOut) {
-        // Fast fade-out transition on logout
         setTimeout(() => {
           Animated.timing(splashOpacity, {
             toValue: 0,
@@ -83,7 +81,6 @@ export default function RootLayout() {
           });
         }, APP_CONFIG.LOGOUT_SPLASH_DELAY_MS);
       } else {
-        // Guarantee minimum splash display duration
         const elapsed = Date.now() - startTime;
         const remainingTime = Math.max(0, APP_CONFIG.SPLASH_MIN_DISPLAY_MS - elapsed);
 
@@ -105,13 +102,13 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.bg }]}>
         <OfflineBanner />
-        <StatusBar style="light" />
+        <StatusBar style={isDark ? "light" : "dark"} />
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: Colors.duolingo.bg },
+            contentStyle: { backgroundColor: theme.bg },
             animation: "fade",
           }}
         >
@@ -121,7 +118,7 @@ export default function RootLayout() {
             name="study/[deckId]"
             options={{
               presentation: 'fullScreenModal',
-              contentStyle: { backgroundColor: Colors.bg.primary },
+              contentStyle: { backgroundColor: theme.bg },
             }}
           />
           <Stack.Screen name="deck/[id]" />
@@ -129,7 +126,7 @@ export default function RootLayout() {
         </Stack>
 
         {showSplash && (
-          <Animated.View style={[styles.splashOverlay, { opacity: splashOpacity }]} pointerEvents="none">
+          <Animated.View style={[styles.splashOverlay, { opacity: splashOpacity, backgroundColor: theme.bg }]} pointerEvents="none">
             <Animated.View
               style={[
                 styles.logoContainer,
@@ -139,7 +136,7 @@ export default function RootLayout() {
                 },
               ]}
             >
-              <View style={styles.glowRing}>
+              <View style={[styles.glowRing, { backgroundColor: theme.blueDim, borderColor: theme.blue }]}>
                 <View style={styles.appIconBox}>
                   <Image
                     source={require('../assets/adaptive-icon.png')}
@@ -159,7 +156,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg.primary,
   },
   splashOverlay: {
     position: 'absolute',
@@ -167,7 +163,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Colors.bg.primary,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 9999,
@@ -180,13 +175,9 @@ const styles = StyleSheet.create({
     width: 106,
     height: 106,
     borderRadius: 28,
-    backgroundColor: Colors.accent.indigoDim,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(94, 106, 210, 0.25)',
-    // Soft shadow for native platforms supporting it
-    shadowColor: Colors.accent.indigo,
+    borderWidth: 2,
     shadowOpacity: 0.35,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 4 },

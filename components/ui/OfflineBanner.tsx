@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
+import { Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Spacing } from "../../constants/theme";
+import { Spacing, Typography, Layout } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
 export const OfflineBanner = React.memo(function OfflineBanner() {
+  const { theme } = useTheme();
   const [isOffline, setIsOffline] = useState(false);
   const slideAnim = React.useRef(new Animated.Value(-60)).current;
 
@@ -53,8 +55,8 @@ export const OfflineBanner = React.memo(function OfflineBanner() {
   if (!isOffline) return null;
 
   return (
-    <Animated.View style={[styles.banner, { transform: [{ translateY: slideAnim }] }]}>
-      <Ionicons name="cloud-offline-outline" size={18} color="#FFFFFF" />
+    <Animated.View style={[styles.banner, { backgroundColor: theme.red, transform: [{ translateY: slideAnim }] }]}>
+      <Ionicons name="cloud-offline-outline" size={Layout.iconSm} color="#FFFFFF" />
       <Text style={styles.bannerText}>Chế độ ngoại tuyến (Offline) — Đang lưu dữ liệu tại máy</Text>
     </Animated.View>
   );
@@ -67,17 +69,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 999,
-    backgroundColor: Colors.duolingo.red,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 8,
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.pageMargin,
   },
   bannerText: {
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
   },
 });

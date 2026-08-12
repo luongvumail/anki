@@ -52,22 +52,25 @@ async function generateViaProxy(
   }
 }
 
-async function generateWithFallback(prompt: string): Promise<string> {
+async function generateWithModels(
+  prompt: string,
+  responseMimeType?: string,
+  temperature = 0.1
+): Promise<string> {
+  if (proxyUrl) {
+    if (__DEV__) console.log(`[Gemini/Proxy] Sending request via proxy`);
+    return generateViaProxy(CANDIDATE_MODELS[0], prompt, responseMimeType, temperature);
+  }
+
   let lastError: unknown = null;
   for (const modelName of CANDIDATE_MODELS) {
     try {
       if (__DEV__) console.log(`[Gemini] Attempting generation with model: ${modelName}`);
-      if (proxyUrl) {
-        const text = await generateViaProxy(modelName, prompt, "application/json", 0.1);
-        if (__DEV__) console.log(`[Gemini/Proxy] Success using model: ${modelName}`);
-        return text;
-      }
-
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
+          ...(responseMimeType ? { responseMimeType } : {}),
+          temperature,
         },
       });
       const result = await model.generateContent(prompt);
@@ -76,42 +79,19 @@ async function generateWithFallback(prompt: string): Promise<string> {
       return text;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn(
-        `[Gemini] Model ${modelName} failed (${msg}), trying fallback...`,
-      );
+      console.warn(`[Gemini] Model ${modelName} failed (${msg}), trying fallback...`);
       lastError = err;
     }
   }
   throw lastError;
 }
 
-/** Plain-text variant — does NOT force JSON mime type. Used for radical/creative analysis. */
-async function generateWithFallbackText(prompt: string): Promise<string> {
-  let lastError: unknown = null;
-  for (const modelName of CANDIDATE_MODELS) {
-    try {
-      if (__DEV__) console.log(`[Gemini/text] Attempting with model: ${modelName}`);
-      if (proxyUrl) {
-        const text = await generateViaProxy(modelName, prompt, undefined, 0.3);
-        if (__DEV__) console.log(`[Gemini/text/Proxy] Success using model: ${modelName}`);
-        return text;
-      }
+function generateWithFallback(prompt: string): Promise<string> {
+  return generateWithModels(prompt, "application/json", 0.1);
+}
 
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: { temperature: 0.3 },
-      });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      if (__DEV__) console.log(`[Gemini/text] Success using model: ${modelName}`);
-      return text;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[Gemini/text] Model ${modelName} failed (${msg}), trying fallback...`);
-      lastError = err;
-    }
-  }
-  throw lastError;
+function generateWithFallbackText(prompt: string): Promise<string> {
+  return generateWithModels(prompt, undefined, 0.3);
 }
 
 function sanitizeInput(input: string): string {
@@ -235,7 +215,8 @@ export function validateSingleCardData(raw: unknown): CardData {
     translation: typeof item.translation === "string" ? item.translation : "",
     examples: Array.isArray(item.examples)
       ? item.examples.map((ex: unknown) => {
-          const e = ex && typeof ex === "object" ? (ex as Record<string, unknown>) : {};
+          if (!ex || typeof ex !== "object") return { chinese: "", pinyin: "", vietnamese: "" };
+          const e = ex as Record<string, unknown>;
           return {
             chinese: typeof e.chinese === "string" ? e.chinese : "",
             pinyin: typeof e.pinyin === "string" ? e.pinyin : "",
@@ -360,21 +341,13 @@ Phân tích từ: "${clean}"`;
  */
 function cleanRadicalText(raw: string): string {
   return raw
-    // Remove fenced code blocks
     .replace(/```[\s\S]*?```/g, "")
-    // Remove markdown bold/italic markers
     .replace(/[*_]{1,3}(.*?)[*_]{1,3}/g, "$1")
-    // Remove markdown headings (#, ##, ###)
     .replace(/^#{1,6}\s+/gm, "")
-    // Remove bullet list markers (- , * , • )
     .replace(/^[\-\*•]\s+/gm, "")
-    // Remove numbered list (1. 2. etc)
     .replace(/^\d+\.\s+/gm, "")
-    // Remove HTML tags
     .replace(/<[^>]+>/g, "")
-    // Remove lines that are just punctuation/whitespace
     .replace(/^[\s\-=_]{3,}$/gm, "")
-    // Collapse 3+ newlines into 2
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

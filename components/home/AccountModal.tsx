@@ -11,12 +11,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Spacing, triggerHaptic } from "../../constants/theme";
+import { Spacing, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { FormField } from "../ui/FormField";
 import { WheelTimePicker } from "./WheelTimePicker";
 import { SectionTitle } from "../ui/SectionTitle";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { DuolingoButton } from "../ui/DuolingoButton";
+import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 
 interface AccountModalProps {
   visible: boolean;
@@ -50,6 +52,8 @@ export function AccountModal({
   onSignOut,
 }: AccountModalProps) {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [loadingPass, setLoadingPass] = useState(false);
@@ -100,10 +104,10 @@ export function AccountModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.modalContainer}>
+      <View style={[styles.modalContainer, { backgroundColor: theme.bg }]}>
         {/* Top App Header */}
-        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + 8, 44) }]}>
-          <Text style={styles.headerTitle}>TÀI KHOẢN &amp; CÀI ĐẶT</Text>
+        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg, borderBottomColor: theme.cardBorder }]}>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>TÀI KHOẢN & CÀI ĐẶT</Text>
 
           <TouchableOpacity
             style={styles.closeBtn}
@@ -112,7 +116,7 @@ export function AccountModal({
               onClose();
             }}
           >
-            <Ionicons name="close" size={24} color={Colors.duolingo.textMuted} />
+            <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
           </TouchableOpacity>
         </View>
 
@@ -120,14 +124,24 @@ export function AccountModal({
           {/* User Account Info Header */}
           <DuolingoCard style={styles.userInfoCard}>
             <View style={styles.userRow}>
-              <View style={styles.avatarCircle}>
-                <Ionicons name="person" size={32} color={Colors.duolingo.blue} />
+              <View style={[styles.avatarCircle, { backgroundColor: theme.blueDim }]}>
+                <Ionicons name="person" size={Layout.iconXl} color={theme.blue} />
               </View>
               <View style={styles.userTextCol}>
-                <Text style={styles.userName}>{displayName || "Học viên Anki"}</Text>
-                <Text style={styles.userEmail}>{email || "chua_cap_nhat@email.com"}</Text>
+                <Text style={[styles.userName, { color: theme.textPrimary }]}>{displayName || "Học viên Anki"}</Text>
+                <Text style={[styles.userEmail, { color: theme.textMuted }]}>{email || "chua_cap_nhat@email.com"}</Text>
               </View>
             </View>
+          </DuolingoCard>
+
+          {/* Theme Settings Section */}
+          <SectionTitle>GIAO DIỆN & CHỦ ĐỀ</SectionTitle>
+          <DuolingoCard style={styles.settingCard}>
+            <Text style={[styles.reminderTitle, { color: theme.textPrimary }]}>Chế độ giao diện</Text>
+            <Text style={[styles.reminderSub, { color: theme.textMuted, marginBottom: Spacing.sm }]}>
+              Tự động đổi theo hệ điều hành hoặc chọn chế độ Sáng / Tối
+            </Text>
+            <ThemeSwitcher />
           </DuolingoCard>
 
           {/* Daily Reminder Settings Section */}
@@ -135,8 +149,8 @@ export function AccountModal({
           <DuolingoCard style={styles.settingCard}>
             <View style={styles.reminderToggleRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.reminderTitle}>Thông báo nhắc ôn bài</Text>
-                <Text style={styles.reminderSub}>Đẩy thông báo vào giờ đã chọn mỗi ngày</Text>
+                <Text style={[styles.reminderTitle, { color: theme.textPrimary }]}>Thông báo nhắc ôn bài</Text>
+                <Text style={[styles.reminderSub, { color: theme.textMuted }]}>Đẩy thông báo vào giờ đã chọn mỗi ngày</Text>
               </View>
               <Switch
                 value={reminderEnabled}
@@ -144,14 +158,14 @@ export function AccountModal({
                   triggerHaptic("selection");
                   onToggleReminder(val);
                 }}
-                trackColor={{ false: Colors.duolingo.cardBottom, true: Colors.duolingo.green }}
+                trackColor={{ false: theme.cardBottom, true: theme.green }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
             {reminderEnabled && (
-              <View style={styles.pickerBox}>
-                <Text style={styles.pickerLabel}>Chọn giờ nhắc học:</Text>
+              <View style={[styles.pickerBox, { borderTopColor: theme.cardBorder }]}>
+                <Text style={[styles.pickerLabel, { color: theme.textMuted }]}>Chọn giờ nhắc học:</Text>
                 <WheelTimePicker
                   hour={reminderHour}
                   minute={reminderMinute}
@@ -163,7 +177,7 @@ export function AccountModal({
           </DuolingoCard>
 
           {/* Account Security Section */}
-          <SectionTitle>BẢO MẬT &amp; MẬT KHẨU</SectionTitle>
+          <SectionTitle>BẢO MẬT & MẬT KHẨU</SectionTitle>
           <DuolingoCard style={styles.settingCard}>
             <FormField
               label="Mật khẩu hiện tại"
@@ -191,7 +205,7 @@ export function AccountModal({
             />
 
             <TouchableOpacity style={styles.resetEmailBtn} onPress={handleResetSubmit} disabled={loadingReset}>
-              <Text style={styles.resetEmailText}>
+              <Text style={[styles.resetEmailText, { color: theme.blue }]}>
                 {loadingReset ? "Đang gửi..." : "Gửi email đặt lại mật khẩu"}
               </Text>
             </TouchableOpacity>
@@ -218,25 +232,21 @@ export function AccountModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
   },
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: 12,
-    backgroundColor: Colors.duolingo.bg,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.duolingo.cardBorder,
+    paddingBottom: Spacing.md,
+    borderBottomWidth: BorderWidths.thin,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   closeBtn: {
-    padding: 6,
+    padding: Spacing.sm,
   },
   scrollContent: {
     paddingHorizontal: Spacing.pageMargin,
@@ -249,13 +259,12 @@ const styles = StyleSheet.create({
   userRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: Spacing.md,
   },
   avatarCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: Colors.duolingo.blueDim,
+    width: Layout.fabSize,
+    height: Layout.fabSize,
+    borderRadius: Layout.fabSize / 2,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -263,15 +272,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   userEmail: {
-    fontSize: 13,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   settingCard: {
     padding: Spacing.md,
@@ -283,36 +290,31 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   reminderTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   reminderSub: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   pickerBox: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.duolingo.cardBorder,
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.lg,
+    borderTopWidth: BorderWidths.thin,
   },
   pickerLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.duolingo.textMuted,
-    marginBottom: 8,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginBottom: Spacing.sm,
   },
   resetEmailBtn: {
     alignItems: "center",
-    marginTop: 12,
-    paddingVertical: 8,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
   resetEmailText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.duolingo.blue,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.bold,
   },
 });

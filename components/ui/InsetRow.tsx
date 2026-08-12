@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { Colors, Typography, Spacing } from '../../constants/theme';
+import { Typography, Spacing } from '../../constants/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface InsetRowProps {
   label: string;
@@ -23,16 +24,24 @@ export function InsetRow({
   labelStyle,
   valueStyle,
 }: InsetRowProps) {
+  const { theme } = useTheme();
+
   return (
-    <View style={[styles.row, isBorder && styles.cellBorderTop, style]}>
-      <Text style={[styles.label, labelStyle]}>{label}</Text>
+    <View
+      style={[
+        styles.row,
+        isBorder && { borderTopWidth: 1, borderTopColor: theme.divider },
+        style,
+      ]}
+    >
+      <Text style={[styles.label, { color: theme.textPrimary }, labelStyle]}>{label}</Text>
       {right ? (
         right
       ) : (
         <Text
           style={[
             styles.value,
-            valueColor ? { color: valueColor, fontWeight: Typography.weight.semibold } : null,
+            { color: valueColor || theme.textMuted },
             valueStyle,
           ]}
         >
@@ -51,19 +60,13 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.cellVertical,
     minHeight: Spacing.cellMinHeight,
   },
-  cellBorderTop: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.border.separator,
-  },
   label: {
     width: 140,
-    fontSize: Typography.text.body.fontSize,
-    color: Colors.text.primary,
+    fontSize: Typography.bodyMD.fontSize,
     fontWeight: Typography.weight.medium,
   },
   value: {
     flex: 1,
-    fontSize: Typography.text.body.fontSize,
-    color: Colors.text.secondary,
+    fontSize: Typography.bodyMD.fontSize,
   },
 });

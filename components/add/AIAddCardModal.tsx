@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { DeckPicker } from "./DeckPicker";
@@ -30,6 +31,7 @@ export function AIAddCardModal({
   initialDeckId,
 }: AIAddCardModalProps) {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const {
     prompt,
     setPrompt,
@@ -56,7 +58,7 @@ export function AIAddCardModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -66,15 +68,15 @@ export function AIAddCardModal({
               onClose();
             }}
           >
-            <Ionicons name="close" size={24} color={Colors.duolingo.textMuted} />
+            <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>THÊM TỪ VỰNG BẰNG AI</Text>
-            <Text style={styles.headerSub}>Tự động tạo Pinyin, Nghĩa &amp; Ví dụ</Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>THÊM TỪ VỰNG BẰNG AI</Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Tự động tạo Pinyin, Nghĩa & Ví dụ</Text>
           </View>
 
-          <View style={{ width: 40 }} />
+          <View style={{ width: Layout.avatarMd }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
@@ -89,18 +91,18 @@ export function AIAddCardModal({
 
           {/* AI Prompt Input Section */}
           <DuolingoCard style={styles.inputCard}>
-            <Text style={styles.inputLabel}>Nhập từ Hán, Pinyin hoặc chủ đề:</Text>
+            <Text style={[styles.inputLabel, { color: theme.textMuted }]}>Nhập từ Hán, Pinyin hoặc chủ đề:</Text>
             <TextInput
-              style={styles.promptInput}
+              style={[styles.promptInput, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.textPrimary }]}
               placeholder="Ví dụ: 苹果, Du lịch, Ăn uống, HSK 3..."
-              placeholderTextColor={Colors.duolingo.disabledText}
+              placeholderTextColor={theme.textMuted}
               value={prompt}
               onChangeText={setPrompt}
               autoCapitalize="none"
             />
 
             <DuolingoButton
-              title={loading ? "AI ĐANG TẠO..." : "TAO TỪ VỰNG BẰNG AI"}
+              title={loading ? "AI ĐANG TẠO..." : "TẠO TỪ VỰNG BẰNG AI"}
               variant="purple"
               size="lg"
               disabled={loading || !prompt.trim()}
@@ -110,7 +112,7 @@ export function AIAddCardModal({
                 loading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+                  <Ionicons name="sparkles" size={Layout.iconMd} color="#FFFFFF" />
                 )
               }
             />
@@ -118,16 +120,16 @@ export function AIAddCardModal({
 
           {/* Error Banner */}
           {errorMessage ? (
-            <View style={styles.errorBox}>
-              <Ionicons name="alert-circle" size={18} color={Colors.duolingo.red} />
-              <Text style={styles.errorText}>{errorMessage}</Text>
+            <View style={[styles.errorBox, { backgroundColor: theme.redDim }]}>
+              <Ionicons name="alert-circle" size={Layout.iconMd} color={theme.red} />
+              <Text style={[styles.errorText, { color: theme.red }]}>{errorMessage}</Text>
             </View>
           ) : null}
 
           {/* Generated Cards Result List */}
           {generatedCards.length > 0 && (
             <View style={styles.resultSection}>
-              <Text style={styles.resultTitle}>
+              <Text style={[styles.resultTitle, { color: theme.textPrimary }]}>
                 Kết quả AI ({selectedIndices.size}/{generatedCards.length} từ chọn):
               </Text>
 
@@ -158,79 +160,69 @@ export function AIAddCardModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: 10,
+    paddingBottom: Spacing.cellPadding,
   },
   closeBtn: {
-    padding: 6,
+    padding: Spacing.sm,
   },
   headerTitleContainer: {
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   headerSub: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   scrollBody: {
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: 30,
+    paddingBottom: Spacing.xxl,
   },
   inputCard: {
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
   inputLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.duolingo.textMuted,
-    marginBottom: 8,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginBottom: Spacing.sm,
   },
   promptInput: {
-    backgroundColor: Colors.duolingo.bgSoftDark,
     borderRadius: Radii.lg,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    fontWeight: "600",
-    color: Colors.text.white,
+    borderWidth: BorderWidths.default,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.cellPadding,
+    fontSize: Typography.bodyMD.fontSize,
+    fontWeight: Typography.weight.semibold,
   },
   errorBox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(255, 75, 75, 0.15)",
-    padding: 12,
+    gap: Spacing.sm,
+    padding: Spacing.md,
     borderRadius: Radii.md,
     marginBottom: Spacing.md,
   },
   errorText: {
-    fontSize: 13,
-    color: Colors.duolingo.red,
+    fontSize: Typography.caption.fontSize,
     flex: 1,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   resultSection: {
-    marginTop: 10,
+    marginTop: Spacing.cellPadding,
   },
   resultTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: Colors.text.white,
-    marginBottom: 10,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginBottom: Spacing.cellPadding,
   },
 });

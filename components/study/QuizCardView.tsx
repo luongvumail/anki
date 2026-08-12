@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { QuizQuestion } from "../../lib/quizGenerator";
-import { Colors, Spacing, Radii } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, BorderWidths } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
@@ -28,6 +29,7 @@ const OPTION_LETTERS = ["A", "B", "C", "D"];
 
 export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardViewProps) {
   const { width } = useWindowDimensions();
+  const { theme } = useTheme();
   const cardWidth = width - Spacing.pageMargin * 2;
 
   const {
@@ -48,15 +50,15 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
   const isCorrect = chosenOption === question.correctAnswer;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Fast Repair Mode Countdown Header */}
         {isFastRepairMode && (
-          <View style={styles.timerHeader}>
-            <Ionicons name="flash" size={18} color={Colors.duolingo.yellow} />
-            <Text style={styles.timerTitle}>SỬA LỖI PHẢN XẠ NHANH (5s):</Text>
-            <View style={styles.timerBadge}>
-              <Text style={styles.timerText}>{timeLeft}s</Text>
+          <View style={[styles.timerHeader, { backgroundColor: theme.cardBg, borderColor: theme.yellow }]}>
+            <Ionicons name="flash" size={Layout.iconMd} color={theme.yellow} />
+            <Text style={[styles.timerTitle, { color: theme.yellow }]}>SỬA LỖI PHẢN XẠ NHANH (5s):</Text>
+            <View style={[styles.timerBadge, { backgroundColor: theme.yellowDim }]}>
+              <Text style={[styles.timerText, { color: theme.yellow }]}>{timeLeft}s</Text>
             </View>
           </View>
         )}
@@ -65,20 +67,25 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
         <Animated.View
           style={[
             styles.questionCard,
-            { width: cardWidth },
+            {
+              width: cardWidth,
+              backgroundColor: theme.cardBg,
+              borderColor: theme.cardBorder,
+              borderBottomColor: theme.cardBottom,
+            },
             { transform: [{ translateX: shakeAnim }, { scale: bounceAnim }] },
           ]}
         >
-          <Text style={styles.questionPromptText}>{question.prompt}</Text>
+          <Text style={[styles.questionPromptText, { color: theme.textMuted }]}>{question.prompt}</Text>
 
           {/* Target Text (Character or Cloze) */}
           {question.type === "cloze" ? (
             <View style={styles.clozeContainer}>
-              <Text style={styles.clozeSentenceText}>
+              <Text style={[styles.clozeSentenceText, { color: theme.textPrimary }]}>
                 {question.clozeSentence?.replace("___", " [ ? ] ")}
               </Text>
               {question.clozeTranslation ? (
-                <Text style={styles.clozeTranslationText}>"{question.clozeTranslation}"</Text>
+                <Text style={[styles.clozeTranslationText, { color: theme.textMuted }]}>"{question.clozeTranslation}"</Text>
               ) : null}
             </View>
           ) : question.type === "listening" ? (
@@ -88,126 +95,145 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                 isPlaying={speaking}
                 size="lg"
               />
-              <Text style={styles.listeningHintText}>Bấm nút loa để nghe lại âm thanh</Text>
+              <Text style={[styles.listeningHintText, { color: theme.textMuted }]}>Bấm nút loa để nghe lại âm thanh</Text>
             </View>
           ) : (
             <View style={styles.targetCharContainer}>
-              <Text style={styles.targetCharText}>{question.targetText || question.card.character}</Text>
-              {question.subText ? (
-                <Text
-                  style={[
-                    styles.targetSubText,
-                    { color: getPinyinToneColor(question.subText) },
-                  ]}
-                >
-                  {question.subText}
+              <Text style={[styles.targetCharText, { color: theme.textPrimary }]}>{question.card.character}</Text>
+              {question.type === "pinyin_choice" ? (
+                <Text style={[styles.targetSubText, { color: getPinyinToneColor(question.card.pinyin) }]}>
+                  {question.card.pinyin}
                 </Text>
               ) : null}
             </View>
           )}
         </Animated.View>
 
-        {/* 4 Multiple Choice Option Cards */}
+        {/* Multiple Choice Options Grid */}
         <View style={[styles.optionsGrid, { width: cardWidth }]}>
-          {question.options.map((option, idx) => {
+          {question.options.map((opt, idx) => {
             const isSelected = selectedIndex === idx;
-            const isRight = option === question.correctAnswer;
+            let cardBg = theme.cardBg;
+            let cardBorder = theme.cardBorder;
+            let cardBottom = theme.cardBottom;
+            let letterBg = theme.bgSoft;
+            let letterColor = theme.textMuted;
+
+            if (isSelected) {
+              cardBg = theme.blueDim;
+              cardBorder = theme.blue;
+              cardBottom = theme.blueDark;
+              letterBg = theme.blue;
+              letterColor = "#FFFFFF";
+            }
+
+            if (isChecked) {
+              if (opt === question.correctAnswer) {
+                cardBg = theme.greenDim;
+                cardBorder = theme.green;
+                cardBottom = theme.greenDark;
+                letterBg = theme.green;
+                letterColor = "#FFFFFF";
+              } else if (isSelected && !isCorrect) {
+                cardBg = theme.redDim;
+                cardBorder = theme.red;
+                cardBottom = theme.redDark;
+                letterBg = theme.red;
+                letterColor = "#FFFFFF";
+              }
+            }
 
             return (
               <TouchableOpacity
                 key={idx}
                 activeOpacity={0.8}
+                disabled={isChecked}
+                onPress={() => handleSelectOption(idx)}
                 style={[
                   styles.optionCard,
-                  isSelected && styles.optionCardSelected,
-                  isChecked && isRight && styles.optionCardCorrect,
-                  isChecked && isSelected && !isRight && styles.optionCardWrong,
+                  {
+                    backgroundColor: cardBg,
+                    borderColor: cardBorder,
+                    borderBottomColor: cardBottom,
+                  },
                 ]}
-                onPress={() => handleSelectOption(idx)}
-                disabled={isChecked}
               >
-                <View
-                  style={[
-                    styles.letterBox,
-                    isSelected && styles.letterBoxSelected,
-                    isChecked && isRight && styles.letterBoxCorrect,
-                    isChecked && isSelected && !isRight && styles.letterBoxWrong,
-                  ]}
-                >
-                  <Text style={styles.letterText}>{OPTION_LETTERS[idx]}</Text>
+                <View style={[styles.letterBox, { backgroundColor: letterBg }]}>
+                  <Text style={[styles.letterText, { color: letterColor }]}>{OPTION_LETTERS[idx]}</Text>
                 </View>
-                <Text
-                  style={[
-                    styles.optionText,
-                    isChecked && isRight && styles.optionTextCorrect,
-                    isChecked && isSelected && !isRight && styles.optionTextWrong,
-                  ]}
-                  numberOfLines={2}
-                >
-                  {option}
+
+                <Text style={[styles.optionText, { color: theme.textPrimary }]} numberOfLines={2}>
+                  {opt}
                 </Text>
+
+                {isChecked && opt === question.correctAnswer && (
+                  <Ionicons name="checkmark-circle" size={Layout.iconLg} color={theme.green} />
+                )}
+                {isChecked && isSelected && !isCorrect && (
+                  <Ionicons name="close-circle" size={Layout.iconLg} color={theme.red} />
+                )}
               </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
 
-      {/* Check Action Button */}
+      {/* Primary Action Button (CHECK) */}
       {!isChecked && (
-        <View style={styles.footerActionBox}>
+        <View style={styles.checkBtnWrapper}>
           <DuolingoButton
             title="KIỂM TRA"
             variant="primary"
             size="lg"
             disabled={selectedIndex === null}
             onPress={handleCheck}
-            style={{ width: "100%" }}
           />
         </View>
       )}
 
-      {/* Result Bottom Drawer Panel */}
+      {/* Bottom Drawer Result Result (CORRECT / INCORRECT) */}
       {isChecked && (
         <Animated.View
           style={[
             styles.resultDrawer,
-            isCorrect ? styles.resultDrawerCorrect : styles.resultDrawerWrong,
-            { transform: [{ translateY: drawerAnim }] },
+            {
+              backgroundColor: isCorrect ? theme.greenDim : theme.redDim,
+              borderColor: isCorrect ? theme.green : theme.red,
+              transform: [{ translateY: drawerAnim }],
+            },
           ]}
         >
           <View style={styles.resultHeaderRow}>
             <View style={styles.resultIconWrap}>
               <Ionicons
                 name={isCorrect ? "checkmark-circle" : "close-circle"}
-                size={36}
-                color={isCorrect ? Colors.duolingo.green : Colors.duolingo.red}
+                size={Layout.iconXl}
+                color={isCorrect ? theme.green : theme.red}
               />
             </View>
             <View style={{ flex: 1 }}>
               <Text
                 style={[
                   styles.resultTitleText,
-                  { color: isCorrect ? Colors.duolingo.green : Colors.duolingo.red },
+                  { color: isCorrect ? theme.green : theme.red },
                 ]}
               >
-                {isCorrect ? "CHÍNH XÁC!" : "CHƯA ĐÚNG RỒI!"}
+                {isCorrect ? "CHÍNH XÁC! XUẤT SẮC!" : "RẤT TIẾC, CHƯA ĐÚNG!"}
               </Text>
               {!isCorrect && (
-                <Text style={styles.correctAnswerLabelText}>
-                  Đáp án đúng: <Text style={{ fontWeight: "900", color: "#FFFFFF" }}>{question.correctAnswer}</Text>
+                <Text style={[styles.correctAnswerLabelText, { color: theme.textMuted }]}>
+                  Đáp án đúng: <Text style={{ fontWeight: "800", color: theme.textPrimary }}>{question.correctAnswer}</Text>
                 </Text>
               )}
             </View>
-
-            <AudioButton onPress={() => playTTS(question.card.character)} size="sm" />
           </View>
 
           <DuolingoButton
-            title="TIẾP TỤC"
-            variant={isCorrect ? "primary" : "secondary"}
+            title="TIẾP THEO"
+            variant={isCorrect ? "primary" : "error"}
             size="lg"
             onPress={handleContinue}
-            style={{ width: "100%", marginTop: 12 }}
+            style={{ marginTop: Spacing.md }}
           />
         </Animated.View>
       )}
@@ -218,162 +244,121 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
   },
   scrollContent: {
-    alignItems: "center",
+    paddingHorizontal: Spacing.pageMargin,
     paddingTop: Spacing.md,
-    paddingBottom: 100,
+    paddingBottom: 110,
+    alignItems: "center",
   },
   timerHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.duolingo.cardBg,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.yellow,
-    marginBottom: 14,
+    borderWidth: BorderWidths.default,
+    marginBottom: Spacing.cellPadding,
   },
   timerTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: Colors.duolingo.yellow,
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   timerBadge: {
-    backgroundColor: Colors.duolingo.yellowDim,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs / 2,
     borderRadius: Radii.sm,
   },
   timerText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: Colors.duolingo.yellow,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   questionCard: {
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.xl,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
+    borderBottomWidth: BorderWidths.card3D,
     padding: Spacing.xl,
     alignItems: "center",
     marginBottom: Spacing.md,
   },
   questionPromptText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     textAlign: "center",
   },
   targetCharContainer: {
     alignItems: "center",
-    marginTop: 14,
+    marginTop: Spacing.cellPadding,
   },
   targetCharText: {
-    fontSize: 48,
-    fontWeight: "900",
-    color: Colors.text.white,
+    fontSize: Typography.hanziCard?.fontSize || 48,
+    fontWeight: Typography.weight.extraBold,
   },
   targetSubText: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 4,
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginTop: Spacing.xs,
   },
   listeningContainer: {
     alignItems: "center",
-    marginTop: 20,
-    gap: 10,
+    marginTop: Spacing.lg,
+    gap: Spacing.cellPadding,
   },
   listeningHintText: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
-    fontWeight: "600",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.semibold,
   },
   clozeContainer: {
     alignItems: "center",
-    marginTop: 16,
+    marginTop: Spacing.lg,
   },
   clozeSentenceText: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.titleLG.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
     lineHeight: 30,
   },
   clozeTranslationText: {
-    fontSize: 14,
-    color: Colors.duolingo.textMuted,
-    marginTop: 8,
-    fontWeight: "600",
+    fontSize: Typography.subhead.fontSize,
+    marginTop: Spacing.sm,
+    fontWeight: Typography.weight.semibold,
     textAlign: "center",
   },
   optionsGrid: {
-    gap: 10,
+    gap: Spacing.cellPadding,
   },
   optionCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.lg,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
+    borderBottomWidth: BorderWidths.card3D,
     padding: Spacing.md,
-    gap: 12,
-  },
-  optionCardSelected: {
-    borderColor: Colors.duolingo.blue,
-    backgroundColor: Colors.duolingo.bgSoftDark,
-  },
-  optionCardCorrect: {
-    borderColor: Colors.duolingo.green,
-    backgroundColor: "rgba(88, 204, 2, 0.15)",
-  },
-  optionCardWrong: {
-    borderColor: Colors.duolingo.red,
-    backgroundColor: "rgba(255, 75, 75, 0.15)",
+    gap: Spacing.md,
   },
   letterBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.duolingo.cardBottom,
+    width: Layout.avatarSm,
+    height: Layout.avatarSm,
+    borderRadius: Radii.lg,
     alignItems: "center",
     justifyContent: "center",
   },
-  letterBoxSelected: {
-    backgroundColor: Colors.duolingo.blue,
-  },
-  letterBoxCorrect: {
-    backgroundColor: Colors.duolingo.green,
-  },
-  letterBoxWrong: {
-    backgroundColor: Colors.duolingo.red,
-  },
   letterText: {
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
   },
   optionText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.text.white,
+    fontSize: Typography.bodyMD.fontSize,
+    fontWeight: Typography.weight.bold,
     flex: 1,
   },
-  optionTextCorrect: {
-    color: Colors.duolingo.green,
-  },
-  optionTextWrong: {
-    color: Colors.duolingo.red,
-  },
-  footerActionBox: {
+  checkBtnWrapper: {
     position: "absolute",
-    bottom: 20,
+    bottom: Spacing.lg,
     left: Spacing.pageMargin,
     right: Spacing.pageMargin,
   },
@@ -382,39 +367,31 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.duolingo.cardBg,
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
+    borderTopWidth: BorderWidths.default,
+    borderLeftWidth: BorderWidths.default,
+    borderRightWidth: BorderWidths.default,
     padding: Spacing.md,
-    paddingBottom: 24,
-  },
-  resultDrawerCorrect: {
-    borderColor: Colors.duolingo.green,
-  },
-  resultDrawerWrong: {
-    borderColor: Colors.duolingo.red,
+    paddingBottom: Spacing.xl,
   },
   resultHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: Spacing.cellPadding,
   },
   resultIconWrap: {
-    width: 40,
-    height: 40,
+    width: Layout.avatarMd,
+    height: Layout.avatarMd,
     alignItems: "center",
     justifyContent: "center",
   },
   resultTitleText: {
-    fontSize: 18,
-    fontWeight: "900",
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   correctAnswerLabelText: {
-    fontSize: 13,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption.fontSize,
     marginTop: 2,
   },
 });

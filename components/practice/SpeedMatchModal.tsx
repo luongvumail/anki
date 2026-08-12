@@ -9,7 +9,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { useSpeedMatch, MatchTile } from "../../hooks/useSpeedMatch";
 
@@ -25,6 +26,7 @@ export function SpeedMatchModal({
   cards,
 }: SpeedMatchModalProps) {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const {
     timeLeft,
     score,
@@ -45,7 +47,7 @@ export function SpeedMatchModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -55,95 +57,90 @@ export function SpeedMatchModal({
               onClose();
             }}
           >
-            <Ionicons name="close" size={24} color={Colors.duolingo.textMuted} />
+            <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>GHÉP TỪ NHANH 60S</Text>
-            <Text style={styles.headerSub}>Thử thách phản xạ từ vựng siêu tốc</Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>GHÉP TỪ NHANH 60S</Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Thử thách phản xạ từ vựng siêu tốc</Text>
           </View>
 
-          <View style={{ width: 40 }} />
+          <View style={{ width: Layout.avatarMd }} />
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Ionicons name="timer-outline" size={18} color={Colors.duolingo.yellow} />
-            <Text style={styles.statVal}>{timeLeft}s</Text>
+          <View style={[styles.statBox, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Ionicons name="timer-outline" size={Layout.iconMd} color={theme.yellow} />
+            <Text style={[styles.statVal, { color: theme.textPrimary }]}>{timeLeft}s</Text>
           </View>
 
-          <View style={styles.statBox}>
-            <Ionicons name="star" size={18} color={Colors.duolingo.green} />
-            <Text style={styles.statVal}>{score} XP</Text>
+          <View style={[styles.statBox, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Ionicons name="star" size={Layout.iconMd} color={theme.green} />
+            <Text style={[styles.statVal, { color: theme.textPrimary }]}>{score} XP</Text>
           </View>
 
-          <View style={styles.statBox}>
-            <Ionicons name="trophy" size={18} color={Colors.duolingo.purple} />
-            <Text style={styles.statVal}>Kỷ lục: {highScore}</Text>
+          <View style={[styles.statBox, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Ionicons name="trophy" size={Layout.iconMd} color={theme.purple} />
+            <Text style={[styles.statVal, { color: theme.textPrimary }]}>Kỷ lục: {highScore}</Text>
           </View>
         </View>
 
         {isGameOver ? (
           /* Game Over Screen */
           <View style={styles.gameOverContainer}>
-            <View style={styles.doneIconCircle}>
-              <Ionicons name="trophy" size={54} color={Colors.duolingo.yellow} />
+            <View style={[styles.doneIconCircle, { backgroundColor: theme.green }]}>
+              <Ionicons name="trophy" size={48} color="#FFFFFF" />
             </View>
-            <Text style={styles.doneTitle}>HẾT GIỜ (60S)!</Text>
-            <Text style={styles.scoreBigText}>+ {score} XP Tích Lũy</Text>
-            {score >= highScore && score > 0 ? (
-              <Text style={styles.highScoreText}>🎉 Kỷ lục mới xuất sắc nhất!</Text>
-            ) : null}
+            <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>HOÀN THÀNH LỢT CHƠI!</Text>
+            <Text style={[styles.scoreBigText, { color: theme.green }]}>+{score} XP</Text>
+            <Text style={[styles.highScoreText, { color: theme.textMuted }]}>
+              Kỷ lục cao nhất: {highScore} XP
+            </Text>
 
             <DuolingoButton
-              title="CHƠI LẠI (60S)"
+              title="CHƠI LẠI"
               variant="primary"
               size="lg"
               onPress={startGame}
               style={{ marginTop: Spacing.xl, width: "100%" }}
             />
-
-            <DuolingoButton
-              title="THOÁT"
-              variant="secondary"
-              size="lg"
-              onPress={onClose}
-              style={{ marginTop: 10, width: "100%" }}
-            />
           </View>
         ) : (
-          /* Active Matching Board Grid */
+          /* Playing Grid Board */
           <View style={styles.boardGrid}>
-            {tiles.map((tile: MatchTile) => {
+            {tiles.map((tile) => {
               if (tile.matched) {
                 return <View key={tile.id} style={styles.matchedTilePlaceholder} />;
               }
 
               const isSelected = selectedTile?.id === tile.id;
 
+              let bgColor = theme.cardBg;
+              let borderColor = theme.cardBorder;
+
+              if (isSelected) {
+                bgColor = theme.blueDim;
+                borderColor = theme.blue;
+              }
+
               return (
                 <TouchableOpacity
                   key={tile.id}
+                  activeOpacity={0.8}
+                  onPress={() => handleTilePress(tile)}
                   style={[
                     styles.tile,
-                    isSelected && styles.tileSelected,
-                    tile.type === "hanzi" && styles.tileHanzi,
+                    {
+                      backgroundColor: bgColor,
+                      borderColor: borderColor,
+                    },
                   ]}
-                  onPress={() => handleTilePress(tile)}
-                  activeOpacity={0.8}
                 >
-                  <Text
-                    style={[
-                      styles.tileText,
-                      isSelected && styles.tileTextSelected,
-                      tile.type === "hanzi" && styles.tileTextHanzi,
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {tile.text}
-                  </Text>
-                  {tile.pinyin ? <Text style={styles.tilePinyin}>{tile.pinyin}</Text> : null}
+                  <Text style={[styles.tileText, { color: theme.textPrimary }]}>{tile.text}</Text>
+                  {tile.pinyin ? (
+                    <Text style={[styles.tilePinyin, { color: theme.blue }]}>{tile.pinyin}</Text>
+                  ) : null}
                 </TouchableOpacity>
               );
             })}
@@ -157,54 +154,48 @@ export function SpeedMatchModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: 10,
+    paddingBottom: Spacing.cellPadding,
   },
   closeBtn: {
-    padding: 6,
+    padding: Spacing.sm,
   },
   headerTitleContainer: {
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   headerSub: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
     paddingHorizontal: Spacing.pageMargin,
-    marginBottom: 20,
-    marginTop: 6,
+    marginBottom: Spacing.lg,
+    marginTop: Spacing.sm,
   },
   statBox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: Colors.duolingo.cardBg,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     borderRadius: Radii.full,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
   },
   statVal: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   boardGrid: {
     flex: 1,
@@ -213,26 +204,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     alignContent: "flex-start",
-    gap: 10,
+    gap: Spacing.cellPadding,
   },
   tile: {
     width: "48%",
     height: 90,
-    backgroundColor: Colors.duolingo.cardBg,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
     borderRadius: Radii.lg,
     alignItems: "center",
     justifyContent: "center",
-    padding: 8,
-  },
-  tileHanzi: {
-    borderColor: Colors.duolingo.blue,
-    backgroundColor: Colors.duolingo.bgSoftDark,
-  },
-  tileSelected: {
-    backgroundColor: Colors.duolingo.yellow,
-    borderColor: Colors.duolingo.yellow,
+    padding: Spacing.sm,
   },
   matchedTilePlaceholder: {
     width: "48%",
@@ -240,24 +221,14 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   tileText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.bodyMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
-  tileTextHanzi: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: Colors.duolingo.blue,
-  },
-  tileTextSelected: {
-    color: "#000000",
-  },
   tilePinyin: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   gameOverContainer: {
     flex: 1,
@@ -269,26 +240,22 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: Colors.duolingo.yellowDim,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: Spacing.lg,
   },
   doneTitle: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: Colors.text.white,
+    fontSize: Typography.titleLG.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   scoreBigText: {
-    fontSize: 26,
-    fontWeight: "900",
-    color: Colors.duolingo.yellow,
-    marginTop: 8,
+    fontSize: Typography.title1.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.sm,
   },
   highScoreText: {
-    fontSize: 14,
-    color: Colors.duolingo.green,
-    fontWeight: "800",
-    marginTop: 8,
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.sm,
   },
 });

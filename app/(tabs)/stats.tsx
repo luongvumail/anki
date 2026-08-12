@@ -3,7 +3,8 @@ import { View, Text, ScrollView, StyleSheet, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Spacing, Radii } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, BorderWidths } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
@@ -15,6 +16,7 @@ import { useStats } from "../../hooks/useStats";
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const {
     loadingCards,
     streakCount,
@@ -37,7 +39,7 @@ export default function StatsScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <DuolingoHeader streakCount={streakCount} />
 
       <ScrollView
@@ -57,21 +59,21 @@ export default function StatsScreen() {
             {/* Level & Rank Hero Banner */}
             <DuolingoCard style={styles.levelBanner}>
               <View style={styles.levelRow}>
-                <View style={styles.levelBadgeCircle}>
-                  <Text style={styles.levelBadgeText}>Lv.{levelInfo.level}</Text>
+                <View style={[styles.levelBadgeCircle, { backgroundColor: theme.yellowDim, borderColor: theme.yellow }]}>
+                  <Text style={[styles.levelBadgeText, { color: theme.yellow }]}>Lv.{levelInfo.level}</Text>
                 </View>
                 <View style={styles.levelTextContainer}>
                   <View style={styles.levelTitleRow}>
-                    <Text style={styles.levelTitleCn}>{levelInfo.title}</Text>
-                    <Text style={styles.levelTitleVi}>({levelInfo.titleVi})</Text>
+                    <Text style={[styles.levelTitleCn, { color: theme.textPrimary }]}>{levelInfo.title}</Text>
+                    <Text style={[styles.levelTitleVi, { color: theme.textMuted }]}>({levelInfo.titleVi})</Text>
                   </View>
-                  <Text style={styles.xpText}>{xp} XP Tích Lũy</Text>
+                  <Text style={[styles.xpText, { color: theme.yellow }]}>{xp} XP Tích Lũy</Text>
                 </View>
               </View>
               <ProgressBar
                 progress={levelInfo.progress}
-                height={12}
-                fillColor={Colors.duolingo.yellow}
+                height={Spacing.sm}
+                fillColor={theme.yellow}
                 style={{ marginTop: Spacing.sm }}
               />
             </DuolingoCard>
@@ -79,26 +81,26 @@ export default function StatsScreen() {
             {/* Main Trophy Progress Card */}
             <DuolingoCard style={styles.trophyBanner}>
               <View style={styles.trophyRow}>
-                <View style={[styles.guideIconTile, { backgroundColor: "rgba(255, 200, 0, 0.15)", marginRight: 10 }]}>
-                  <Ionicons name="trophy" size={24} color={Colors.duolingo.yellow} />
+                <View style={[styles.guideIconTile, { backgroundColor: theme.yellowDim, marginRight: Spacing.cellPadding }]}>
+                  <Ionicons name="trophy" size={Layout.iconLg} color={theme.yellow} />
                 </View>
                 <View style={styles.trophyText}>
-                  <Text style={styles.trophyTitle}>TIẾN ĐỘ THUỘC TỪ VỰNG</Text>
-                  <Text style={styles.trophySub}>
+                  <Text style={[styles.trophyTitle, { color: theme.textPrimary }]}>TIẾN ĐỘ THUỘC TỪ VỰNG</Text>
+                  <Text style={[styles.trophySub, { color: theme.textMuted }]}>
                     {retentionRatePct === 100
                       ? "Xuất sắc! Bạn đã thuộc 100% vốn từ hiện tại"
                       : `Bạn đã ghi nhớ thuộc ${retentionRatePct}% tổng từ vựng`}
                   </Text>
                 </View>
-                <View style={styles.retentionBadge}>
-                  <Text style={styles.retentionBadgeText}>{retentionRatePct}%</Text>
+                <View style={[styles.retentionBadge, { backgroundColor: theme.greenDim }]}>
+                  <Text style={[styles.retentionBadgeText, { color: theme.green }]}>{retentionRatePct}%</Text>
                 </View>
               </View>
 
               <ProgressBar
                 progress={retentionRatePct / 100}
-                height={10}
-                fillColor={Colors.duolingo.green}
+                height={Spacing.sm}
+                fillColor={theme.green}
                 style={{ marginTop: Spacing.sm }}
               />
             </DuolingoCard>
@@ -106,27 +108,27 @@ export default function StatsScreen() {
             {/* Overview Stat Cards Grid */}
             <View style={styles.statsGrid}>
               <DuolingoCard style={styles.statCardItem}>
-                <Ionicons name="flame" size={24} color={Colors.duolingo.yellow} />
-                <Text style={styles.statCardVal}>{streakCount} Ngày</Text>
-                <Text style={styles.statCardLabel}>Chuỗi Học Liên Tục</Text>
+                <Ionicons name="flame" size={Layout.iconLg} color={theme.yellow} />
+                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>{streakCount} Ngày</Text>
+                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>Chuỗi Học Liên Tục</Text>
               </DuolingoCard>
 
               <DuolingoCard style={styles.statCardItem}>
-                <Ionicons name="checkmark-circle" size={24} color={Colors.duolingo.green} />
-                <Text style={styles.statCardVal}>{learnedCount} từ</Text>
-                <Text style={styles.statCardLabel}>Đã Ghi Nhớ Thuộc</Text>
+                <Ionicons name="checkmark-circle" size={Layout.iconLg} color={theme.green} />
+                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>{learnedCount} từ</Text>
+                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>Đã Ghi Nhớ Thuộc</Text>
               </DuolingoCard>
 
               <DuolingoCard style={styles.statCardItem}>
-                <Ionicons name="time" size={24} color={Colors.duolingo.orange} />
-                <Text style={styles.statCardVal}>{dueCount} từ</Text>
-                <Text style={styles.statCardLabel}>Cần Ôn Tập Ngay</Text>
+                <Ionicons name="time" size={Layout.iconLg} color={theme.yellow} />
+                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>{dueCount} từ</Text>
+                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>Cần Ôn Tập Ngay</Text>
               </DuolingoCard>
 
               <DuolingoCard style={styles.statCardItem}>
-                <Ionicons name="sparkles" size={24} color={Colors.duolingo.blue} />
-                <Text style={styles.statCardVal}>{newCardsCount} từ</Text>
-                <Text style={styles.statCardLabel}>Từ Mới Chưa Học</Text>
+                <Ionicons name="sparkles" size={Layout.iconLg} color={theme.blue} />
+                <Text style={[styles.statCardVal, { color: theme.textPrimary }]}>{newCardsCount} từ</Text>
+                <Text style={[styles.statCardLabel, { color: theme.textMuted }]}>Từ Mới Chưa Học</Text>
               </DuolingoCard>
             </View>
 
@@ -140,25 +142,25 @@ export default function StatsScreen() {
 
                   return (
                     <View key={day.dateStr} style={styles.barColumn}>
-                      <Text style={styles.barCountText}>{day.count > 0 ? day.count : ""}</Text>
+                      <Text style={[styles.barCountText, { color: theme.textMuted }]}>{day.count > 0 ? day.count : ""}</Text>
 
-                      <View style={styles.barTrack}>
+                      <View style={[styles.barTrack, { backgroundColor: theme.cardBottom }]}>
                         <View
                           style={[
                             styles.barFill,
                             {
                               height: `${heightPct}%`,
                               backgroundColor: day.isToday
-                                ? Colors.duolingo.blue
+                                ? theme.blue
                                 : day.count > 0
-                                  ? Colors.duolingo.green
-                                  : Colors.duolingo.cardBottom,
+                                  ? theme.green
+                                  : theme.cardBottom,
                             },
                           ]}
                         />
                       </View>
 
-                      <Text style={[styles.barDayText, day.isToday && styles.barDayToday]}>
+                      <Text style={[styles.barDayText, { color: day.isToday ? theme.textPrimary : theme.textMuted }, day.isToday && styles.barDayToday]}>
                         {day.dayName}
                       </Text>
                     </View>
@@ -180,79 +182,70 @@ export default function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg },
+  container: { flex: 1 },
   scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md },
 
   levelBanner: { padding: Spacing.md, marginBottom: Spacing.md },
-  levelRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  levelRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
   levelBadgeCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: Colors.duolingo.yellowDim,
+    width: Layout.btnHeightLg,
+    height: Layout.btnHeightLg,
+    borderRadius: Layout.btnHeightLg / 2,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: Colors.duolingo.yellow,
+    borderWidth: BorderWidths.default,
   },
   levelBadgeText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: Colors.duolingo.yellow,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   levelTextContainer: { flex: 1 },
-  levelTitleRow: { flexDirection: "row", alignItems: "baseline", gap: 6 },
-  levelTitleCn: { fontSize: 18, fontWeight: "800", color: Colors.text.white },
-  levelTitleVi: { fontSize: 13, fontWeight: "600", color: Colors.duolingo.textMuted },
-  xpText: { fontSize: 12, fontWeight: "800", color: Colors.duolingo.yellow, marginTop: 2 },
+  levelTitleRow: { flexDirection: "row", alignItems: "baseline", gap: Spacing.xs },
+  levelTitleCn: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold },
+  levelTitleVi: { fontSize: Typography.caption.fontSize, fontWeight: Typography.weight.semibold },
+  xpText: { fontSize: Typography.caption1.fontSize, fontWeight: Typography.weight.extraBold, marginTop: 2 },
 
   trophyBanner: { padding: Spacing.md, marginBottom: Spacing.md },
-  trophyRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  trophyRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
   retentionBadge: {
-    backgroundColor: Colors.duolingo.greenDim,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
   },
   retentionBadgeText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: Colors.duolingo.green,
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   guideIconTile: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: Layout.avatarMd,
+    height: Layout.avatarMd,
+    borderRadius: Radii.full,
     alignItems: "center",
     justifyContent: "center",
   },
   trophyText: { flex: 1 },
   trophyTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.8,
   },
   trophySub: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.semibold,
     marginTop: 2,
   },
 
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: Spacing.md },
+  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.cellPadding, marginBottom: Spacing.md },
   statCardItem: { width: "48%", padding: Spacing.md, alignItems: "flex-start" },
   statCardVal: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginTop: 4,
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.xs,
   },
   statCardLabel: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
 
   chartCard: { padding: Spacing.md, marginBottom: Spacing.md },
@@ -264,20 +257,18 @@ const styles = StyleSheet.create({
   },
   barColumn: { flex: 1, alignItems: "center", height: "100%", justifyContent: "flex-end" },
   barCountText: {
-    fontSize: 10,
-    color: Colors.duolingo.textMuted,
-    fontWeight: "700",
-    marginBottom: 4,
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginBottom: Spacing.xs,
   },
   barTrack: {
-    width: 14,
+    width: Spacing.cellPadding,
     height: 90,
-    backgroundColor: Colors.duolingo.cardBottom,
-    borderRadius: 7,
+    borderRadius: Radii.full,
     overflow: "hidden",
     justifyContent: "flex-end",
   },
-  barFill: { width: "100%", borderRadius: 7 },
-  barDayText: { fontSize: 12, color: Colors.duolingo.textMuted, marginTop: 6, fontWeight: "600" },
-  barDayToday: { color: "#FFFFFF", fontWeight: "800" },
+  barFill: { width: "100%", borderRadius: Radii.full },
+  barDayText: { fontSize: Typography.caption1.fontSize, marginTop: Spacing.xs, fontWeight: Typography.weight.semibold },
+  barDayToday: { fontWeight: Typography.weight.extraBold },
 });

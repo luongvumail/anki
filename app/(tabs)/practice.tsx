@@ -4,29 +4,26 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore, Card } from "../../store/useStore";
-import { getLevelInfo } from "../../store/slices/userProgressSlice";
 import { getStreakCount } from "../../lib/reviewTracker";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { SectionTitle } from "../../components/ui/SectionTitle";
-import { ProgressBar } from "../../components/ui/ProgressBar";
-import { SkeletonCard } from "../../components/ui/SkeletonCard";
 import { SpeedMatchModal } from "../../components/practice/SpeedMatchModal";
 import { SentenceBuilderModal } from "../../components/practice/SentenceBuilderModal";
 import { PronunciationTrainerModal } from "../../components/practice/PronunciationTrainerModal";
 
 export default function PracticeScreen() {
   const insets = useSafeAreaInsets();
-  const xp = useStore((s) => s.xp);
+  const { theme } = useTheme();
   const fetchUserProgress = useStore((s) => s.fetchUserProgress);
   const cards = useStore((s) => s.cards);
   const decks = useStore((s) => s.decks);
@@ -67,8 +64,6 @@ export default function PracticeScreen() {
     return list;
   }, [cards]);
 
-  const levelInfo = useMemo(() => getLevelInfo(xp), [xp]);
-
   const handleOpenSpeedMatch = () => {
     if (allCardsList.length < 2) {
       Alert.alert(
@@ -107,7 +102,7 @@ export default function PracticeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <DuolingoHeader streakCount={streakCount} />
 
       <ScrollView
@@ -123,19 +118,19 @@ export default function PracticeScreen() {
         {/* Mode 1: Speed Match */}
         <DuolingoCard style={styles.modeCard}>
           <View style={styles.modeRow}>
-            <View style={[styles.modeIconTile, { backgroundColor: "rgba(255, 200, 0, 0.15)" }]}>
-              <Ionicons name="stopwatch" size={28} color={Colors.duolingo.yellow} />
+            <View style={[styles.modeIconTile, { backgroundColor: theme.yellowDim }]}>
+              <Ionicons name="stopwatch" size={Layout.iconXl} color={theme.yellow} />
             </View>
             <View style={styles.modeTextCol}>
-              <Text style={styles.modeTitle}>GAME GHÉP TỪ NHANH 60S</Text>
-              <Text style={styles.modeDesc}>
+              <Text style={[styles.modeTitle, { color: theme.textPrimary }]}>GAME GHÉP TỪ NHANH 60S</Text>
+              <Text style={[styles.modeDesc, { color: theme.textMuted }]}>
                 Ghép ngẫu nhiên Chữ Hán & Nghĩa tương ứng trong 60 giây. Luyện phản xạ siêu tốc!
               </Text>
             </View>
           </View>
           <DuolingoButton
             title="CHƠI NGAY"
-            icon={<Ionicons name="play" size={18} color="#FFFFFF" />}
+            icon={<Ionicons name="play" size={Layout.iconMd} color="#FFFFFF" />}
             variant="yellow"
             size="lg"
             onPress={handleOpenSpeedMatch}
@@ -146,19 +141,19 @@ export default function PracticeScreen() {
         {/* Mode 2: Sentence Builder */}
         <DuolingoCard style={styles.modeCard}>
           <View style={styles.modeRow}>
-            <View style={[styles.modeIconTile, { backgroundColor: "rgba(88, 204, 2, 0.15)" }]}>
-              <Ionicons name="build" size={28} color={Colors.duolingo.green} />
+            <View style={[styles.modeIconTile, { backgroundColor: theme.greenDim }]}>
+              <Ionicons name="build" size={Layout.iconXl} color={theme.green} />
             </View>
             <View style={styles.modeTextCol}>
-              <Text style={styles.modeTitle}>XẾP TỪ THÀNH CÂU</Text>
-              <Text style={styles.modeDesc}>
+              <Text style={[styles.modeTitle, { color: theme.textPrimary }]}>XẾP TỪ THÀNH CÂU</Text>
+              <Text style={[styles.modeDesc, { color: theme.textMuted }]}>
                 Sắp xếp các từ bị xáo trộn thành câu Tiếng Trung hoàn chỉnh theo câu ví dụ AI.
               </Text>
             </View>
           </View>
           <DuolingoButton
             title="BẮT ĐẦU"
-            icon={<Ionicons name="play" size={18} color="#FFFFFF" />}
+            icon={<Ionicons name="play" size={Layout.iconMd} color="#FFFFFF" />}
             variant="primary"
             size="lg"
             onPress={handleOpenSentenceBuilder}
@@ -169,19 +164,19 @@ export default function PracticeScreen() {
         {/* Mode 3: AI Pronunciation Trainer */}
         <DuolingoCard style={styles.modeCard}>
           <View style={styles.modeRow}>
-            <View style={[styles.modeIconTile, { backgroundColor: "rgba(168, 85, 247, 0.15)" }]}>
-              <Ionicons name="mic" size={28} color={Colors.duolingo.purple} />
+            <View style={[styles.modeIconTile, { backgroundColor: theme.purpleDim }]}>
+              <Ionicons name="mic" size={Layout.iconXl} color={theme.purple} />
             </View>
             <View style={styles.modeTextCol}>
-              <Text style={styles.modeTitle}>PHÒNG LUYỆN PHÁT ÂM AI</Text>
-              <Text style={styles.modeDesc}>
-                Thu âm giọng đọc Tiếng Trung, AI phân tích nhận diện Pinyin &amp; 4 thanh điệu chuẩn xác.
+              <Text style={[styles.modeTitle, { color: theme.textPrimary }]}>PHÒNG LUYỆN PHÁT ÂM AI</Text>
+              <Text style={[styles.modeDesc, { color: theme.textMuted }]}>
+                Thu âm giọng đọc Tiếng Trung, AI phân tích nhận diện Pinyin & 4 thanh điệu chuẩn xác.
               </Text>
             </View>
           </View>
           <DuolingoButton
             title="THU ÂM NGAY"
-            icon={<Ionicons name="mic-circle" size={20} color="#FFFFFF" />}
+            icon={<Ionicons name="mic-circle" size={Layout.iconMd} color="#FFFFFF" />}
             variant="purple"
             size="lg"
             onPress={handleOpenPronunciationTrainer}
@@ -222,25 +217,12 @@ export default function PracticeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg },
+  container: { flex: 1 },
   scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md },
-
-  levelCard: { marginBottom: Spacing.lg, padding: Spacing.md },
-  levelHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: Spacing.md },
-  levelBadgeBox: { backgroundColor: "#131F24", paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.md },
-  levelBadgeTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
-  levelBadgeSub: { fontSize: 11, color: Colors.duolingo.textMuted, marginTop: 1, fontWeight: "600" },
-  xpBox: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(255, 200, 0, 0.15)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radii.full },
-  xpValText: { fontSize: 14, fontWeight: "800", color: Colors.duolingo.yellow },
-
-  levelProgressRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  levelNumText: { fontSize: 12, fontWeight: "800", color: Colors.duolingo.textMuted },
-  nextLevelXPText: { fontSize: 12, fontWeight: "800", color: Colors.duolingo.yellow },
-
   modeCard: { marginBottom: Spacing.md, padding: Spacing.md },
-  modeRow: { flexDirection: "row", gap: 12, alignItems: "center" },
-  modeIconTile: { width: 52, height: 52, borderRadius: Radii.lg, alignItems: "center", justifyContent: "center" },
+  modeRow: { flexDirection: "row", gap: Spacing.md, alignItems: "center" },
+  modeIconTile: { width: Layout.btnHeightXl, height: Layout.btnHeightXl, borderRadius: Radii.lg, alignItems: "center", justifyContent: "center" },
   modeTextCol: { flex: 1 },
-  modeTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
-  modeDesc: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 4, lineHeight: 17 },
+  modeTitle: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold },
+  modeDesc: { fontSize: Typography.caption.fontSize, marginTop: Spacing.xs, lineHeight: 17 },
 });

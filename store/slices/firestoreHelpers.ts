@@ -26,12 +26,13 @@ export function userProgressRef(uid: string) {
 /**
  * Removes undefined properties from an object so Firestore setDoc/updateDoc calls don't crash.
  */
-export function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
-  const clean: Record<string, any> = {};
-  Object.keys(obj).forEach((key) => {
-    if (obj[key] !== undefined) {
-      clean[key] = obj[key];
+export function sanitizeForFirestore<T extends object>(obj: T): Partial<T> {
+  const clean: Record<string, unknown> = {};
+  const record = obj as Record<string, unknown>;
+  Object.keys(record).forEach((key) => {
+    if (record[key] !== undefined) {
+      clean[key] = record[key];
     }
   });
-  return clean;
+  return clean as Partial<T>;
 }

@@ -5,7 +5,8 @@ import {
   StyleSheet,
   ViewStyle,
 } from "react-native";
-import { Colors, Radii, Spacing } from "../../constants/theme";
+import { Radii, Spacing } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
 export interface DuolingoCardProps {
   children: React.ReactNode;
@@ -23,29 +24,34 @@ export function DuolingoCard({
   padding = Spacing.md,
 }: DuolingoCardProps) {
   const [pressed, setPressed] = useState(false);
+  const { theme } = useTheme();
 
   const getVariantStyle = () => {
     switch (variant) {
       case "active":
         return {
-          bg: "#1D3545",
-          borderBottom: Colors.duolingo.blue,
+          bg: theme.blueDim,
+          border: theme.blue,
+          borderBottom: theme.blueDark,
         };
       case "success":
         return {
-          bg: Colors.duolingo.greenDark,
-          borderBottom: Colors.duolingo.green,
+          bg: theme.greenDim,
+          border: theme.green,
+          borderBottom: theme.greenDark,
         };
       case "error":
         return {
-          bg: Colors.duolingo.redDark,
-          borderBottom: Colors.duolingo.red,
+          bg: theme.redDim,
+          border: theme.red,
+          borderBottom: theme.redDark,
         };
       case "default":
       default:
         return {
-          bg: Colors.duolingo.bgSoftDark,
-          borderBottom: "#18242B",
+          bg: theme.cardBg,
+          border: theme.cardBorder,
+          borderBottom: theme.cardBottom,
         };
     }
   };
@@ -63,8 +69,9 @@ export function DuolingoCard({
           styles.cardBase,
           {
             backgroundColor: vColors.bg,
+            borderColor: vColors.border,
             borderBottomColor: vColors.borderBottom,
-            borderBottomWidth: pressed ? 1 : 3,
+            borderBottomWidth: pressed ? 1 : 4,
             transform: [{ translateY: pressed ? 2 : 0 }],
             padding,
           },
@@ -82,8 +89,9 @@ export function DuolingoCard({
         styles.cardBase,
         {
           backgroundColor: vColors.bg,
+          borderColor: vColors.border,
           borderBottomColor: vColors.borderBottom,
-          borderBottomWidth: 3,
+          borderBottomWidth: 4,
           padding,
         },
         style,
@@ -97,8 +105,8 @@ export function DuolingoCard({
 const styles = StyleSheet.create({
   cardBase: {
     width: "100%",
-    borderRadius: Radii.lg,              // --radius-lg: 16px
-    borderWidth: 0,                       // KHÔNG border mảnh bao quanh (Rule 2)
+    borderRadius: Radii.lg,
+    borderWidth: 2,
     overflow: "hidden",
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, TextStyle } from 'react-native';
-import { Colors, Typography, Spacing } from '../../constants/theme';
+import { Typography, Spacing } from '../../constants/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface SectionTitleProps {
   children: React.ReactNode;
@@ -8,13 +9,13 @@ interface SectionTitleProps {
 }
 
 export const SectionTitle = React.memo(function SectionTitle({ children, style }: SectionTitleProps) {
-  return <Text style={[styles.title, style]}>{children}</Text>;
+  const { theme } = useTheme();
+  return <Text style={[styles.title, { color: theme.textMuted }, style]}>{children}</Text>;
 });
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: Typography.text.caption1.fontSize,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.8,
     marginTop: Spacing.lg,

@@ -1,20 +1,18 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   RefreshControl,
-  ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { auth } from "../../lib/firebase";
 import { getStreakCount } from "../../lib/reviewTracker";
 import { useStore } from "../../store/useStore";
-import { Colors, Spacing } from "../../constants/theme";
+import { Spacing, Typography, Layout } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
@@ -27,6 +25,7 @@ import { computeDueCount } from "../../lib/deckUtils";
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const decks = useStore((s) => s.decks);
   const fetchDecks = useStore((s) => s.fetchDecks);
   const isLoading = useStore((s) => s.isLoading);
@@ -59,7 +58,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header Bar with Personalized User Greeting */}
       <DuolingoHeader streakCount={streakCount} />
 
@@ -72,7 +71,7 @@ export default function DashboardScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.duolingo.green}
+            tintColor={theme.green}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -84,11 +83,11 @@ export default function DashboardScreen() {
           </View>
         ) : decks.length === 0 ? (
           <DuolingoCard style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Chưa có bộ thẻ nào!</Text>
-            <Text style={styles.emptySub}>Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng.</Text>
+            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>Chưa có bộ thẻ nào!</Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng.</Text>
             <DuolingoButton
               title="TẠO BỘ THẺ MỚI"
-              icon={<Ionicons name="add-circle" size={20} color="#FFFFFF" />}
+              icon={<Ionicons name="add-circle" size={Layout.iconMd} color="#FFFFFF" />}
               variant="primary"
               onPress={() => router.push("/(tabs)/decks")}
               style={{ marginTop: Spacing.md }}
@@ -129,13 +128,11 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
   },
   scrollContent: {
     paddingHorizontal: Spacing.pageMargin,
     paddingTop: Spacing.md,
   },
-
   emptyCard: {
     alignItems: "center",
     justifyContent: "center",
@@ -143,14 +140,12 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   emptySub: {
-    fontSize: 13,
-    color: Colors.duolingo.textMuted,
-    marginTop: 4,
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.xs,
     textAlign: "center",
   },
 });

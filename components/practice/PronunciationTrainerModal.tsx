@@ -11,7 +11,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";
 import { ProgressBar } from "../ui/ProgressBar";
@@ -30,6 +31,7 @@ export function PronunciationTrainerModal({
   cards,
 }: PronunciationTrainerModalProps) {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const {
     currentIndex,
     shuffledCards,
@@ -65,7 +67,7 @@ export function PronunciationTrainerModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -75,21 +77,21 @@ export function PronunciationTrainerModal({
               onClose();
             }}
           >
-            <Ionicons name="close" size={24} color={Colors.duolingo.textMuted} />
+            <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>LUYỆN PHÁT ÂM AI</Text>
-            <Text style={styles.headerSub}>Chấm điểm & Sửa lỗi Pinyin</Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>LUYỆN PHÁT ÂM AI</Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Chấm điểm & Sửa lỗi Pinyin</Text>
           </View>
 
-          <View style={{ width: 40 }} />
+          <View style={{ width: Layout.avatarMd }} />
         </View>
 
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <ProgressBar progress={progress} height={8} fillColor={Colors.duolingo.purple} />
-          <Text style={styles.progressText}>
+          <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.purple} />
+          <Text style={[styles.progressText, { color: theme.textMuted }]}>
             {shuffledCards.length > 0 ? `${currentIndex + 1}/${shuffledCards.length}` : "0/0"}
           </Text>
         </View>
@@ -97,11 +99,11 @@ export function PronunciationTrainerModal({
         {isDone ? (
           /* Completion Screen */
           <View style={styles.doneContainer}>
-            <View style={styles.doneIconCircle}>
-              <Ionicons name="trophy" size={54} color={Colors.duolingo.yellow} />
+            <View style={[styles.doneIconCircle, { backgroundColor: theme.yellowDim }]}>
+              <Ionicons name="trophy" size={Layout.fabSize} color={theme.yellow} />
             </View>
-            <Text style={styles.doneTitle}>HOÀN THÀNH BÀI PHÁT ÂM!</Text>
-            <Text style={styles.doneSub}>
+            <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>HOÀN THÀNH BÀI PHÁT ÂM!</Text>
+            <Text style={[styles.doneSub, { color: theme.textMuted }]}>
               Bạn đã hoàn thành 5 từ vựng luyện giọng nói với AI. Thêm 100 XP tích lũy!
             </Text>
             <DuolingoButton
@@ -120,8 +122,8 @@ export function PronunciationTrainerModal({
           <View style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
               {/* Card Hero Box */}
-              <View style={styles.heroCard}>
-                <Text style={styles.heroChar}>{currentCard.character}</Text>
+              <View style={[styles.heroCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+                <Text style={[styles.heroChar, { color: theme.textPrimary }]}>{currentCard.character}</Text>
                 <Text
                   style={[
                     styles.heroPinyin,
@@ -130,16 +132,16 @@ export function PronunciationTrainerModal({
                 >
                   {currentCard.pinyin}
                 </Text>
-                <Text style={styles.heroMeaning}>{currentCard.translation}</Text>
+                <Text style={[styles.heroMeaning, { color: theme.textMuted }]}>{currentCard.translation}</Text>
 
                 {/* Listen Model Speaker */}
-                <View style={styles.speakerBox}>
+                <View style={[styles.speakerBox, { backgroundColor: theme.bgSoft }]}>
                   <AudioButton
                     onPress={() => playTTS(currentCard.character)}
                     isPlaying={speaking}
                     size="md"
                   />
-                  <Text style={styles.speakerLabel}>Bấm để nghe phát âm mẫu</Text>
+                  <Text style={[styles.speakerLabel, { color: theme.textMuted }]}>Bấm để nghe phát âm mẫu</Text>
                 </View>
               </View>
 
@@ -149,8 +151,9 @@ export function PronunciationTrainerModal({
                   <TouchableOpacity
                     style={[
                       styles.micBtn,
-                      isRecording && styles.micBtnActive,
-                      analyzing && styles.micBtnAnalyzing,
+                      { backgroundColor: theme.blue, shadowColor: theme.blue },
+                      isRecording && { backgroundColor: theme.red, shadowColor: theme.red },
+                      analyzing && { backgroundColor: theme.purple, shadowColor: theme.purple },
                     ]}
                     onPress={isRecording ? handleStopRecording : handleStartRecording}
                     disabled={analyzing}
@@ -158,13 +161,13 @@ export function PronunciationTrainerModal({
                   >
                     <Ionicons
                       name={isRecording ? "stop" : analyzing ? "sparkles" : "mic"}
-                      size={36}
+                      size={Layout.iconXl}
                       color="#FFFFFF"
                     />
                   </TouchableOpacity>
                 </Animated.View>
 
-                <Text style={styles.micHint}>
+                <Text style={[styles.micHint, { color: theme.textMuted }]}>
                   {isRecording
                     ? "Đang thu âm... Bấm dừng khi đọc xong"
                     : analyzing
@@ -180,8 +183,10 @@ export function PronunciationTrainerModal({
                 style={[
                   styles.resultDrawer,
                   {
+                    backgroundColor: theme.cardBg,
+                    borderColor: theme.cardBorder,
                     transform: [{ translateY: drawerAnim }],
-                    paddingBottom: Math.max(insets.bottom + 10, 20),
+                    paddingBottom: Math.max(insets.bottom + Spacing.sm, Spacing.lg),
                   },
                 ]}
               >
@@ -192,10 +197,10 @@ export function PronunciationTrainerModal({
                       {
                         backgroundColor:
                           score >= 90
-                            ? Colors.duolingo.greenDim
+                            ? theme.greenDim
                             : score >= 60
-                              ? Colors.duolingo.yellowDim
-                              : Colors.duolingo.redDim,
+                              ? theme.yellowDim
+                              : theme.redDim,
                       },
                     ]}
                   >
@@ -205,10 +210,10 @@ export function PronunciationTrainerModal({
                         {
                           color:
                             score >= 90
-                              ? Colors.duolingo.green
+                              ? theme.green
                               : score >= 60
-                                ? Colors.duolingo.yellow
-                                : Colors.duolingo.red,
+                                ? theme.yellow
+                                : theme.red,
                         },
                       ]}
                     >
@@ -217,35 +222,35 @@ export function PronunciationTrainerModal({
                   </View>
 
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.feedbackTitle}>{feedback}</Text>
+                    <Text style={[styles.feedbackTitle, { color: theme.textPrimary }]}>{feedback}</Text>
                     {recognizedText ? (
-                      <Text style={styles.recognizedText}>
-                        Âm nhận diện: "<Text style={{ color: "#FFFFFF" }}>{recognizedText}</Text>"
+                      <Text style={[styles.recognizedText, { color: theme.textMuted }]}>
+                        Âm nhận diện: "<Text style={{ color: theme.textPrimary }}>{recognizedText}</Text>"
                       </Text>
                     ) : null}
                   </View>
                 </View>
 
                 {errorDetail ? (
-                  <View style={styles.detailBox}>
-                    <Ionicons name="alert-circle" size={16} color={Colors.duolingo.yellow} />
-                    <Text style={styles.detailText}>{errorDetail}</Text>
+                  <View style={[styles.detailBox, { backgroundColor: theme.yellowDim }]}>
+                    <Ionicons name="alert-circle" size={Layout.iconSm} color={theme.yellow} />
+                    <Text style={[styles.detailText, { color: theme.yellow }]}>{errorDetail}</Text>
                   </View>
                 ) : null}
 
                 {pronunciationTip ? (
-                  <View style={styles.tipBox}>
-                    <Ionicons name="bulb" size={16} color={Colors.duolingo.purple} />
-                    <Text style={styles.tipText}>{pronunciationTip}</Text>
+                  <View style={[styles.tipBox, { backgroundColor: theme.purpleDim }]}>
+                    <Ionicons name="bulb" size={Layout.iconSm} color={theme.purple} />
+                    <Text style={[styles.tipText, { color: theme.purple }]}>{pronunciationTip}</Text>
                   </View>
                 ) : null}
 
                 {/* User Playback & Next Action Buttons */}
                 <View style={styles.actionRow}>
                   {userAudioUri ? (
-                    <TouchableOpacity style={styles.listenUserBtn} onPress={playUserRecording}>
-                      <Ionicons name="play" size={16} color={Colors.duolingo.blue} />
-                      <Text style={styles.listenUserText}>Nghe lại bản thu</Text>
+                    <TouchableOpacity style={[styles.listenUserBtn, { backgroundColor: theme.blueDim }]} onPress={playUserRecording}>
+                      <Ionicons name="play" size={Layout.iconSm} color={theme.blue} />
+                      <Text style={[styles.listenUserText, { color: theme.blue }]}>Nghe lại bản thu</Text>
                     </TouchableOpacity>
                   ) : null}
 
@@ -279,211 +284,180 @@ export function PronunciationTrainerModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: 10,
+    paddingBottom: Spacing.cellPadding,
   },
   closeBtn: {
-    padding: 6,
+    padding: Spacing.sm,
   },
   headerTitleContainer: {
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   headerSub: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: Spacing.cellPadding,
     paddingHorizontal: Spacing.pageMargin,
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   progressText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   scrollBody: {
     paddingHorizontal: Spacing.pageMargin,
     alignItems: "center",
-    paddingBottom: 20,
+    paddingBottom: Spacing.xl,
   },
   heroCard: {
     width: "100%",
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.xl,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
     padding: Spacing.xl,
     alignItems: "center",
-    marginVertical: 10,
+    marginVertical: Spacing.cellPadding,
   },
   heroChar: {
-    fontSize: 54,
-    fontWeight: "900",
-    color: Colors.text.white,
+    fontSize: Typography.hanziHero.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   heroPinyin: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginTop: 6,
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginTop: Spacing.sm,
   },
   heroMeaning: {
-    fontSize: 15,
-    color: Colors.duolingo.textMuted,
-    marginTop: 4,
-    fontWeight: "600",
+    fontSize: Typography.subhead.fontSize,
+    marginTop: Spacing.xs,
+    fontWeight: Typography.weight.semibold,
   },
   speakerBox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: 20,
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
     borderRadius: Radii.full,
   },
   speakerLabel: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
-    fontWeight: "600",
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.semibold,
   },
   micSection: {
     alignItems: "center",
-    marginTop: 30,
+    marginTop: Spacing.xxl,
   },
   micBtn: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.duolingo.blue,
+    width: Layout.avatarXl,
+    height: Layout.avatarXl,
+    borderRadius: Layout.avatarXl / 2,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: Colors.duolingo.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 6,
   },
-  micBtnActive: {
-    backgroundColor: Colors.duolingo.red,
-    shadowColor: Colors.duolingo.red,
-  },
-  micBtnAnalyzing: {
-    backgroundColor: Colors.duolingo.purple,
-    shadowColor: Colors.duolingo.purple,
-  },
   micHint: {
-    fontSize: 13,
-    color: Colors.duolingo.textMuted,
-    marginTop: 14,
-    fontWeight: "600",
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.cellPadding,
+    fontWeight: Typography.weight.semibold,
   },
   resultDrawer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.duolingo.cardBg,
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderTopWidth: BorderWidths.default,
+    borderLeftWidth: BorderWidths.default,
+    borderRightWidth: BorderWidths.default,
     padding: Spacing.md,
-    gap: 12,
+    gap: Spacing.md,
   },
   resultHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: Spacing.md,
   },
   scoreCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: Layout.avatarLg,
+    height: Layout.avatarLg,
+    borderRadius: Layout.avatarLg / 2,
     alignItems: "center",
     justifyContent: "center",
   },
   scoreText: {
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   feedbackTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   recognizedText: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
     marginTop: 2,
   },
   detailBox: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: Colors.duolingo.yellowDim,
-    padding: 10,
+    gap: Spacing.sm,
+    padding: Spacing.cellPadding,
     borderRadius: Radii.md,
   },
   detailText: {
-    fontSize: 12,
-    color: Colors.duolingo.yellow,
+    fontSize: Typography.caption1.fontSize,
     flex: 1,
     lineHeight: 16,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   tipBox: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: Colors.duolingo.purpleDim,
-    padding: 10,
+    gap: Spacing.sm,
+    padding: Spacing.cellPadding,
     borderRadius: Radii.md,
   },
   tipText: {
-    fontSize: 12,
-    color: Colors.duolingo.purple,
+    fontSize: Typography.caption1.fontSize,
     flex: 1,
     lineHeight: 16,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginTop: 4,
+    gap: Spacing.cellPadding,
+    marginTop: Spacing.xs,
   },
   listenUserBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.duolingo.blueDim,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.cellPadding,
     borderRadius: Radii.md,
   },
   listenUserText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.duolingo.blue,
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.bold,
   },
   doneContainer: {
     flex: 1,
@@ -495,22 +469,19 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: Colors.duolingo.yellowDim,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: Spacing.lg,
   },
   doneTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: Colors.text.white,
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
   doneSub: {
-    fontSize: 14,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.subhead.fontSize,
     textAlign: "center",
-    marginTop: 8,
+    marginTop: Spacing.sm,
     lineHeight: 20,
   },
 });

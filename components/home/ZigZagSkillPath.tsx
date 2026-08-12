@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Radii, Spacing } from "../../constants/theme";
+import { Radii, Spacing, Typography, Layout, BorderWidths } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { Deck } from "../../store/slices/types";
 import { DeckIcon } from "../ui/DeckIcon";
 import { DuolingoMascot } from "../ui/DuolingoMascot";
@@ -32,6 +33,8 @@ const PathNodeItem = React.memo(
     pulseAnim,
     onSelect,
   }: PathNodeItemProps) => {
+    const { theme } = useTheme();
+
     return (
       <View style={[styles.nodeRow, { transform: [{ translateX: offset }] }]}>
         <View style={styles.nodeWrapper}>
@@ -43,16 +46,16 @@ const PathNodeItem = React.memo(
                 {
                   transform: isPriority ? [{ scale: pulseAnim }] : [],
                   backgroundColor: isPriority
-                    ? Colors.duolingo.yellow
-                    : Colors.duolingo.blue,
+                    ? theme.yellow
+                    : theme.blue,
                 },
               ]}
             >
               <Text style={styles.dueBadgeText}>{dueCount}</Text>
             </Animated.View>
           ) : isCompleted ? (
-            <View style={styles.completedBadge}>
-              <Ionicons name="checkmark-sharp" size={12} color="#FFFFFF" />
+            <View style={[styles.completedBadge, { backgroundColor: theme.green }]}>
+              <Ionicons name="checkmark-sharp" size={Layout.iconSm} color="#FFFFFF" />
             </View>
           ) : null}
 
@@ -62,18 +65,19 @@ const PathNodeItem = React.memo(
             onPress={() => onSelect(deck)}
             style={[
               styles.nodeButton,
-              isPriority && styles.nodeButtonPriority,
-              isCompleted && styles.nodeButtonCompleted,
+              { backgroundColor: theme.cardBottom },
+              isPriority && { backgroundColor: theme.blue },
+              isCompleted && { backgroundColor: theme.green },
             ]}
           >
-            <View style={styles.nodeInnerCircle}>
+            <View style={[styles.nodeInnerCircle, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
               {isCompleted ? (
-                <Ionicons name="star" size={28} color={Colors.duolingo.yellow} />
+                <Ionicons name="star" size={Layout.iconXl} color={theme.yellow} />
               ) : (
                 <DeckIcon
                   name={deck.icon}
-                  size={26}
-                  color={isPriority ? Colors.duolingo.blue : Colors.duolingo.textMuted}
+                  size={Layout.iconLg}
+                  color={isPriority ? theme.blue : theme.textMuted}
                 />
               )}
             </View>
@@ -84,12 +88,16 @@ const PathNodeItem = React.memo(
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => onSelect(deck)}
-          style={[styles.nodeTextCard, isPriority && styles.nodeTextCardPriority]}
+          style={[
+            styles.nodeTextCard,
+            { backgroundColor: theme.cardBg, borderColor: theme.cardBorder },
+            isPriority && { borderColor: theme.blue },
+          ]}
         >
-          <Text style={styles.nodeDeckName} numberOfLines={1}>
+          <Text style={[styles.nodeDeckName, { color: theme.textPrimary }]} numberOfLines={1}>
             {deck.name}
           </Text>
-          <Text style={styles.nodeDeckSub}>
+          <Text style={[styles.nodeDeckSub, { color: theme.textMuted }]}>
             {deck.cardCount || 0} từ · {dueCount > 0 ? `Cần ôn ${dueCount}` : "Đã xong"}
           </Text>
         </TouchableOpacity>
@@ -100,6 +108,7 @@ const PathNodeItem = React.memo(
 
 export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkillPathProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const { theme } = useTheme();
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -137,11 +146,11 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
   return (
     <View style={styles.container}>
       {/* Unit Title Banner */}
-      <View style={styles.unitBanner}>
+      <View style={[styles.unitBanner, { backgroundColor: theme.blue, shadowColor: theme.blue }]}>
         <View style={styles.unitBannerContent}>
           <Text style={styles.unitBannerTitle}>KHO BỘ THẺ CỦA TÔI</Text>
           <Text style={styles.unitBannerSub}>
-            Chọn bộ thẻ bên dưới để bắt đầu lật thẻ Flashcard &amp; làm bài tập SRS!
+            Chọn bộ thẻ bên dưới để bắt đầu lật thẻ Flashcard & làm bài tập SRS!
           </Text>
         </View>
       </View>
@@ -200,44 +209,42 @@ const styles = StyleSheet.create({
   },
   unitBanner: {
     width: "100%",
-    backgroundColor: Colors.duolingo.blue,
     borderRadius: Radii.lg,
     padding: Spacing.md,
     marginBottom: Spacing.xl,
-    shadowColor: Colors.duolingo.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 4,
   },
   unitBannerContent: {
-    gap: 4,
+    gap: Spacing.xs,
   },
   unitBannerTitle: {
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
     letterSpacing: 0.8,
   },
   unitBannerSub: {
-    fontSize: 12,
+    fontSize: Typography.caption1.fontSize,
     color: "rgba(255, 255, 255, 0.9)",
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
     lineHeight: 16,
   },
   pathList: {
     alignItems: "center",
-    gap: 28,
+    gap: Spacing.xxl,
     width: "100%",
   },
   mascotPathContainer: {
-    marginBottom: -10,
+    marginBottom: -Spacing.sm,
     zIndex: 10,
   },
   nodeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: Spacing.cellPadding,
   },
   nodeWrapper: {
     alignItems: "center",
@@ -245,77 +252,60 @@ const styles = StyleSheet.create({
   },
   dueBadge: {
     position: "absolute",
-    top: -12,
+    top: -Spacing.md,
     zIndex: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs / 2,
     borderRadius: Radii.full,
-    borderWidth: 2,
+    borderWidth: BorderWidths.default,
     borderColor: "#FFFFFF",
   },
   dueBadgeText: {
-    fontSize: 11,
-    fontWeight: "900",
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
   },
   completedBadge: {
     position: "absolute",
-    top: -8,
+    top: -Spacing.sm,
     zIndex: 5,
-    backgroundColor: Colors.duolingo.green,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: Layout.iconMd,
+    height: Layout.iconMd,
+    borderRadius: Layout.iconMd / 2,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
+    borderWidth: BorderWidths.default,
     borderColor: "#FFFFFF",
   },
   nodeButton: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: Colors.duolingo.cardBottom,
     paddingBottom: 6,
     justifyContent: "flex-start",
-  },
-  nodeButtonPriority: {
-    backgroundColor: Colors.duolingo.blue,
-  },
-  nodeButtonCompleted: {
-    backgroundColor: Colors.duolingo.green,
   },
   nodeInnerCircle: {
     width: "100%",
     height: 66,
     borderRadius: 33,
-    backgroundColor: Colors.duolingo.cardBg,
     borderWidth: 3,
-    borderColor: Colors.duolingo.cardBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   nodeTextCard: {
-    backgroundColor: Colors.duolingo.cardBg,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.sm,
     borderRadius: Radii.md,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
     maxWidth: 160,
   },
-  nodeTextCardPriority: {
-    borderColor: Colors.duolingo.blue,
-  },
   nodeDeckName: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   nodeDeckSub: {
-    fontSize: 11,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption2.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
 });

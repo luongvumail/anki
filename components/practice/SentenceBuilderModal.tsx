@@ -10,7 +10,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";
 import { ProgressBar } from "../ui/ProgressBar";
@@ -28,6 +29,7 @@ export function SentenceBuilderModal({
   cards,
 }: SentenceBuilderModalProps) {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const {
     questions,
     currentIndex,
@@ -55,7 +57,7 @@ export function SentenceBuilderModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.lg), backgroundColor: theme.bg }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -65,21 +67,21 @@ export function SentenceBuilderModal({
               onClose();
             }}
           >
-            <Ionicons name="close" size={24} color={Colors.duolingo.textMuted} />
+            <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>XẾP TỪ THÀNH CÂU</Text>
-            <Text style={styles.headerSub}>Rèn luyện ngữ pháp &amp; phản xạ câu</Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>XẾP TỪ THÀNH CÂU</Text>
+            <Text style={[styles.headerSub, { color: theme.textMuted }]}>Rèn luyện ngữ pháp & phản xạ câu</Text>
           </View>
 
-          <View style={{ width: 40 }} />
+          <View style={{ width: Layout.avatarMd }} />
         </View>
 
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
-          <ProgressBar progress={progress} height={8} fillColor={Colors.duolingo.green} />
-          <Text style={styles.progressText}>
+          <ProgressBar progress={progress} height={Spacing.sm} fillColor={theme.green} />
+          <Text style={[styles.progressText, { color: theme.textMuted }]}>
             {questions.length > 0 ? `${currentIndex + 1}/${questions.length}` : "0/0"}
           </Text>
         </View>
@@ -87,11 +89,11 @@ export function SentenceBuilderModal({
         {isDone ? (
           /* Completion Screen */
           <View style={styles.doneContainer}>
-            <View style={styles.doneIconCircle}>
-              <Ionicons name="trophy" size={54} color={Colors.duolingo.yellow} />
+            <View style={[styles.doneIconCircle, { backgroundColor: theme.yellowDim }]}>
+              <Ionicons name="trophy" size={Layout.fabSize} color={theme.yellow} />
             </View>
-            <Text style={styles.doneTitle}>XUẤT SẮC! HOÀN THÀNH BÀI XẾP CÂU</Text>
-            <Text style={styles.doneSub}>
+            <Text style={[styles.doneTitle, { color: theme.textPrimary }]}>XUẤT SẮC! HOÀN THÀNH BÀI XẾP CÂU</Text>
+            <Text style={[styles.doneSub, { color: theme.textMuted }]}>
               Bạn đã xếp đúng các câu ví dụ mẫu. Thêm XP tích lũy vào tài khoản!
             </Text>
             <DuolingoButton
@@ -106,31 +108,47 @@ export function SentenceBuilderModal({
             />
           </View>
         ) : currentQuestion ? (
+          /* Active Question Screen */
           <View style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
-              {/* Vietnamese Meaning Prompt Box */}
-              <View style={styles.promptCard}>
-                <Text style={styles.promptTitle}>Dịch câu sau sang Tiếng Trung:</Text>
-                <Text style={styles.promptVietnamese}>"{currentQuestion.vietnamese}"</Text>
-
+              {/* Vietnamese Meaning Prompt */}
+              <View style={[styles.promptCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+                <Text style={[styles.promptTitle, { color: theme.textMuted }]}>DỊCH CÂU SAU SANG TIẾNG TRUNG:</Text>
+                <Text style={[styles.promptVietnamese, { color: theme.textPrimary }]}>"{currentQuestion.vietnamese}"</Text>
                 {currentQuestion.pinyin ? (
-                  <Text style={styles.promptPinyin}>({currentQuestion.pinyin})</Text>
+                  <Text style={[styles.promptPinyin, { color: theme.blue }]}>{currentQuestion.pinyin}</Text>
                 ) : null}
               </View>
 
-              {/* User Answer Drop Zone Area */}
-              <View style={styles.userDropArea}>
+              {/* User Drop Area */}
+              <View
+                style={[
+                  styles.userDropArea,
+                  {
+                    backgroundColor: theme.bgSoft,
+                    borderColor: isSubmitted
+                      ? isCorrect
+                        ? theme.green
+                        : theme.red
+                      : theme.cardBorder,
+                  },
+                ]}
+              >
                 {userSentence.length === 0 ? (
-                  <Text style={styles.dropPlaceholder}>Bấm các từ bên dưới để xếp câu tại đây...</Text>
+                  <Text style={[styles.dropPlaceholder, { color: theme.textMuted }]}>
+                    Chạm các từ bên dưới để ghép thành câu...
+                  </Text>
                 ) : (
                   <View style={styles.wordWrapRow}>
                     {userSentence.map((item) => (
                       <TouchableOpacity
                         key={item.id}
-                        style={styles.wordTileSelected}
+                        style={[
+                          styles.wordTileSelected,
+                          { backgroundColor: theme.blue, borderColor: theme.blueDark },
+                        ]}
                         onPress={() => handleRemoveWord(item)}
                         disabled={isSubmitted}
-                        activeOpacity={0.8}
                       >
                         <Text style={styles.wordTileTextSelected}>{item.text}</Text>
                       </TouchableOpacity>
@@ -141,46 +159,70 @@ export function SentenceBuilderModal({
 
               {/* Available Word Bank */}
               <View style={styles.wordBankArea}>
-                <Text style={styles.wordBankTitle}>Ngân hàng từ vựng:</Text>
+                <Text style={[styles.wordBankTitle, { color: theme.textMuted }]}>KHO TỪ VỰNG:</Text>
                 <View style={styles.wordWrapRow}>
                   {wordBank.map((item) => (
                     <TouchableOpacity
                       key={item.id}
-                      style={styles.wordTile}
+                      style={[
+                        styles.wordTile,
+                        {
+                          backgroundColor: theme.cardBg,
+                          borderColor: theme.cardBorder,
+                        },
+                      ]}
                       onPress={() => handleSelectWord(item)}
                       disabled={isSubmitted}
-                      activeOpacity={0.8}
                     >
-                      <Text style={styles.wordTileText}>{item.text}</Text>
+                      <Text style={[styles.wordTileText, { color: theme.textPrimary }]}>
+                        {item.text}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
             </ScrollView>
 
-            {/* Bottom Action Footer */}
-            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 10, 20) }]}>
+            {/* Bottom Footer Actions */}
+            <View
+              style={[
+                styles.footer,
+                {
+                  backgroundColor: theme.bg,
+                  borderTopColor: theme.cardBorder,
+                  paddingBottom: Math.max(insets.bottom + Spacing.sm, Spacing.lg),
+                },
+              ]}
+            >
               {isSubmitted ? (
-                <View style={styles.resultBox}>
+                <View
+                  style={[
+                    styles.resultBox,
+                    {
+                      backgroundColor: isCorrect ? theme.greenDim : theme.redDim,
+                      borderColor: isCorrect ? theme.green : theme.red,
+                    },
+                  ]}
+                >
                   <View style={styles.resultHeader}>
                     <Ionicons
                       name={isCorrect ? "checkmark-circle" : "close-circle"}
-                      size={28}
-                      color={isCorrect ? Colors.duolingo.green : Colors.duolingo.red}
+                      size={Layout.iconLg}
+                      color={isCorrect ? theme.green : theme.red}
                     />
                     <Text
                       style={[
                         styles.resultTitle,
-                        { color: isCorrect ? Colors.duolingo.green : Colors.duolingo.red },
+                        { color: isCorrect ? theme.green : theme.red },
                       ]}
                     >
-                      {isCorrect ? "Chính xác 100%!" : "Chưa chính xác!"}
+                      {isCorrect ? "CHÍNH XÁC! CÂU ĐÚNG NGHỮ PHÁP." : "CHƯA CHÍNH XÁC!"}
                     </Text>
                     <AudioButton onPress={() => playTTS(currentQuestion.chinese)} size="sm" />
                   </View>
                   {!isCorrect ? (
-                    <Text style={styles.correctAnswerText}>
-                      Đáp án đúng: <Text style={{ color: "#FFFFFF", fontWeight: "800" }}>{currentQuestion.chinese}</Text>
+                    <Text style={[styles.correctAnswerText, { color: theme.textMuted }]}>
+                      Đáp án đúng: <Text style={{ color: theme.textPrimary, fontWeight: "800" }}>{currentQuestion.chinese}</Text>
                     </Text>
                   ) : null}
 
@@ -189,7 +231,7 @@ export function SentenceBuilderModal({
                     variant={isCorrect ? "primary" : "secondary"}
                     size="lg"
                     onPress={handleNext}
-                    style={{ marginTop: 12 }}
+                    style={{ marginTop: Spacing.md }}
                   />
                 </View>
               ) : (
@@ -212,157 +254,135 @@ export function SentenceBuilderModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: 10,
+    paddingBottom: Spacing.cellPadding,
   },
   closeBtn: {
-    padding: 6,
+    padding: Spacing.sm,
   },
   headerTitleContainer: {
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   headerSub: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
     marginTop: 2,
-    fontWeight: "600",
+    fontWeight: Typography.weight.semibold,
   },
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: Spacing.cellPadding,
     paddingHorizontal: Spacing.pageMargin,
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   progressText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   scrollBody: {
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: 20,
+    paddingBottom: Spacing.xl,
   },
   promptCard: {
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.xl,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
     padding: Spacing.md,
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   promptTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.bold,
     textTransform: "uppercase",
   },
   promptVietnamese: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: Colors.text.white,
-    marginTop: 6,
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.sm,
   },
   promptPinyin: {
-    fontSize: 13,
-    color: Colors.duolingo.blue,
-    marginTop: 4,
-    fontWeight: "600",
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.xs,
+    fontWeight: Typography.weight.semibold,
   },
   userDropArea: {
     minHeight: 110,
-    backgroundColor: Colors.duolingo.bgSoftDark,
     borderRadius: Radii.lg,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
     borderStyle: "dashed",
     padding: Spacing.md,
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   dropPlaceholder: {
-    fontSize: 13,
-    color: Colors.duolingo.disabledText,
+    fontSize: Typography.caption.fontSize,
     textAlign: "center",
-    fontWeight: "500",
+    fontWeight: Typography.weight.medium,
   },
   wordBankArea: {
-    marginTop: 10,
+    marginTop: Spacing.cellPadding,
   },
   wordBankTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.duolingo.textMuted,
-    marginBottom: 10,
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginBottom: Spacing.cellPadding,
   },
   wordWrapRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: Spacing.cellPadding,
   },
   wordTile: {
-    backgroundColor: Colors.duolingo.cardBg,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderWidth: BorderWidths.default,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.cellPadding,
     borderRadius: Radii.md,
   },
   wordTileText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   wordTileSelected: {
-    backgroundColor: Colors.duolingo.blue,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.cellPadding,
     borderRadius: Radii.md,
   },
   wordTileTextSelected: {
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
   },
   footer: {
     paddingHorizontal: Spacing.pageMargin,
-    paddingTop: 12,
-    backgroundColor: Colors.duolingo.bg,
-    borderTopWidth: 1,
-    borderTopColor: Colors.duolingo.cardBorder,
+    paddingTop: Spacing.md,
+    borderTopWidth: BorderWidths.thin,
   },
   resultBox: {
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.lg,
     padding: Spacing.md,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    borderWidth: BorderWidths.default,
   },
   resultHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.sm,
   },
   resultTitle: {
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: Typography.callout.fontSize,
+    fontWeight: Typography.weight.extraBold,
     flex: 1,
   },
   correctAnswerText: {
-    fontSize: 13,
-    color: Colors.duolingo.textMuted,
-    marginTop: 6,
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.sm,
   },
   doneContainer: {
     flex: 1,
@@ -374,22 +394,19 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: Colors.duolingo.yellowDim,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: Spacing.lg,
   },
   doneTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: Colors.text.white,
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
   doneSub: {
-    fontSize: 14,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.subhead.fontSize,
     textAlign: "center",
-    marginTop: 8,
+    marginTop: Spacing.sm,
     lineHeight: 20,
   },
 });

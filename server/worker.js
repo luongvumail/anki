@@ -22,7 +22,13 @@ async function callGeminiWithRetry(url, payload, maxRetries = 2) {
     }
     return response;
   }
-  return lastResponse;
+  return (
+    lastResponse ||
+    new Response(JSON.stringify({ error: "Gemini service unavailable after retries" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
+    })
+  );
 }
 
 async function handleWorkerRequest(request, env) {

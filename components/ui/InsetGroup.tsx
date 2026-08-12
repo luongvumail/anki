@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Radii } from '../../constants/theme';
+import { Radii } from '../../constants/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface InsetGroupProps {
   children: React.ReactNode;
@@ -8,13 +9,19 @@ interface InsetGroupProps {
 }
 
 export const InsetGroup = React.memo(function InsetGroup({ children, style }: InsetGroupProps) {
-  return <View style={[styles.insetGroup, style]}>{children}</View>;
+  const { theme } = useTheme();
+
+  return (
+    <View style={[styles.insetGroup, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }, style]}>
+      {children}
+    </View>
+  );
 });
 
 const styles = StyleSheet.create({
   insetGroup: {
-    backgroundColor: Colors.bg.secondary,
     borderRadius: Radii.card,
+    borderWidth: 2,
     overflow: 'hidden',
   },
 });

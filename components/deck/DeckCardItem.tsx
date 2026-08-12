@@ -2,7 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Colors, Spacing } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DeckIcon } from "../ui/DeckIcon";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { DuolingoButton } from "../ui/DuolingoButton";
@@ -23,22 +24,23 @@ interface DeckCardItemProps {
 
 export const DeckCardItem = React.memo(({ itemStats, onDelete }: DeckCardItemProps) => {
   const { deck, total, due, masteryPct } = itemStats;
+  const { theme } = useTheme();
 
   return (
     <DuolingoCard style={styles.deckCardItem} onPress={() => router.push(`/deck/${deck.id}`)}>
       <View style={styles.deckHeaderRow}>
-        <View style={styles.deckIconBox}>
-          <DeckIcon name={deck.icon || "book-outline"} size={22} color={Colors.duolingo.blue} />
+        <View style={[styles.deckIconBox, { backgroundColor: theme.blueDim }]}>
+          <DeckIcon name={deck.icon || "book-outline"} size={Layout.iconLg} color={theme.blue} />
         </View>
 
         <View style={styles.deckMainTitleBox}>
           <View style={styles.titleChevronRow}>
-            <Text style={styles.deckTitle} numberOfLines={1}>
+            <Text style={[styles.deckTitle, { color: theme.textPrimary }]} numberOfLines={1}>
               {deck.name}
             </Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.duolingo.textMuted} />
+            <Ionicons name="chevron-forward" size={Layout.iconMd} color={theme.textMuted} />
           </View>
-          <Text style={styles.deckCardCountText}>
+          <Text style={[styles.deckCardCountText, { color: theme.textMuted }]}>
             {total} từ vựng {due > 0 ? ` · ${due} thẻ cần ôn` : ""}
           </Text>
         </View>
@@ -46,14 +48,14 @@ export const DeckCardItem = React.memo(({ itemStats, onDelete }: DeckCardItemPro
         <TouchableOpacity
           onPress={() => onDelete(deck.id, deck.name)}
           style={styles.deleteBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={Layout.hitSlopLg}
         >
-          <Ionicons name="trash-outline" size={18} color={Colors.duolingo.red} />
+          <Ionicons name="trash-outline" size={Layout.iconMd} color={theme.red} />
         </TouchableOpacity>
       </View>
 
       {deck.description ? (
-        <Text style={styles.deckDesc} numberOfLines={2}>
+        <Text style={[styles.deckDesc, { color: theme.textSubhead }]} numberOfLines={2}>
           {deck.description}
         </Text>
       ) : null}
@@ -61,11 +63,11 @@ export const DeckCardItem = React.memo(({ itemStats, onDelete }: DeckCardItemPro
       <View style={styles.masteryBarRow}>
         <ProgressBar
           progress={masteryPct / 100}
-          height={10}
-          fillColor={Colors.duolingo.green}
+          height={Spacing.sm}
+          fillColor={theme.green}
           style={{ flex: 1 }}
         />
-        <Text style={styles.masteryPctText}>{masteryPct}% Thuộc</Text>
+        <Text style={[styles.masteryPctText, { color: theme.green }]}>{masteryPct}% Thuộc</Text>
       </View>
 
       <DuolingoButton
@@ -86,22 +88,21 @@ export const DeckCardItem = React.memo(({ itemStats, onDelete }: DeckCardItemPro
 });
 
 const styles = StyleSheet.create({
-  deckCardItem: { padding: Spacing.md, marginBottom: 14 },
-  deckHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  deckCardItem: { padding: Spacing.md, marginBottom: Spacing.cellPadding },
+  deckHeaderRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
   deckIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: Colors.duolingo.blueDim,
+    width: Layout.avatarMd,
+    height: Layout.avatarMd,
+    borderRadius: Radii.md,
     alignItems: "center",
     justifyContent: "center",
   },
   deckMainTitleBox: { flex: 1 },
-  titleChevronRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  deckTitle: { fontSize: 17, fontWeight: "800", color: "#FFFFFF", flexShrink: 1 },
-  deckCardCountText: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 2, fontWeight: "600" },
-  deleteBtn: { padding: 4 },
-  deckDesc: { fontSize: 13, color: "rgba(255, 255, 255, 0.75)", marginTop: 6, lineHeight: 17 },
-  masteryBarRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
-  masteryPctText: { fontSize: 12, fontWeight: "800", color: Colors.duolingo.green },
+  titleChevronRow: { flexDirection: "row", alignItems: "center", gap: Spacing.xs },
+  deckTitle: { fontSize: Typography.bodyLG.fontSize, fontWeight: Typography.weight.extraBold, flexShrink: 1 },
+  deckCardCountText: { fontSize: Typography.caption.fontSize, marginTop: 2, fontWeight: Typography.weight.semibold },
+  deleteBtn: { padding: Spacing.xs },
+  deckDesc: { fontSize: Typography.caption.fontSize, marginTop: Spacing.xs, lineHeight: 17 },
+  masteryBarRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginTop: Spacing.md },
+  masteryPctText: { fontSize: Typography.caption2.fontSize, fontWeight: Typography.weight.extraBold },
 });

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated, ViewStyle } from "react-native";
-import { Colors, Radii, Spacing } from "../../constants/theme";
+import { Radii, Spacing, Layout, BorderWidths, Animations } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
 interface SkeletonCardProps {
   lines?: number;
@@ -9,18 +10,19 @@ interface SkeletonCardProps {
 
 export const SkeletonCard = React.memo(({ lines = 2, style }: SkeletonCardProps) => {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
+  const { theme } = useTheme();
 
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 0.7,
-          duration: 800,
+          duration: Animations.timingLong,
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 0.3,
-          duration: 800,
+          duration: Animations.timingLong,
           useNativeDriver: true,
         }),
       ])
@@ -30,12 +32,21 @@ export const SkeletonCard = React.memo(({ lines = 2, style }: SkeletonCardProps)
   }, [pulseAnim]);
 
   return (
-    <View style={[styles.cardContainer, style]}>
+    <View
+      style={[
+        styles.cardContainer,
+        {
+          backgroundColor: theme.cardBg,
+          borderColor: theme.cardBorder,
+        },
+        style,
+      ]}
+    >
       <View style={styles.headerRow}>
-        <Animated.View style={[styles.avatarSkeleton, { opacity: pulseAnim }]} />
+        <Animated.View style={[styles.avatarSkeleton, { opacity: pulseAnim, backgroundColor: theme.cardBottom }]} />
         <View style={styles.headerTextCol}>
-          <Animated.View style={[styles.titleSkeleton, { opacity: pulseAnim }]} />
-          <Animated.View style={[styles.subtitleSkeleton, { opacity: pulseAnim }]} />
+          <Animated.View style={[styles.titleSkeleton, { opacity: pulseAnim, backgroundColor: theme.cardBottom }]} />
+          <Animated.View style={[styles.subtitleSkeleton, { opacity: pulseAnim, backgroundColor: theme.cardBottom }]} />
         </View>
       </View>
       {Array.from({ length: lines }).map((_, index) => (
@@ -43,7 +54,7 @@ export const SkeletonCard = React.memo(({ lines = 2, style }: SkeletonCardProps)
           key={index}
           style={[
             styles.lineSkeleton,
-            { opacity: pulseAnim, width: index === lines - 1 ? "60%" : "100%" },
+            { opacity: pulseAnim, width: index === lines - 1 ? "60%" : "100%", backgroundColor: theme.cardBottom },
           ]}
         />
       ))}
@@ -53,45 +64,39 @@ export const SkeletonCard = React.memo(({ lines = 2, style }: SkeletonCardProps)
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.lg,
     padding: Spacing.md,
-    marginBottom: 14,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
+    marginBottom: Spacing.cellPadding,
+    borderWidth: BorderWidths.default,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
   avatarSkeleton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: Colors.duolingo.cardBottom,
+    width: Layout.avatarLg,
+    height: Layout.avatarLg,
+    borderRadius: Radii.md,
   },
   headerTextCol: {
     flex: 1,
-    gap: 6,
+    gap: Spacing.sm,
   },
   titleSkeleton: {
-    height: 16,
+    height: Spacing.lg,
     width: "50%",
     borderRadius: Radii.sm,
-    backgroundColor: Colors.duolingo.cardBottom,
   },
   subtitleSkeleton: {
-    height: 12,
+    height: Spacing.md,
     width: "35%",
     borderRadius: Radii.sm,
-    backgroundColor: Colors.duolingo.cardBottom,
   },
   lineSkeleton: {
-    height: 12,
+    height: Spacing.md,
     borderRadius: Radii.sm,
-    backgroundColor: Colors.duolingo.cardBottom,
-    marginTop: 8,
+    marginTop: Spacing.sm,
   },
 });

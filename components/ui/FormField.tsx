@@ -9,7 +9,8 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
+import { Typography, Spacing, Radii, BorderWidths } from '../../constants/theme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface FormFieldProps extends TextInputProps {
   label: string;
@@ -33,21 +34,24 @@ export const FormField = React.memo(function FormField({
 }: FormFieldProps) {
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const { theme } = useTheme();
 
   return (
     <Pressable style={[styles.fieldBox, containerStyle]} onPress={() => inputRef.current?.focus()}>
-      <Text style={[styles.fieldLabel, labelStyle]}>{label}</Text>
+      <Text style={[styles.fieldLabel, { color: theme.textMuted }, labelStyle]}>{label}</Text>
       <View
         style={[
           styles.inputWrapper,
-          isFocused && styles.inputWrapperFocused,
-          !!error && styles.inputWrapperError,
+          {
+            backgroundColor: theme.inputBg,
+            borderColor: !!error ? theme.red : isFocused ? theme.blue : theme.inputBorder,
+          },
         ]}
       >
         <TextInput
           ref={inputRef}
-          style={[styles.input, inputStyle]}
-          placeholderTextColor={Colors.text.tertiary}
+          style={[styles.input, { color: theme.textPrimary }, inputStyle]}
+          placeholderTextColor={theme.textMuted}
           onFocus={(e) => {
             setIsFocused(true);
             if (onFocus) onFocus(e);
@@ -60,9 +64,9 @@ export const FormField = React.memo(function FormField({
         />
       </View>
       {error ? (
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={[styles.errorText, { color: theme.red }]}>{error}</Text>
       ) : helperText ? (
-        <Text style={styles.helperText}>{helperText}</Text>
+        <Text style={[styles.helperText, { color: theme.textMuted }]}>{helperText}</Text>
       ) : null}
     </Pressable>
   );
@@ -73,42 +77,32 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   fieldLabel: {
-    fontSize: Typography.text.caption2.fontSize,
+    fontSize: Typography.caption.fontSize,
     fontWeight: Typography.weight.bold,
-    color: Colors.text.secondary,
     letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginBottom: 6,
-    marginLeft: 2,
+    marginBottom: Spacing.sm,
+    marginLeft: Spacing.xs,
   },
   inputWrapper: {
-    backgroundColor: Colors.bg.tertiary,
     borderRadius: Radii.card,
-    minHeight: 48,
+    minHeight: Spacing.minTouchTarget,
     justifyContent: 'center',
-  },
-  inputWrapperFocused: {
-    backgroundColor: Colors.bg.tertiary,
-  },
-  inputWrapperError: {
-    backgroundColor: Colors.bg.tertiary,
+    borderWidth: BorderWidths.default,
   },
   input: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: 12,
-    fontSize: Typography.text.subhead.fontSize,
-    color: Colors.text.primary,
+    paddingVertical: Spacing.md,
+    fontSize: Typography.subhead.fontSize,
   },
   errorText: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: Colors.neon.coral,
-    marginTop: 4,
-    marginLeft: 2,
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.xs / 2,
   },
   helperText: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: Colors.text.tertiary,
-    marginTop: 4,
-    marginLeft: 2,
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.xs / 2,
   },
 });

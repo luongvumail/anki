@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Radii } from "../../constants/theme";
+import { Radii, Spacing, Typography, BorderWidths, Animations } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
 export type MascotExpression = "waving" | "celebrate" | "happy" | "thinking" | "sad";
 
@@ -17,18 +18,19 @@ export function DuolingoMascot({
   speechBubbleText,
 }: DuolingoMascotProps) {
   const bounceAnim = useRef(new Animated.Value(0)).current;
+  const { theme } = useTheme();
 
   useEffect(() => {
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(bounceAnim, {
-          toValue: -6,
-          duration: 800,
+          toValue: -Spacing.sm,
+          duration: Animations.timingLong,
           useNativeDriver: true,
         }),
         Animated.timing(bounceAnim, {
           toValue: 0,
-          duration: 800,
+          duration: Animations.timingLong,
           useNativeDriver: true,
         }),
       ])
@@ -40,16 +42,16 @@ export function DuolingoMascot({
   const getIconAndBadge = () => {
     switch (expression) {
       case "celebrate":
-        return { icon: "trophy" as const, bg: Colors.duolingo.yellow };
+        return { icon: "trophy" as const, bg: theme.yellow };
       case "happy":
-        return { icon: "sparkles" as const, bg: Colors.duolingo.green };
+        return { icon: "sparkles" as const, bg: theme.green };
       case "sad":
-        return { icon: "heart-dislike" as const, bg: Colors.duolingo.red };
+        return { icon: "heart-dislike" as const, bg: theme.red };
       case "thinking":
-        return { icon: "bulb" as const, bg: Colors.duolingo.purple };
+        return { icon: "bulb" as const, bg: theme.purple };
       case "waving":
       default:
-        return { icon: "hand-left" as const, bg: Colors.duolingo.blue };
+        return { icon: "hand-left" as const, bg: theme.blue };
     }
   };
 
@@ -58,9 +60,9 @@ export function DuolingoMascot({
   return (
     <View style={styles.mascotContainer}>
       {speechBubbleText ? (
-        <View style={styles.speechBubble}>
-          <Text style={styles.speechBubbleText}>{speechBubbleText}</Text>
-          <View style={styles.speechArrow} />
+        <View style={[styles.speechBubble, { backgroundColor: theme.cardBg, borderBottomColor: theme.cardBottom }]}>
+          <Text style={[styles.speechBubbleText, { color: theme.textPrimary }]}>{speechBubbleText}</Text>
+          <View style={[styles.speechArrow, { borderTopColor: theme.cardBg }]} />
         </View>
       ) : null}
 
@@ -86,43 +88,39 @@ const styles = StyleSheet.create({
   mascotContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 6,
+    marginVertical: Spacing.xs,
   },
   mascotAvatar: {
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 0,
-    borderBottomWidth: 4,
+    borderWidth: BorderWidths.none,
+    borderBottomWidth: BorderWidths.card3D,
     borderBottomColor: "rgba(0, 0, 0, 0.25)",
   },
   speechBubble: {
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.md,
-    borderWidth: 0,
-    borderBottomWidth: 3,
-    borderBottomColor: "#18242B",
-    marginBottom: 8,
+    borderWidth: BorderWidths.none,
+    borderBottomWidth: BorderWidths.default,
+    marginBottom: Spacing.sm,
     maxWidth: 200,
     alignItems: "center",
   },
   speechBubbleText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
   speechArrow: {
     position: "absolute",
-    bottom: -6,
+    bottom: -Spacing.xs,
     width: 0,
     height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 6,
+    borderLeftWidth: Spacing.xs,
+    borderRightWidth: Spacing.xs,
+    borderTopWidth: Spacing.xs,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: Colors.duolingo.bgSoftDark,
   },
 });

@@ -25,6 +25,7 @@ import { getFirestoreErrorMessage } from "../../lib/errorHandler";
 import { APP_CONFIG } from "../../constants/config";
 
 export const PAGE_SIZE = APP_CONFIG.PAGE_SIZE;
+const FIRESTORE_BATCH_SIZE = 500;
 
 function fireAndForget(actionName: string, asyncFn: () => Promise<void>): void {
   asyncFn().catch((err) => {
@@ -301,10 +302,9 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
 
     // Perform batched bulk deletion in Firestore (max 500 items per batch)
     fireAndForget("clearDeckCards", async () => {
-      const BATCH_SIZE = 500;
-      for (let i = 0; i < existingCards.length; i += BATCH_SIZE) {
+      for (let i = 0; i < existingCards.length; i += FIRESTORE_BATCH_SIZE) {
         const batch = writeBatch(db);
-        const chunk = existingCards.slice(i, i + BATCH_SIZE);
+        const chunk = existingCards.slice(i, i + FIRESTORE_BATCH_SIZE);
         chunk.forEach((c) => batch.delete(cardRef(uid, deckId, c.id)));
         await batch.commit();
       }
@@ -347,11 +347,10 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
 
     // Async background persistence to Firestore using local cards (no re-fetching getDocs)
     fireAndForget("resetDeckProgress", async () => {
-      const BATCH_SIZE = 500;
       const defaultSRS = createDefaultSRSState();
-      for (let i = 0; i < existingCards.length; i += BATCH_SIZE) {
+      for (let i = 0; i < existingCards.length; i += FIRESTORE_BATCH_SIZE) {
         const batch = writeBatch(db);
-        const chunk = existingCards.slice(i, i + BATCH_SIZE);
+        const chunk = existingCards.slice(i, i + FIRESTORE_BATCH_SIZE);
         chunk.forEach((c) =>
           batch.update(cardRef(uid, deckId, c.id), { srs: defaultSRS, updatedAt: now }),
         );

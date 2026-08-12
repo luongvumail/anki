@@ -3,7 +3,8 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore } from "../../store/useStore";
 import { ALL_BADGES } from "../../store/slices/userProgressSlice";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
+import { Spacing, Typography, Layout, Radii } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DuolingoCard } from "../ui/DuolingoCard";
 import { SectionTitle } from "../ui/SectionTitle";
 
@@ -13,6 +14,7 @@ interface BadgesGalleryProps {
 }
 
 export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearned }: BadgesGalleryProps) {
+  const { theme } = useTheme();
   const unlockedBadgeIds = useStore((s) => s.unlockedBadgeIds || []);
   const checkAndUnlockBadges = useStore((s) => s.checkAndUnlockBadges);
 
@@ -55,28 +57,47 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
           return (
             <DuolingoCard
               key={badge.id}
-              style={[
+              style={StyleSheet.flatten([
                 styles.badgeCard,
-                isUnlocked ? styles.badgeUnlockedCard : styles.badgeLockedCard,
-              ] as any}
+                {
+                  borderColor: isUnlocked ? theme.yellow : theme.cardBorder,
+                  opacity: isUnlocked ? 1 : 0.7,
+                },
+              ])}
             >
-              <View style={[styles.iconBox, isUnlocked ? styles.iconUnlocked : styles.iconLocked]}>
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: isUnlocked ? theme.yellowDim : theme.bgSoft },
+                ]}
+              >
                 <Ionicons
                   name={badge.icon as any}
-                  size={24}
-                  color={isUnlocked ? Colors.duolingo.yellow : Colors.duolingo.textMuted}
+                  size={Layout.iconLg}
+                  color={isUnlocked ? theme.yellow : theme.textMuted}
                 />
               </View>
 
-              <Text style={[styles.badgeTitle, isUnlocked && styles.badgeTitleUnlocked]} numberOfLines={1}>
+              <Text
+                style={[
+                  styles.badgeTitle,
+                  { color: isUnlocked ? theme.textPrimary : theme.textMuted },
+                ]}
+                numberOfLines={1}
+              >
                 {badge.title}
               </Text>
 
-              <Text style={styles.badgeDesc} numberOfLines={2}>
+              <Text style={[styles.badgeDesc, { color: theme.textMuted }]} numberOfLines={2}>
                 {badge.description}
               </Text>
 
-              <Text style={[styles.progressText, isUnlocked && styles.progressUnlockedText]}>
+              <Text
+                style={[
+                  styles.progressText,
+                  { color: isUnlocked ? theme.green : theme.textMuted },
+                ]}
+              >
                 {isUnlocked ? "ĐÃ MỞ KHÓA" : progressText}
               </Text>
             </DuolingoCard>
@@ -89,54 +110,33 @@ export function BadgesGallery({ streakCount: propStreak, learnedCards: propLearn
 
 const styles = StyleSheet.create({
   container: { marginTop: Spacing.md },
-  badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.cellPadding },
   badgeCard: {
     width: "48%",
     padding: Spacing.sm,
     alignItems: "center",
   },
-  badgeUnlockedCard: {
-    borderColor: Colors.duolingo.yellow,
-  },
-  badgeLockedCard: {
-    opacity: 0.7,
-  },
   iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: Layout.avatarLg,
+    height: Layout.avatarLg,
+    borderRadius: Radii.full,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6,
-  },
-  iconUnlocked: {
-    backgroundColor: "rgba(255, 200, 0, 0.15)",
-  },
-  iconLocked: {
-    backgroundColor: Colors.duolingo.bg,
+    marginBottom: Spacing.xs,
   },
   badgeTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
-  badgeTitleUnlocked: {
-    color: "#FFFFFF",
-  },
   badgeDesc: {
-    fontSize: 11,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption2.fontSize,
     textAlign: "center",
     marginTop: 2,
   },
   progressText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
-    marginTop: 6,
-  },
-  progressUnlockedText: {
-    color: Colors.duolingo.green,
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.xs,
   },
 });

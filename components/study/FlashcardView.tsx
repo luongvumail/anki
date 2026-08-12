@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import { Colors, Spacing, Radii } from "../../constants/theme";
+import { Spacing, Radii, Typography, BorderWidths } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { AudioButton } from "../ui/AudioButton";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
 import { useFlashcardAnimation } from "../../hooks/useFlashcardAnimation";
@@ -26,10 +27,10 @@ interface FlashcardViewProps {
 
 export function FlashcardView({ card, onNext, showNextButton }: FlashcardViewProps) {
   const { width } = useWindowDimensions();
+  const { theme } = useTheme();
   const cardWidth = width - Spacing.pageMargin * 2;
 
   const {
-    isFlipped,
     speaking,
     frontAnimatedStyle,
     backAnimatedStyle,
@@ -41,20 +42,44 @@ export function FlashcardView({ card, onNext, showNextButton }: FlashcardViewPro
     <View style={styles.container}>
       <TouchableOpacity activeOpacity={1} onPress={handleFlip} style={{ width: cardWidth, height: 380 }}>
         {/* Front Face */}
-        <Animated.View style={[styles.cardFace, styles.cardFront, frontAnimatedStyle, { width: cardWidth }]}>
-          <Text style={styles.frontCharacter}>{card.character}</Text>
+        <Animated.View
+          style={[
+            styles.cardFace,
+            styles.cardFront,
+            frontAnimatedStyle,
+            {
+              width: cardWidth,
+              backgroundColor: theme.cardBg,
+              borderColor: theme.cardBorder,
+              borderBottomColor: theme.cardBottom,
+            },
+          ]}
+        >
+          <Text style={[styles.frontCharacter, { color: theme.textPrimary }]}>{card.character}</Text>
 
           <View style={styles.audioRow}>
             <AudioButton onPress={playTTS} isPlaying={speaking} size="md" />
           </View>
 
-          <Text style={styles.tapToFlipHint}>Chạm vào thẻ để xem nghĩa &amp; chi tiết</Text>
+          <Text style={[styles.tapToFlipHint, { color: theme.textMuted }]}>Chạm vào thẻ để xem nghĩa & chi tiết</Text>
         </Animated.View>
 
         {/* Back Face */}
-        <Animated.View style={[styles.cardFace, styles.cardBack, backAnimatedStyle, { width: cardWidth }]}>
+        <Animated.View
+          style={[
+            styles.cardFace,
+            styles.cardBack,
+            backAnimatedStyle,
+            {
+              width: cardWidth,
+              backgroundColor: theme.cardBg,
+              borderColor: theme.cardBorder,
+              borderBottomColor: theme.cardBottom,
+            },
+          ]}
+        >
           <ScrollView contentContainerStyle={styles.backScrollContent} showsVerticalScrollIndicator={false}>
-            <Text style={styles.backCharacter}>{card.character}</Text>
+            <Text style={[styles.backCharacter, { color: theme.textPrimary }]}>{card.character}</Text>
             <Text
               style={[
                 styles.backPinyin,
@@ -63,63 +88,65 @@ export function FlashcardView({ card, onNext, showNextButton }: FlashcardViewPro
             >
               {card.pinyin}
             </Text>
-            <Text style={styles.backTranslation}>{card.translation}</Text>
+            <Text style={[styles.backTranslation, { color: theme.textPrimary }]}>{card.translation}</Text>
 
             {card.hanviet ? (
-              <View style={styles.tagBadge}>
-                <Text style={styles.tagText}>Hán Việt: {card.hanviet}</Text>
+              <View style={[styles.tagBadge, { backgroundColor: theme.blueDim }]}>
+                <Text style={[styles.tagText, { color: theme.blue }]}>Hán Việt: {card.hanviet}</Text>
               </View>
             ) : null}
 
             {card.radical ? (
-              <View style={styles.radicalBox}>
-                <Ionicons name="layers-outline" size={14} color={Colors.duolingo.purple} />
-                <Text style={styles.radicalText}>{card.radical}</Text>
+              <View style={[styles.radicalBox, { backgroundColor: theme.purpleDim }]}>
+                <Ionicons name="shapes" size={14} color={theme.purple} />
+                <Text style={[styles.radicalText, { color: theme.purple }]}>Bộ thủ: {card.radical}</Text>
               </View>
             ) : null}
 
             {card.examples && card.examples.length > 0 ? (
-              <View style={styles.exampleContainer}>
-                <Text style={styles.exampleHeader}>CÂU VÍ DỤ:</Text>
-                <Text style={styles.exampleCn}>{card.examples[0].chinese}</Text>
-                {card.examples[0].pinyin ? (
-                  <Text style={styles.examplePy}>{card.examples[0].pinyin}</Text>
-                ) : null}
-                <Text style={styles.exampleVi}>{card.examples[0].vietnamese}</Text>
+              <View style={[styles.exampleContainer, { backgroundColor: theme.bgSoft }]}>
+                <Text style={[styles.exampleHeader, { color: theme.textMuted }]}>CÂU VÍ DỤ</Text>
+                <Text style={[styles.exampleCn, { color: theme.textPrimary }]}>{card.examples[0].chinese}</Text>
+                {card.examples[0].pinyin ? <Text style={[styles.examplePy, { color: theme.blue }]}>{card.examples[0].pinyin}</Text> : null}
+                {card.examples[0].vietnamese ? <Text style={[styles.exampleVi, { color: theme.textMuted }]}>{card.examples[0].vietnamese}</Text> : null}
               </View>
+            ) : null}
+
+            {showNextButton && onNext ? (
+              <TouchableOpacity style={[styles.nextCardBtn, { backgroundColor: theme.green }]} onPress={onNext}>
+                <Text style={styles.nextCardBtnText}>TIẾP THEO</Text>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
             ) : null}
           </ScrollView>
         </Animated.View>
       </TouchableOpacity>
-
-      {showNextButton && onNext && (
-        <TouchableOpacity style={styles.nextCardBtn} onPress={onNext} activeOpacity={0.8}>
-          <Text style={styles.nextCardBtnText}>XEM TỪ TIẾP THEO</Text>
-          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing.pageMargin,
+  },
+  cardWrapper: {
+    width: "100%",
+    height: 440,
   },
   cardFace: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    height: 380,
-    backgroundColor: Colors.duolingo.cardBg,
+    width: "100%",
+    height: "100%",
     borderRadius: Radii.xl,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.cardBorder,
-    padding: Spacing.xl,
-    alignItems: "center",
+    padding: Spacing.lg,
     justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
     backfaceVisibility: "hidden",
+    borderWidth: BorderWidths.default,
+    borderBottomWidth: BorderWidths.card3D,
   },
   cardFront: {
     zIndex: 2,
@@ -128,113 +155,100 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   frontCharacter: {
-    fontSize: 64,
-    fontWeight: "900",
-    color: Colors.text.white,
+    fontSize: Typography.hanziHero.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    textAlign: "center",
   },
   audioRow: {
-    marginTop: 20,
+    marginTop: Spacing.md,
   },
   tapToFlipHint: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
-    marginTop: 24,
-    fontWeight: "600",
+    fontSize: Typography.caption.fontSize,
+    marginTop: Spacing.xl,
+    fontWeight: Typography.weight.semibold,
   },
   backScrollContent: {
     alignItems: "center",
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
   backCharacter: {
-    fontSize: 36,
-    fontWeight: "900",
-    color: Colors.text.white,
+    fontSize: Typography.hanziCard.fontSize,
+    fontWeight: Typography.weight.extraBold,
   },
   backPinyin: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginTop: 4,
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginTop: Spacing.xs,
   },
   backTranslation: {
-    fontSize: 16,
-    color: Colors.text.white,
-    marginTop: 6,
-    fontWeight: "800",
+    fontSize: Typography.callout.fontSize,
+    marginTop: Spacing.sm,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
   tagBadge: {
-    backgroundColor: Colors.duolingo.blueDim,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.md,
-    marginTop: 10,
+    marginTop: Spacing.cellPadding,
   },
   tagText: {
-    fontSize: 12,
-    color: Colors.duolingo.blue,
-    fontWeight: "700",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.bold,
   },
   radicalBox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: Colors.duolingo.purpleDim,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.md,
-    marginTop: 8,
+    marginTop: Spacing.sm,
   },
   radicalText: {
-    fontSize: 12,
-    color: Colors.duolingo.purple,
-    fontWeight: "600",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.semibold,
   },
   exampleContainer: {
     width: "100%",
-    backgroundColor: Colors.duolingo.bgSoftDark,
     borderRadius: Radii.lg,
     padding: Spacing.md,
-    marginTop: 14,
+    marginTop: Spacing.cellPadding,
     alignItems: "center",
   },
   exampleHeader: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.text.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.8,
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
   },
   exampleCn: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: Colors.text.white,
+    fontSize: Typography.subhead.fontSize,
+    fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
   examplePy: {
-    fontSize: 12,
-    color: Colors.duolingo.blue,
+    fontSize: Typography.caption.fontSize,
     marginTop: 2,
     textAlign: "center",
   },
   exampleVi: {
-    fontSize: 12,
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.caption.fontSize,
     marginTop: 2,
     textAlign: "center",
   },
   nextCardBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.duolingo.blue,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
     borderRadius: Radii.full,
-    marginTop: 20,
+    marginTop: Spacing.lg,
   },
   nextCardBtnText: {
-    fontSize: 13,
-    fontWeight: "800",
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
   },
 });

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   ScrollView,
@@ -16,7 +15,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useStore } from "../../store/useStore";
 import { getFirestoreErrorMessage } from "../../lib/errorHandler";
-import { Colors, Spacing, Radii, VECTOR_DECK_ICONS, triggerHaptic } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, BorderWidths, VECTOR_DECK_ICONS, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { DeckIcon } from "../../components/ui/DeckIcon";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { FormField } from "../../components/ui/FormField";
@@ -37,6 +37,7 @@ import {
 
 export default function DecksScreen() {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const decks = useStore((s) => s.decks);
   const cardsState = useStore((s) => s.cards);
   const fetchDecks = useStore((s) => s.fetchDecks);
@@ -94,7 +95,7 @@ export default function DecksScreen() {
       await createDeck({
         name: deckName.trim(),
         description: deckDesc.trim(),
-        color: Colors.duolingo.blue,
+        color: theme.blue,
         icon: selectedIcon,
       });
       setDeckName("");
@@ -105,7 +106,7 @@ export default function DecksScreen() {
     } finally {
       setCreating(false);
     }
-  }, [createDeck, deckDesc, deckName, selectedIcon]);
+  }, [createDeck, deckDesc, deckName, selectedIcon, theme.blue]);
 
   const handleDelete = useCallback(
     (deckId: string, name: string) => {
@@ -117,126 +118,104 @@ export default function DecksScreen() {
           {
             text: "Xóa bộ thẻ",
             style: "destructive",
-            onPress: async () => {
-              triggerHaptic("heavy");
-              try {
-                await deleteDeck(deckId);
-              } catch (e: unknown) {
-                Alert.alert("Xóa thất bại", getFirestoreErrorMessage(e));
-              }
-            },
+            onPress: () => deleteDeck(deckId),
           },
-        ]
+        ],
       );
     },
-    [deleteDeck]
-  );
-
-  const renderHeader = useCallback(
-    () => (
-      <View style={styles.screenHeaderRow}>
-        <View style={styles.screenHeaderTitleBox}>
-          <Text style={styles.screenTitle}>BỘ THẺ TỪ VỰNG</Text>
-          <Text style={styles.screenSubtitle}>
-            {decks.length} bộ thẻ
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.addDeckHeaderBtn}
-          onPress={() => setShowCreate(true)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={20} color="#FFFFFF" />
-          <Text style={styles.addDeckHeaderBtnText}>TẠO BỘ THẺ</Text>
-        </TouchableOpacity>
-      </View>
-    ),
-    [decks.length]
-  );
-
-  const renderEmpty = useCallback(
-    () =>
-      isLoading ? (
-        <View style={{ marginTop: Spacing.md }}>
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-        </View>
-      ) : (
-        <DuolingoCard style={styles.emptyCard}>
-          <Ionicons name="library-outline" size={48} color={Colors.duolingo.blue} />
-          <Text style={styles.emptyTitle}>Chưa có bộ thẻ nào!</Text>
-          <Text style={styles.emptySub}>
-            Bấm nút "Tạo bộ thẻ" ở trên để bắt đầu khởi tạo danh sách từ vựng.
-          </Text>
-          <DuolingoButton
-            title="TẠO BỘ THẺ ĐẦU TIÊN"
-            variant="primary"
-            size="lg"
-            onPress={() => setShowCreate(true)}
-            style={{ marginTop: Spacing.md, width: "100%" }}
-          />
-        </DuolingoCard>
-      ),
-    [isLoading]
-  );
-
-  const renderDeckItem = useCallback(
-    ({ item }: { item: (typeof deckItemsStats)[0] }) => (
-      <DeckCardItem itemStats={item} onDelete={handleDelete} />
-    ),
-    [handleDelete]
+    [deleteDeck],
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <DuolingoHeader streakCount={streakCount} />
 
       <FlatList
         data={deckItemsStats}
         keyExtractor={(item) => item.deck.id}
-        renderItem={renderDeckItem}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom + 90, 110) },
+          { paddingBottom: Math.max(insets.bottom + 80, 100) },
         ]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.duolingo.blue}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.green} />
         }
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={styles.screenHeaderRow}>
+            <View style={styles.screenHeaderTitleBox}>
+              <Text style={[styles.screenTitle, { color: theme.textPrimary }]}>QUẢN LÝ BỘ THẺ</Text>
+              <Text style={[styles.screenSubtitle, { color: theme.textMuted }]}>
+                {decks.length} Bộ thẻ vựng Hán ngữ
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.addDeckHeaderBtn,
+                { backgroundColor: theme.blue, borderBottomColor: theme.blueDark },
+              ]}
+              onPress={() => {
+                triggerHaptic("selection");
+                setShowCreate(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={Layout.iconMd} color="#FFFFFF" />
+              <Text style={styles.addDeckHeaderBtnText}>THÊM BỘ</Text>
+            </TouchableOpacity>
+          </View>
+        }
+        renderItem={({ item }) => <DeckCardItem itemStats={item} onDelete={handleDelete} />}
+        ListEmptyComponent={
+          isLoading ? (
+            <View>
+              <SkeletonCard lines={2} />
+              <SkeletonCard lines={2} />
+            </View>
+          ) : (
+            <DuolingoCard style={styles.emptyCard}>
+              <Ionicons name="book-outline" size={Layout.avatarXl} color={theme.textMuted} />
+              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>CHƯA CÓ BỘ TỪ VỰNG NÀO</Text>
+              <Text style={[styles.emptySub, { color: theme.textMuted }]}>
+                Tạo bộ từ đầu tiên để bắt đầu hành trình chinh phục Hán Tự ngay hôm nay!
+              </Text>
+              <DuolingoButton
+                title="TẠO BỘ TỪ MỚI"
+                icon={<Ionicons name="add" size={Layout.iconMd} color="#FFFFFF" />}
+                variant="primary"
+                size="lg"
+                onPress={() => setShowCreate(true)}
+                style={{ marginTop: Spacing.lg }}
+              />
+            </DuolingoCard>
+          )
+        }
       />
 
-      {/* Modal Create Deck - iOS pageSheet modal Presentation */}
-      <Modal
-        visible={showCreate}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowCreate(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top + 8, 16) }]}>
-            <TouchableOpacity onPress={() => setShowCreate(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
+      <Modal visible={showCreate} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowCreate(false)}>
+        <View
+          style={[
+            styles.modalContainer,
+            { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg },
+          ]}
+        >
+          <View style={[styles.modalHeader, { borderBottomColor: theme.cardBorder }]}>
+            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>TẠO BỘ THẺ MỚI</Text>
+            <TouchableOpacity onPress={() => setShowCreate(false)}>
+              <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>TẠO BỘ THẺ MỚI</Text>
-            <View style={{ width: 26 }} />
           </View>
 
-          <ScrollView contentContainerStyle={styles.modalScroll}>
-            <DuolingoCard style={{ marginBottom: Spacing.md }}>
+          <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
+            <DuolingoCard style={{ padding: Spacing.md }}>
               <FormField
-                label="Tên bộ thẻ"
+                label="Tên bộ thẻ (Bắt buộc)"
                 value={deckName}
                 onChangeText={setDeckName}
-                placeholder="Ví dụ: Từ vựng HSK 1, Giao tiếp..."
+                placeholder="Ví dụ: HSK 3 - Từ Vựng Căn Bản"
               />
-              <View style={{ height: 12 }} />
+              <View style={{ height: Spacing.md }} />
               <FormField
                 label="Mô tả bộ thẻ"
                 value={deckDesc}
@@ -252,13 +231,17 @@ export default function DecksScreen() {
                 return (
                   <TouchableOpacity
                     key={iconName}
-                    style={[styles.iconPickerItem, isSelected && styles.iconPickerSelected]}
+                    style={[
+                      styles.iconPickerItem,
+                      { backgroundColor: theme.bgSoft, borderBottomColor: theme.cardBottom },
+                      isSelected && { backgroundColor: theme.blueDim, borderBottomColor: theme.blueDark },
+                    ]}
                     onPress={() => setSelectedIcon(iconName)}
                   >
                     <DeckIcon
                       name={iconName}
-                      size={24}
-                      color={isSelected ? Colors.duolingo.blue : Colors.duolingo.textMuted}
+                      size={Layout.iconLg}
+                      color={isSelected ? theme.blue : theme.textMuted}
                     />
                   </TouchableOpacity>
                 );
@@ -287,7 +270,7 @@ export default function DecksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg },
+  container: { flex: 1 },
   scrollContent: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md },
   screenHeaderRow: {
     flexDirection: "row",
@@ -296,48 +279,39 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   screenHeaderTitleBox: { flex: 1 },
-  screenTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", letterSpacing: 0.5 },
-  screenSubtitle: { fontSize: 13, fontWeight: "600", color: Colors.duolingo.textMuted, marginTop: 2 },
+  screenTitle: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold, letterSpacing: 0.5 },
+  screenSubtitle: { fontSize: Typography.caption.fontSize, fontWeight: Typography.weight.semibold, marginTop: 2 },
   addDeckHeaderBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.duolingo.blue,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     borderRadius: Radii.full,
-    borderBottomWidth: 3,
-    borderBottomColor: Colors.duolingo.blueDark,
+    borderBottomWidth: BorderWidths.card3D,
   },
-  addDeckHeaderBtnText: { fontSize: 12, fontWeight: "800", color: "#FFFFFF" },
+  addDeckHeaderBtnText: { fontSize: Typography.caption1.fontSize, fontWeight: Typography.weight.extraBold, color: "#FFFFFF" },
   emptyCard: { alignItems: "center", justifyContent: "center", padding: Spacing.xl, marginTop: Spacing.md },
-  emptyTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginTop: 12 },
-  emptySub: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 6, textAlign: "center" },
-  modalContainer: { flex: 1, backgroundColor: Colors.duolingo.bg },
+  emptyTitle: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold, marginTop: Spacing.md },
+  emptySub: { fontSize: Typography.caption.fontSize, marginTop: Spacing.xs, textAlign: "center" },
+  modalContainer: { flex: 1 },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     paddingBottom: Spacing.md,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.cardBorder,
+    borderBottomWidth: BorderWidths.default,
   },
-  modalTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF" },
-  modalScroll: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md, paddingBottom: 40 },
-  iconGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: Spacing.md },
+  modalTitle: { fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold },
+  modalScroll: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md, paddingBottom: Spacing.xxl },
+  iconGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.cellPadding, marginBottom: Spacing.md },
   iconPickerItem: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: Colors.duolingo.bgSoftDark,
+    width: Layout.btnHeightXl,
+    height: Layout.btnHeightXl,
+    borderRadius: Radii.md,
     alignItems: "center",
     justifyContent: "center",
-    borderBottomWidth: 3,
-    borderBottomColor: "#18242B",
-  },
-  iconPickerSelected: {
-    backgroundColor: Colors.duolingo.blueDim,
-    borderBottomColor: Colors.duolingo.blueDark,
+    borderBottomWidth: BorderWidths.card3D,
   },
 });

@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore } from "../../store/useStore";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 import { FlashcardView } from "../../components/study/FlashcardView";
 import { QuizCardView } from "../../components/study/QuizCardView";
 import { SessionDoneScreen } from "../../components/study/SessionDoneScreen";
@@ -15,6 +16,7 @@ import { useStudySession } from "../../hooks/useStudySession";
 export default function StudyScreen() {
   const insets = useSafeAreaInsets();
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
+  const { theme } = useTheme();
   const decks = useStore((s) => s.decks);
 
   const deck = useMemo(
@@ -55,12 +57,12 @@ export default function StudyScreen() {
 
   if (!isLoading && deckCards.length === 0) {
     return (
-      <View style={styles.loadingContainer}>
-        <Ionicons name="book-outline" size={48} color={Colors.duolingo.textMuted} style={{ marginBottom: 12 }} />
-        <Text style={{ fontSize: 18, fontWeight: "800", color: "#FFFFFF", marginBottom: 6 }}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.bg }]}>
+        <Ionicons name="book-outline" size={Layout.avatarLg} color={theme.textMuted} style={{ marginBottom: Spacing.md }} />
+        <Text style={{ fontSize: Typography.titleMD.fontSize, fontWeight: Typography.weight.extraBold, color: theme.textPrimary, marginBottom: Spacing.xs }}>
           Bộ thẻ này chưa có từ vựng!
         </Text>
-        <Text style={{ fontSize: 13, color: Colors.duolingo.textMuted, textAlign: "center", marginBottom: 20, paddingHorizontal: 32 }}>
+        <Text style={{ fontSize: Typography.caption.fontSize, color: theme.textMuted, textAlign: "center", marginBottom: Spacing.xl, paddingHorizontal: Spacing.xl }}>
           Vui lòng quay lại danh sách bộ thẻ và thêm thẻ từ vựng trước khi bắt đầu học.
         </Text>
         <DuolingoButton
@@ -76,8 +78,8 @@ export default function StudyScreen() {
 
   if (isLoading || (!session && stage !== "done")) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color={Colors.duolingo.green} />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.bg }]}>
+        <ActivityIndicator size="small" color={theme.green} />
       </View>
     );
   }
@@ -100,70 +102,76 @@ export default function StudyScreen() {
     );
   }
 
-  let progress = 0;
-  if (stage === "preview") {
-    progress = Math.min(1, (previewIndex + 1) / Math.max(1, targetCards.length));
-  } else if (stage === "validation") {
-    progress = Math.min(1, session.currentIndex / Math.max(1, questions.length));
-  } else if (stage === "repair") {
-    progress = Math.min(1, (repairIndex + 1) / Math.max(1, repairQuestions.length));
-  }
+  const previewProgress = targetCards.length > 0 ? (previewIndex + 1) / targetCards.length : 0;
+  const validationProgress = questions.length > 0 ? (session.currentIndex + 1) / questions.length : 0;
+  const repairProgress = repairQuestions.length > 0 ? (repairIndex + 1) / repairQuestions.length : 0;
 
-  const currentPreviewCardId = targetCards[previewIndex]?.id;
-  const currentPreviewCard = deckCards.find((c) => c.id === currentPreviewCardId) ?? targetCards[previewIndex];
   const currentValidationQuestion = questions[session.currentIndex];
   const currentRepairQuestion = repairQuestions[repairIndex];
 
   return (
-    <View style={styles.container}>
-      {/* Header Bar */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 44) }]}>
-        <TouchableOpacity onPress={handleExitSession} style={styles.closeHeaderBtn} activeOpacity={0.8}>
-          <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      {/* Dynamic Top Header with Progress Bar */}
+      <View style={[styles.header, { paddingTop: Math.max(insets.top + Spacing.sm, Spacing.cellMinHeight), backgroundColor: theme.bg }]}>
+        <TouchableOpacity
+          style={styles.closeHeaderBtn}
+          onPress={() => {
+            triggerHaptic("selection");
+            handleExitSession();
+          }}
+        >
+          <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.deckHeaderTitle} numberOfLines={1}>
-            {deck?.name || "HỌC TỪ VỰNG"}
+          <Text style={[styles.deckHeaderTitle, { color: theme.textMuted }]}>
+            {deck?.name || "BỘ THẺ HỌC TẬP"} • {stage === "preview" ? "XEM THẺ CHUẨN BỊ" : stage === "validation" ? "BÀI KIỂM TRA PHẢN XẠ" : "SỬA LỖI NHANH"}
           </Text>
           <ProgressBar
-            progress={progress}
-            height={14}
+            progress={
+              stage === "preview"
+                ? previewProgress
+                : stage === "validation"
+                  ? validationProgress
+                  : repairProgress
+            }
+            height={Spacing.sm}
             fillColor={
               stage === "preview"
-                ? Colors.duolingo.blue
-                : stage === "repair"
-                ? Colors.duolingo.yellow
-                : Colors.duolingo.green
+                ? theme.blue
+                : stage === "validation"
+                  ? theme.green
+                  : theme.yellow
             }
           />
         </View>
 
+        {/* Header Stage Badge */}
         <View
           style={[
             styles.stageBadge,
             stage === "preview"
-              ? styles.stageBadgePreview
-              : stage === "repair"
-              ? styles.stageBadgeRepair
-              : styles.stageBadgeValidation,
+              ? { backgroundColor: theme.blueDim }
+              : stage === "validation"
+                ? { backgroundColor: theme.greenDim }
+                : { backgroundColor: theme.yellowDim },
           ]}
         >
           <Ionicons
             name={
               stage === "preview"
-                ? "card-outline"
-                : stage === "repair"
-                ? "flash"
-                : "checkmark-circle-outline"
+                ? "eye-outline"
+                : stage === "validation"
+                  ? "checkmark-circle-outline"
+                  : "flash-outline"
             }
-            size={13}
+            size={Layout.iconSm}
             color={
               stage === "preview"
-                ? Colors.duolingo.blue
-                : stage === "repair"
-                ? Colors.duolingo.yellow
-                : Colors.duolingo.green
+                ? theme.blue
+                : stage === "validation"
+                  ? theme.green
+                  : theme.yellow
             }
           />
           <Text
@@ -172,31 +180,32 @@ export default function StudyScreen() {
               {
                 color:
                   stage === "preview"
-                    ? Colors.duolingo.blue
-                    : stage === "repair"
-                    ? Colors.duolingo.yellow
-                    : Colors.duolingo.green,
+                    ? theme.blue
+                    : stage === "validation"
+                      ? theme.green
+                      : theme.yellow,
               },
             ]}
           >
-            {stage === "preview" ? "NẠP TỪ" : stage === "repair" ? "CẮM CỜ" : "KIỂM TRA"}
+            {stage === "preview"
+              ? `${previewIndex + 1}/${targetCards.length}`
+              : stage === "validation"
+                ? `${session.currentIndex + 1}/${questions.length}`
+                : `${repairIndex + 1}/${repairQuestions.length}`}
           </Text>
         </View>
       </View>
 
-      {/* Stage Content */}
+      {/* Main Interactive Stage Body */}
       <View style={styles.stageContentContainer}>
         {stage === "preview" ? (
-          currentPreviewCard ? (
+          targetCards.length > 0 ? (
             <FlashcardView
-              key={`fc-${currentPreviewCard.id}-${previewIndex}`}
-              card={currentPreviewCard}
+              card={targetCards[previewIndex]}
               currentIndex={previewIndex}
               totalCards={targetCards.length}
-              onNext={() => {
-                triggerHaptic("selection");
-                handleNextPreview();
-              }}
+              showNextButton={true}
+              onNext={handleNextPreview}
               onPrev={handlePrevPreview}
             />
           ) : null
@@ -224,10 +233,9 @@ export default function StudyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg },
+  container: { flex: 1 },
   loadingContainer: {
     flex: 1,
-    backgroundColor: Colors.duolingo.bg,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -237,30 +245,25 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     paddingBottom: Spacing.xs,
-    backgroundColor: Colors.duolingo.bg,
-    gap: 8,
+    gap: Spacing.sm,
   },
-  closeHeaderBtn: { padding: 4 },
-  headerCenter: { flex: 1, paddingHorizontal: 4 },
+  closeHeaderBtn: { padding: Spacing.xs },
+  headerCenter: { flex: 1, paddingHorizontal: Spacing.xs },
   deckHeaderTitle: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: Colors.duolingo.textMuted,
+    fontSize: Typography.text.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.8,
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
     textAlign: "center",
   },
   stageBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
   },
-  stageBadgePreview: { backgroundColor: Colors.duolingo.blueDim },
-  stageBadgeValidation: { backgroundColor: Colors.duolingo.greenDim },
-  stageBadgeRepair: { backgroundColor: Colors.duolingo.yellowDim },
-  stageBadgeText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
+  stageBadgeText: { fontSize: Typography.caption2.fontSize, fontWeight: Typography.weight.extraBold, letterSpacing: 0.5 },
   stageContentContainer: { flex: 1, overflow: "hidden" },
 });

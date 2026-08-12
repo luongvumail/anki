@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, Radii, Spacing, triggerHaptic } from "../../constants/theme";
+import { Radii, Spacing, Typography, Layout, BorderWidths, Animations, triggerHaptic } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
 export interface ErrorToastProps {
   visible: boolean;
@@ -17,14 +18,15 @@ export const ErrorToast = React.memo(function ErrorToast({
   onDismiss,
 }: ErrorToastProps) {
   const slideAnim = useRef(new Animated.Value(-100)).current;
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (visible) {
       triggerHaptic("error");
       Animated.spring(slideAnim, {
         toValue: 0,
-        tension: 70,
-        friction: 8,
+        tension: Animations.springTension,
+        friction: Animations.springFriction,
         useNativeDriver: true,
       }).start();
 
@@ -36,7 +38,7 @@ export const ErrorToast = React.memo(function ErrorToast({
     } else {
       Animated.timing(slideAnim, {
         toValue: -100,
-        duration: 250,
+        duration: Animations.timingShort + 50,
         useNativeDriver: true,
       }).start();
     }
@@ -45,20 +47,30 @@ export const ErrorToast = React.memo(function ErrorToast({
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.toastContainer, { transform: [{ translateY: slideAnim }] }]}>
-      <Ionicons name="alert-circle" size={22} color={Colors.duolingo.red} />
-      <Text style={styles.messageText} numberOfLines={2}>
+    <Animated.View
+      style={[
+        styles.toastContainer,
+        {
+          backgroundColor: theme.cardBg,
+          borderColor: theme.red,
+          shadowColor: theme.red,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <Ionicons name="alert-circle" size={Layout.iconLg} color={theme.red} />
+      <Text style={[styles.messageText, { color: theme.textPrimary }]} numberOfLines={2}>
         {message}
       </Text>
 
       {onRetry && (
-        <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
+        <TouchableOpacity style={[styles.retryBtn, { backgroundColor: theme.red }]} onPress={onRetry}>
           <Text style={styles.retryText}>THỬ LẠI</Text>
         </TouchableOpacity>
       )}
 
       <TouchableOpacity onPress={onDismiss} style={styles.closeBtn}>
-        <Ionicons name="close" size={18} color={Colors.duolingo.textMuted} />
+        <Ionicons name="close" size={Layout.iconMd} color={theme.textMuted} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -67,19 +79,16 @@ export const ErrorToast = React.memo(function ErrorToast({
 const styles = StyleSheet.create({
   toastContainer: {
     position: "absolute",
-    top: 50,
+    top: Spacing.xxl,
     left: Spacing.pageMargin,
     right: Spacing.pageMargin,
     zIndex: 1000,
-    backgroundColor: Colors.duolingo.cardBg,
     borderRadius: Radii.lg,
-    borderWidth: 2,
-    borderColor: Colors.duolingo.red,
+    borderWidth: BorderWidths.default,
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.md,
-    gap: 10,
-    shadowColor: Colors.duolingo.red,
+    gap: Spacing.cellPadding,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -87,22 +96,20 @@ const styles = StyleSheet.create({
   },
   messageText: {
     flex: 1,
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.text.white,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.bold,
   },
   retryBtn: {
-    backgroundColor: Colors.duolingo.red,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.cellPadding,
+    paddingVertical: Spacing.sm,
     borderRadius: Radii.md,
   },
   retryText: {
-    fontSize: 11,
-    fontWeight: "900",
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
   },
   closeBtn: {
-    padding: 4,
+    padding: Spacing.xs,
   },
 });
