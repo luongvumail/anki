@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     paddingBottom: Spacing.xs,
-    borderBottomWidth: BorderWidths.default,
+    borderBottomWidth: BorderWidths.thin,
   },
   backBtn: { padding: Spacing.xs, width: Layout.avatarSm },
   headerTitle: {

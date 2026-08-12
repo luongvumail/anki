@@ -6,7 +6,7 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
-import { Radii, Layout, Spacing, Typography, BorderWidths } from "../../constants/theme";
+import { Radii, Layout, Spacing, Typography, BorderWidths, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 
 export type DuolingoButtonVariant =
@@ -76,62 +76,47 @@ export function DuolingoButton({
   const getVariantStyles = () => {
     if (disabled) {
       return {
-        bg: theme.cardBg,
-        border: theme.cardBorder,
-        bottom: theme.cardBottom,
+        bg: theme.bgSoft,
         text: theme.textMuted,
       };
     }
 
     switch (variant) {
       case "primary":
-      case "success":
-        return {
-          bg: theme.green,
-          border: theme.green,
-          bottom: theme.greenDark,
-          text: "#FFFFFF",
-        };
       case "blue":
         return {
           bg: theme.blue,
-          border: theme.blue,
-          bottom: theme.blueDark,
+          text: "#FFFFFF",
+        };
+      case "success":
+        return {
+          bg: theme.green,
           text: "#FFFFFF",
         };
       case "error":
         return {
           bg: theme.red,
-          border: theme.red,
-          bottom: theme.redDark,
-          text: "#FFFFFF",
-        };
-      case "purple":
-        return {
-          bg: theme.purple,
-          border: theme.purple,
-          bottom: theme.purpleDark,
           text: "#FFFFFF",
         };
       case "yellow":
         return {
           bg: theme.yellow,
-          border: theme.yellow,
-          bottom: theme.yellowDark,
-          text: theme.textInverse,
+          text: "#FFFFFF",
+        };
+      case "purple":
+        return {
+          bg: theme.purple,
+          text: "#FFFFFF",
         };
       case "secondary":
         return {
-          bg: theme.cardBg,
-          border: theme.cardBorder,
-          bottom: theme.cardBottom,
+          bg: theme.bgSoft,
           text: theme.textPrimary,
         };
       case "ghost":
+      default:
         return {
           bg: "transparent",
-          border: "transparent",
-          bottom: "transparent",
           text: theme.textMuted,
         };
     }
@@ -141,6 +126,7 @@ export function DuolingoButton({
 
   const handlePressIn = () => {
     if (disabled) return;
+    triggerHaptic("light");
     setPressed(true);
   };
 
@@ -162,11 +148,8 @@ export function DuolingoButton({
           height: sizeStyle.height,
           paddingHorizontal: sizeStyle.paddingHorizontal,
           backgroundColor: vColors.bg,
-          borderColor: vColors.border,
-          borderWidth: variant === "ghost" ? BorderWidths.none : BorderWidths.thin,
-          borderBottomColor: vColors.bottom,
-          borderBottomWidth: variant === "ghost" ? BorderWidths.none : pressed ? BorderWidths.thin : BorderWidths.card3D,
-          transform: [{ translateY: pressed ? 2 : 0 }],
+          transform: [{ scale: pressed ? 0.97 : 1 }],
+          opacity: pressed ? 0.92 : 1,
         },
         style,
       ]}

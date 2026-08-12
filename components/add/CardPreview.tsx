@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   previewCard: {
     borderRadius: Radii.card,
-    borderWidth: BorderWidths.default,
+    borderWidth: BorderWidths.thin,
     padding: Spacing.cellHorizontal,
   },
   previewTop: {

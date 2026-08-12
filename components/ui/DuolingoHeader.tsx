@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
     paddingBottom: Spacing.sm,
-    borderBottomWidth: BorderWidths.default,
+    borderBottomWidth: BorderWidths.thin,
   },
   courseSelector: {
     flexDirection: "row",
@@ -92,7 +92,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
     borderWidth: BorderWidths.thin,
-    borderBottomWidth: BorderWidths.default,
   },
   courseTitleText: {
     fontSize: Typography.caption.fontSize,
@@ -112,7 +111,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
     borderWidth: BorderWidths.thin,
-    borderBottomWidth: BorderWidths.default,
   },
   statValue: {
     fontSize: Typography.caption.fontSize,

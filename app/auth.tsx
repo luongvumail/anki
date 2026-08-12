@@ -25,6 +25,7 @@ import { Spacing, Radii, Typography, Layout, BorderWidths, triggerHaptic } from 
 import { useTheme } from "../hooks/useTheme";
 import { DuolingoButton } from "../components/ui/DuolingoButton";
 import { AuthField } from "../components/ui/AuthField";
+import { DuolingoMascot } from "../components/ui/DuolingoMascot";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
@@ -118,13 +119,7 @@ export default function AuthScreen() {
       >
         {/* Header / Branding */}
         <View style={styles.header}>
-          <View style={styles.appIconBox}>
-            <Image
-              source={require("../assets/images/mascot.png")}
-              style={styles.appIconImage}
-              resizeMode="contain"
-            />
-          </View>
+          <DuolingoMascot size={Layout.avatarXl} expression="happy" speechBubbleText="Chào mừng bạn!" />
 
           <Text style={[styles.appName, { color: theme.textPrimary }]}>Anki Chinese</Text>
           <Text style={[styles.tagline, { color: theme.textMuted }]}>
@@ -282,7 +277,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg,
     padding: Spacing.xs,
     marginBottom: Spacing.lg,
-    borderBottomWidth: BorderWidths.card3D,
+    borderWidth: BorderWidths.thin,
   },
   segmentBtn: {
     flex: 1,

@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.pageMargin,
     position: "relative",
-    borderBottomWidth: BorderWidths.default,
+    borderBottomWidth: BorderWidths.thin,
   },
   dragHandle: {
     width: 40,
@@ -255,14 +255,14 @@ const styles = StyleSheet.create({
     gap: Spacing.cellPadding,
   },
 
-  /* 3D Tactile Deck Item Card */
+  /* Linear Craft Deck Item Card */
   deckCard3D: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderRadius: Radii.lg,
     padding: Spacing.md,
-    borderBottomWidth: BorderWidths.card3D,
+    borderWidth: BorderWidths.thin,
   },
   deckCardLeft: {
     flexDirection: "row",

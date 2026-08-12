@@ -38,17 +38,26 @@ export function useStats() {
   const userId = useStore((s) => s.userId);
   const xp = useStore((s) => s.xp || 0);
 
-  const [loadingCards, setLoadingCards] = useState(true);
+  const [loadingCards, setLoadingCards] = useState(() => {
+    return Object.keys(cards).length === 0;
+  });
   const [reviewHistory, setReviewHistory] = useState<Record<string, number>>({});
   const [streakCount, setStreakCount] = useState(0);
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(Object.keys(cards).length > 0 ? 1 : 0)).current;
 
   const loadAllData = useCallback(async () => {
     if (!userId) return;
-    setLoadingCards(true);
 
-    let currentDecks = decks;
+    const currentStore = useStore.getState();
+    let currentDecks = currentStore.decks;
+    const hasCardsInStore = Object.keys(currentStore.cards).length > 0;
+
+    if (!hasCardsInStore) {
+      setLoadingCards(true);
+      fadeAnim.setValue(0);
+    }
+
     if (currentDecks.length === 0) {
       await fetchDecks();
       currentDecks = useStore.getState().decks;
@@ -67,10 +76,10 @@ export function useStats() {
 
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 350,
+      duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [userId, decks, fetchDecks, fetchCards]);
+  }, [userId, fetchDecks, fetchCards, fadeAnim]);
 
   const allCardsList = useMemo(() => {
     let list: Card[] = [];

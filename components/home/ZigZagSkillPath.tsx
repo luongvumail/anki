@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Radii, Spacing, Typography, Layout, BorderWidths } from "../../constants/theme";
+import { Radii, Spacing, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { Deck } from "../../store/slices/types";
 import { DeckIcon } from "../ui/DeckIcon";
@@ -34,6 +34,43 @@ const PathNodeItem = React.memo(
     onSelect,
   }: PathNodeItemProps) => {
     const { theme } = useTheme();
+    const [pressed, setPressed] = useState(false);
+
+    const handlePressIn = () => {
+      triggerHaptic("medium");
+      setPressed(true);
+    };
+
+    const handlePressOut = () => {
+      setPressed(false);
+    };
+
+    const getNodeColors = () => {
+      if (isPriority) {
+        return {
+          bg: theme.blue,
+          border: theme.blue,
+          bottom: theme.blueDark,
+          iconColor: theme.blue,
+        };
+      }
+      if (isCompleted) {
+        return {
+          bg: theme.green,
+          border: theme.green,
+          bottom: theme.greenDark,
+          iconColor: theme.yellow,
+        };
+      }
+      return {
+        bg: theme.cardBg,
+        border: theme.cardBorder,
+        bottom: theme.cardBottom,
+        iconColor: theme.textMuted,
+      };
+    };
+
+    const nodeColors = getNodeColors();
 
     return (
       <View style={[styles.nodeRow, { transform: [{ translateX: offset }] }]}>
@@ -45,60 +82,64 @@ const PathNodeItem = React.memo(
                 styles.dueBadge,
                 {
                   transform: isPriority ? [{ scale: pulseAnim }] : [],
-                  backgroundColor: isPriority
-                    ? theme.yellow
-                    : theme.blue,
+                  backgroundColor: isPriority ? theme.yellow : theme.blue,
+                  borderColor: "#FFFFFF",
                 },
               ]}
             >
               <Text style={styles.dueBadgeText}>{dueCount}</Text>
             </Animated.View>
           ) : isCompleted ? (
-            <View style={[styles.completedBadge, { backgroundColor: theme.green }]}>
+            <View style={[styles.completedBadge, { backgroundColor: theme.green, borderColor: "#FFFFFF" }]}>
               <Ionicons name="checkmark-sharp" size={Layout.iconSm} color="#FFFFFF" />
             </View>
           ) : null}
 
-          {/* Duolingo 3D Button Node */}
+          {/* Sleek Linear Craft Node Button */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={1}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
             onPress={() => onSelect(deck)}
             style={[
-              styles.nodeButton,
-              { backgroundColor: theme.cardBottom },
-              isPriority && { backgroundColor: theme.blue },
-              isCompleted && { backgroundColor: theme.green },
+              styles.nodeButtonCraft,
+              {
+                backgroundColor: isPriority || isCompleted ? nodeColors.bg : theme.cardBg,
+                borderColor: nodeColors.border,
+                shadowColor: isPriority ? theme.blue : "#000000",
+                transform: [{ scale: pressed ? 0.94 : 1 }],
+                opacity: pressed ? 0.9 : 1,
+              },
             ]}
           >
-            <View style={[styles.nodeInnerCircle, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-              {isCompleted ? (
-                <Ionicons name="star" size={Layout.iconXl} color={theme.yellow} />
-              ) : (
-                <DeckIcon
-                  name={deck.icon}
-                  size={Layout.iconLg}
-                  color={isPriority ? theme.blue : theme.textMuted}
-                />
-              )}
-            </View>
+            {isCompleted ? (
+              <Ionicons name="star" size={Layout.iconLg} color="#FFFFFF" />
+            ) : isPriority ? (
+              <DeckIcon name={deck.icon} size={Layout.iconLg} color="#FFFFFF" />
+            ) : (
+              <DeckIcon name={deck.icon} size={Layout.iconLg} color={theme.textMuted} />
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Deck Title Card Banner */}
+        {/* Linear Craft Deck Info Card */}
         <TouchableOpacity
-          activeOpacity={0.8}
+          activeOpacity={0.9}
           onPress={() => onSelect(deck)}
           style={[
             styles.nodeTextCard,
-            { backgroundColor: theme.cardBg, borderColor: theme.cardBorder },
-            isPriority && { borderColor: theme.blue },
+            {
+              backgroundColor: theme.cardBg,
+              borderColor: isPriority ? theme.blue : theme.cardBorder,
+              shadowColor: theme.isDark ? "#000000" : "#0F172A",
+            },
           ]}
         >
           <Text style={[styles.nodeDeckName, { color: theme.textPrimary }]} numberOfLines={1}>
             {deck.name}
           </Text>
           <Text style={[styles.nodeDeckSub, { color: theme.textMuted }]}>
-            {deck.cardCount || 0} từ · {dueCount > 0 ? `Cần ôn ${dueCount}` : "Đã xong"}
+            {deck.cardCount || 0} từ · {dueCount > 0 ? `Cần ôn ${dueCount}` : "Đã thuộc"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -114,13 +155,13 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.08,
-          duration: 900,
+          toValue: 1.1,
+          duration: 800,
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 900,
+          duration: 800,
           useNativeDriver: true,
         }),
       ])
@@ -131,7 +172,7 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 
   if (!decks || decks.length === 0) return null;
 
-  const offsets = [0, 50, 70, 40, -40, -70, -50];
+  const offsets = [0, 48, 68, 36, -36, -68, -48];
 
   let priorityIdx = 0;
   let maxDue = -1;
@@ -143,16 +184,33 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
     }
   });
 
+  const totalDueAllDecks = Object.values(dueCardsMap).reduce((a, b) => a + b, 0);
+
   return (
     <View style={styles.container}>
-      {/* Unit Title Banner */}
-      <View style={[styles.unitBanner, { backgroundColor: theme.blue, shadowColor: theme.blue }]}>
-        <View style={styles.unitBannerContent}>
-          <Text style={styles.unitBannerTitle}>KHO BỘ THẺ CỦA TÔI</Text>
-          <Text style={styles.unitBannerSub}>
-            Chọn bộ thẻ bên dưới để bắt đầu lật thẻ Flashcard & làm bài tập SRS!
-          </Text>
+      {/* Clean Borderless Unit Title Banner */}
+      <View
+        style={[
+          styles.unitBanner,
+          {
+            backgroundColor: theme.blue,
+          },
+        ]}
+      >
+        <View style={styles.unitBannerTopRow}>
+          <View style={styles.unitPill}>
+            <Text style={styles.unitPillText}>UNIT 1</Text>
+          </View>
+          <View style={styles.dueSummaryPill}>
+            <Ionicons name="flame" size={Layout.iconSm} color={theme.yellow} />
+            <Text style={styles.dueSummaryText}>{totalDueAllDecks} CẦN ÔN</Text>
+          </View>
         </View>
+
+        <Text style={styles.unitBannerTitle}>HÀNH TRÌNH TỪ VỰNG TIẾNG TRUNG</Text>
+        <Text style={styles.unitBannerSub}>
+          Chọn bộ thẻ bên dưới để bắt đầu lật Flashcard & thực hành phản xạ SRS!
+        </Text>
       </View>
 
       {/* Real Decks Zig-Zag Path */}
@@ -165,21 +223,21 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 
           return (
             <React.Fragment key={deck.id}>
-              {/* Mascot Panda standing by the priority deck */}
+              {/* Mascot Owl standing proudly at current active deck */}
               {isPriority && (
                 <View
                   style={[
                     styles.mascotPathContainer,
-                    { transform: [{ translateX: -offset * 0.8 }] },
+                    { transform: [{ translateX: -offset * 0.7 }] },
                   ]}
                 >
                   <DuolingoMascot
                     expression={dueCount > 0 ? "happy" : "celebrate"}
-                    size={64}
+                    size={72}
                     speechBubbleText={
                       dueCount > 0
-                        ? `Bộ "${deck.name}" có ${dueCount} từ cần ôn!`
-                        : `Bộ "${deck.name}" đã thuộc hết hôm nay!`
+                        ? `Ôn "${deck.name}" ngay!`
+                        : `Thành công! Đã thuộc "${deck.name}"`
                     }
                   />
                 </View>
@@ -204,31 +262,58 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.sm,
     alignItems: "center",
   },
   unitBanner: {
     width: "100%",
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
+    borderRadius: Radii.xl,
+    padding: Spacing.lg,
     marginBottom: Spacing.xl,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    borderWidth: BorderWidths.default,
   },
-  unitBannerContent: {
-    gap: Spacing.xs,
+  unitBannerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.sm,
   },
-  unitBannerTitle: {
-    fontSize: Typography.callout.fontSize,
+  unitPill: {
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs / 2,
+    borderRadius: Radii.full,
+  },
+  unitPillText: {
+    fontSize: Typography.caption2.fontSize,
     fontWeight: Typography.weight.extraBold,
     color: "#FFFFFF",
-    letterSpacing: 0.8,
+    letterSpacing: 1,
+  },
+  dueSummaryPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs / 2,
+    borderRadius: Radii.full,
+  },
+  dueSummaryText: {
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    color: "#FFFFFF",
+  },
+  unitBannerTitle: {
+    fontSize: Typography.title3.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.xs,
   },
   unitBannerSub: {
     fontSize: Typography.caption1.fontSize,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "rgba(255, 255, 255, 0.95)",
     fontWeight: Typography.weight.semibold,
     lineHeight: 16,
   },
@@ -238,7 +323,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   mascotPathContainer: {
-    marginBottom: -Spacing.sm,
+    marginBottom: -Spacing.xs,
     zIndex: 10,
   },
   nodeRow: {
@@ -252,13 +337,12 @@ const styles = StyleSheet.create({
   },
   dueBadge: {
     position: "absolute",
-    top: -Spacing.md,
-    zIndex: 5,
+    top: -Spacing.sm,
+    zIndex: 15,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs / 2,
     borderRadius: Radii.full,
     borderWidth: BorderWidths.default,
-    borderColor: "#FFFFFF",
   },
   dueBadgeText: {
     fontSize: Typography.caption2.fontSize,
@@ -267,37 +351,37 @@ const styles = StyleSheet.create({
   },
   completedBadge: {
     position: "absolute",
-    top: -Spacing.sm,
-    zIndex: 5,
-    width: Layout.iconMd,
-    height: Layout.iconMd,
-    borderRadius: Layout.iconMd / 2,
+    top: -Spacing.xs,
+    zIndex: 15,
+    width: Layout.iconLg,
+    height: Layout.iconLg,
+    borderRadius: Layout.iconLg / 2,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: BorderWidths.default,
-    borderColor: "#FFFFFF",
   },
-  nodeButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    paddingBottom: 6,
-    justifyContent: "flex-start",
-  },
-  nodeInnerCircle: {
-    width: "100%",
-    height: 66,
-    borderRadius: 33,
-    borderWidth: 3,
+  nodeButtonCraft: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 0,
     alignItems: "center",
     justifyContent: "center",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   nodeTextCard: {
     paddingHorizontal: Spacing.cellPadding,
     paddingVertical: Spacing.sm,
-    borderRadius: Radii.md,
-    borderWidth: BorderWidths.default,
-    maxWidth: 160,
+    borderRadius: Radii.lg,
+    borderWidth: 0,
+    maxWidth: 170,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 1,
   },
   nodeDeckName: {
     fontSize: Typography.caption.fontSize,

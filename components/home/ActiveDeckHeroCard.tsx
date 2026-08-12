@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Radii, Spacing } from "../../constants/theme";
+import { Radii, Spacing, BorderWidths } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { Deck } from "../../store/slices/types";
 import { DuolingoButton } from "../ui/DuolingoButton";
@@ -116,10 +116,13 @@ export function ActiveDeckHeroCard({
 const styles = StyleSheet.create({
   cardContainer: {
     borderRadius: Radii.xl,
-    borderWidth: 2,
-    borderBottomWidth: 5,
+    borderWidth: BorderWidths.thin,
     padding: Spacing.md,
     marginBottom: Spacing.md,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   topRow: {
     flexDirection: "row",
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radii.full,
-    borderBottomWidth: 2,
+    borderWidth: BorderWidths.thin,
   },
   switchBadgeText: {
     fontSize: 12,
