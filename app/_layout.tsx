@@ -8,6 +8,7 @@ import { useStore } from '../store/useStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Colors } from '../constants/theme';
 import { APP_CONFIG } from '../constants/config';
+import { OfflineBanner } from '../components/ui/OfflineBanner';
 
 export default function RootLayout() {
   const setUserId = useStore(s => s.setUserId);
@@ -104,13 +105,14 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <StatusBar style="light" />
-      
       <View style={styles.container}>
+        <OfflineBanner />
+        <StatusBar style="light" />
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: Colors.bg.primary },
+            contentStyle: { backgroundColor: Colors.duolingo.bg },
+            animation: "fade",
           }}
         >
           <Stack.Screen name="auth" />

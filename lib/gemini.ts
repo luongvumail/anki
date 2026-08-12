@@ -12,7 +12,7 @@ async function generateWithFallback(prompt: string): Promise<string> {
   let lastError: unknown = null;
   for (const modelName of CANDIDATE_MODELS) {
     try {
-      console.log(`[Gemini] Attempting generation with model: ${modelName}`);
+      if (__DEV__) console.log(`[Gemini] Attempting generation with model: ${modelName}`);
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: {
@@ -22,7 +22,7 @@ async function generateWithFallback(prompt: string): Promise<string> {
       });
       const result = await model.generateContent(prompt);
       const text = result.response.text();
-      console.log(`[Gemini] Success using model: ${modelName}`);
+      if (__DEV__) console.log(`[Gemini] Success using model: ${modelName}`);
       return text;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -40,14 +40,14 @@ async function generateWithFallbackText(prompt: string): Promise<string> {
   let lastError: unknown = null;
   for (const modelName of CANDIDATE_MODELS) {
     try {
-      console.log(`[Gemini/text] Attempting with model: ${modelName}`);
+      if (__DEV__) console.log(`[Gemini/text] Attempting with model: ${modelName}`);
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: { temperature: 0.3 },
       });
       const result = await model.generateContent(prompt);
       const text = result.response.text();
-      console.log(`[Gemini/text] Success using model: ${modelName}`);
+      if (__DEV__) console.log(`[Gemini/text] Success using model: ${modelName}`);
       return text;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

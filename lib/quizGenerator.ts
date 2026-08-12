@@ -1,4 +1,5 @@
 import { Card } from "../store/slices/types";
+import { APP_CONFIG } from "../constants/config";
 
 export type QuestionType = "meaning_choice" | "pinyin_choice" | "listening" | "cloze";
 
@@ -19,20 +20,9 @@ export interface QuizQuestion {
 /**
  * Fallback distractor arrays if deck has < 4 cards
  */
-const FALLBACK_CHARACTERS = ["好", "你", "学", "中", "国", "人", "爱", "生", "水", "大", "小", "日"];
-const FALLBACK_PINYINS = ["hǎo", "nǐ", "xué", "zhōng", "guó", "rén", "ài", "shēng", "shuǐ", "dà"];
-const FALLBACK_TRANSLATIONS = [
-  "Xin chào",
-  "Tốt / Hảo",
-  "Học sinh",
-  "Cảm ơn",
-  "Nước uống",
-  "To lớn",
-  "Tạm biệt",
-  "Yêu thương",
-  "Bạn bè",
-  "Thức ăn",
-];
+const FALLBACK_CHARACTERS = APP_CONFIG.QUIZ_FALLBACKS.CHARACTERS;
+const FALLBACK_PINYINS = APP_CONFIG.QUIZ_FALLBACKS.PINYINS;
+const FALLBACK_TRANSLATIONS = APP_CONFIG.QUIZ_FALLBACKS.TRANSLATIONS;
 
 /**
  * Utility to shuffle an array randomly

@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Animated } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";

@@ -324,21 +324,11 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
 
   resetDeckProgress: async (deckId) => {
     const uid = getUserId();
-    const snap = await getDocs(cardsRef(uid, deckId));
+    const existingCards = get().cards[deckId] || [];
     const now = new Date().toISOString();
-    const resets = snap.docs.map((d) =>
-      updateDoc(d.ref, { srs: createDefaultSRSState(), updatedAt: now }),
-    );
-    await Promise.all(resets);
+    const cardCount = existingCards.length;
 
-    const cardCount = snap.docs.length;
-    const deckDocRef = doc(decksRef(uid), deckId);
-    await updateDoc(deckDocRef, {
-      dueCount: cardCount,
-      newCount: cardCount,
-      updatedAt: now,
-    });
-
+    // Optimistically update local store immediately
     set((s) => ({
       cards: {
         ...s.cards,
@@ -352,6 +342,26 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
         d.id === deckId ? { ...d, dueCount: cardCount, newCount: cardCount, updatedAt: now } : d,
       ),
     }));
+
+    // Async background persistence to Firestore
+    (async () => {
+      try {
+        const snap = await getDocs(cardsRef(uid, deckId));
+        const resets = snap.docs.map((d) =>
+          updateDoc(d.ref, { srs: createDefaultSRSState(), updatedAt: now }),
+        );
+        await Promise.all(resets);
+
+        const deckDocRef = doc(decksRef(uid), deckId);
+        await updateDoc(deckDocRef, {
+          dueCount: snap.docs.length,
+          newCount: snap.docs.length,
+          updatedAt: now,
+        });
+      } catch (err) {
+        console.error("[resetDeckProgress] Firestore async sync failed:", err);
+      }
+    })();
   },
 
   findExistingCard: (character, deckId) => {

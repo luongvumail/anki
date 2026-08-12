@@ -21,6 +21,7 @@ import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
 import { ZigZagSkillPath } from "../../components/home/ZigZagSkillPath";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
+import { SkeletonCard } from "../../components/ui/SkeletonCard";
 import { Deck } from "../../store/slices/types";
 import { computeDueCount } from "../../lib/deckUtils";
 
@@ -77,11 +78,10 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         {isLoading && decks.length === 0 ? (
-          <ActivityIndicator
-            size="small"
-            color={Colors.duolingo.green}
-            style={{ marginVertical: 40 }}
-          />
+          <View style={{ marginTop: Spacing.md }}>
+            <SkeletonCard lines={3} />
+            <SkeletonCard lines={2} />
+          </View>
         ) : decks.length === 0 ? (
           <DuolingoCard style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Chưa có bộ thẻ nào!</Text>

@@ -16,10 +16,12 @@ import { useStore } from "../../store/useStore";
 import { isDue } from "../../lib/srs";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
 import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { APP_CONFIG } from "../../constants/config";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { AudioButton } from "../../components/ui/AudioButton";
+import { SkeletonCard } from "../../components/ui/SkeletonCard";
 import { generateRadical } from "../../lib/gemini";
 
 export default function CardDetailScreen() {
@@ -63,7 +65,7 @@ export default function CardDetailScreen() {
     setSpeaking(true);
     Speech.speak(card.character, {
       language: "zh-CN",
-      rate: 0.8,
+      rate: APP_CONFIG.SPEECH_RATE,
       onDone: () => setSpeaking(false),
       onError: () => setSpeaking(false),
     });
@@ -82,7 +84,7 @@ export default function CardDetailScreen() {
         Alert.alert("Thông báo", "AI không thể phân tích bộ thủ cho từ này. Vui lòng thử lại.");
       }
     } catch (e) {
-      console.warn("[generateRadical]", e);
+      console.warn("[card/generateRadical] Failed to generate radical:", e);
       Alert.alert("Lỗi", "Không thể kết nối AI. Vui lòng kiểm tra kết nối mạng và thử lại.");
     } finally {
       setGeneratingRadical(false);
@@ -91,8 +93,16 @@ export default function CardDetailScreen() {
 
   if (!card) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color={Colors.duolingo.blue} />
+      <View style={styles.container}>
+        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + 8, 44) }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color={Colors.text.white} />
+          </TouchableOpacity>
+        </View>
+        <View style={{ paddingHorizontal: Spacing.pageMargin, marginTop: Spacing.md }}>
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={2} />
+        </View>
       </View>
     );
   }

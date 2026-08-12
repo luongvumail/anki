@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -9,13 +9,14 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Speech from "expo-speech";
 import { QuizQuestion } from "../../lib/quizGenerator";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
+import { Colors, Spacing, Radii } from "../../constants/theme";
 import { DuolingoButton } from "../ui/DuolingoButton";
 import { AudioButton } from "../ui/AudioButton";
+import { getPinyinToneColor } from "../../lib/pinyinColor";
+import { useQuizCard, WeakTagType } from "../../hooks/useQuizCard";
 
-export type WeakTagType = "pinyin" | "character" | "meaning";
+export { WeakTagType };
 
 interface QuizCardViewProps {
   question: QuizQuestion;
@@ -29,326 +30,143 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
   const { width } = useWindowDimensions();
   const cardWidth = width - Spacing.pageMargin * 2;
 
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [isChecked, setIsChecked] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(5);
+  const {
+    selectedIndex,
+    isChecked,
+    speaking,
+    timeLeft,
+    drawerAnim,
+    shakeAnim,
+    bounceAnim,
+    playTTS,
+    handleSelectOption,
+    handleCheck,
+    handleContinue,
+  } = useQuizCard(question, onAnswer, isFastRepairMode);
 
-  const startTimeRef = useRef<number>(0);
-  const responseTimeMsRef = useRef<number>(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Animation Refs
-  const drawerAnim = useRef(new Animated.Value(300)).current;
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-  const bounceAnim = useRef(new Animated.Value(1)).current;
-
-  const playTTS = useCallback((text: string) => {
-    if (!text) return;
-    setSpeaking(true);
-    Speech.speak(text, {
-      language: "zh-CN",
-      rate: 0.8,
-      onDone: () => setSpeaking(false),
-      onError: () => setSpeaking(false),
-    });
-  }, []);
-
-  useEffect(() => {
-    // Reset timer & timing on new question
-    startTimeRef.current = Date.now();
-    responseTimeMsRef.current = 0;
-    setSelectedIndex(null);
-    setIsChecked(false);
-    setTimeLeft(5);
-    drawerAnim.setValue(300);
-    shakeAnim.setValue(0);
-    bounceAnim.setValue(1);
-
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    if (isFastRepairMode) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            // Auto timeout trigger
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    // Auto play audio if listening question
-    if (question.type === "listening") {
-      playTTS(question.audioText || question.card.character);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [question, playTTS, drawerAnim, shakeAnim, bounceAnim, isFastRepairMode]);
-
-  // Handle timeout in fast repair mode
-  useEffect(() => {
-    if (isFastRepairMode && timeLeft === 0 && !isChecked) {
-      responseTimeMsRef.current = 5000;
-      setIsChecked(true);
-      triggerHaptic("error");
-      Animated.spring(drawerAnim, {
-        toValue: 0,
-        tension: 65,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [timeLeft, isFastRepairMode, isChecked, drawerAnim]);
-
-  const handleSelectOption = (index: number) => {
-    if (isChecked) return;
-    setSelectedIndex(index);
-  };
-
-  const handleCheck = () => {
-    if (selectedIndex === null || isChecked) return;
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    responseTimeMsRef.current = Date.now() - startTimeRef.current;
-    const selectedOption = question.options[selectedIndex];
-    const isCorrect = selectedOption === question.correctAnswer;
-
-    setIsChecked(true);
-
-    if (isCorrect) {
-      triggerHaptic("success");
-      Animated.sequence([
-        Animated.timing(bounceAnim, { toValue: 1.08, duration: 100, useNativeDriver: true }),
-        Animated.spring(bounceAnim, {
-          toValue: 1,
-          friction: 4,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      triggerHaptic("error");
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: -10, duration: 45, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 10, duration: 45, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -6, duration: 45, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 45, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 45, useNativeDriver: true }),
-      ]).start();
-    }
-
-    // Slide up bottom result sheet
-    Animated.spring(drawerAnim, {
-      toValue: 0,
-      tension: 65,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleContinue = () => {
-    const selectedOption = selectedIndex !== null ? question.options[selectedIndex] : null;
-    const isCorrect = selectedOption === question.correctAnswer;
-
-    let weakTag: WeakTagType = "meaning";
-    if (question.type === "pinyin_choice") weakTag = "pinyin";
-    else if (question.type === "listening" || question.type === "cloze") weakTag = "character";
-
-    onAnswer(isCorrect, responseTimeMsRef.current || 4000, weakTag);
-  };
-
-  const selectedOption = selectedIndex !== null ? question.options[selectedIndex] : null;
-  const isCorrect = selectedOption === question.correctAnswer;
+  const chosenOption = selectedIndex !== null ? question.options[selectedIndex] : null;
+  const isCorrect = chosenOption === question.correctAnswer;
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Question Prompt Speech Bubble */}
+        {/* Fast Repair Mode Countdown Header */}
+        {isFastRepairMode && (
+          <View style={styles.timerHeader}>
+            <Ionicons name="flash" size={18} color={Colors.duolingo.yellow} />
+            <Text style={styles.timerTitle}>SỬA LỖI PHẢN XẠ NHANH (5s):</Text>
+            <View style={styles.timerBadge}>
+              <Text style={styles.timerText}>{timeLeft}s</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Question Prompt Card */}
         <Animated.View
           style={[
-            styles.speechCard,
-            {
-              width: cardWidth,
-              transform: [{ translateX: shakeAnim }, { scale: bounceAnim }],
-            },
+            styles.questionCard,
+            { width: cardWidth },
+            { transform: [{ translateX: shakeAnim }, { scale: bounceAnim }] },
           ]}
         >
-          {/* Badge indicator */}
-          <View style={styles.badgeRow}>
-            <View style={styles.typeBadge}>
-              <Text style={styles.typeBadgeText}>
-                {question.type === "meaning_choice"
-                  ? "BÀI TẬP CHỌN NGHĨA"
-                  : question.type === "listening"
-                    ? "BÀI TẬP ÂM THANH"
-                    : question.type === "cloze"
-                      ? "ĐIỀN VÀO CHỖ TRỐNG"
-                      : "TRẮC NGHIỆM PINYIN"}
+          <Text style={styles.questionPromptText}>{question.prompt}</Text>
+
+          {/* Target Text (Character or Cloze) */}
+          {question.type === "cloze" ? (
+            <View style={styles.clozeContainer}>
+              <Text style={styles.clozeSentenceText}>
+                {question.clozeSentence?.replace("___", " [ ? ] ")}
               </Text>
-            </View>
-
-            {isFastRepairMode && (
-              <View style={[styles.typeBadge, { backgroundColor: Colors.duolingo.yellow }]}>
-                <Ionicons name="flash" size={12} color="#000000" />
-                <Text style={[styles.typeBadgeText, { color: "#000000", fontWeight: "900" }]}>
-                  CẮM CỜ NGUY CƠ: {timeLeft}s
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <Text style={styles.promptText}>{question.prompt}</Text>
-
-          {/* Question Body */}
-          {(question.type === "pinyin_choice" || question.type === "meaning_choice") && (
-            <View style={styles.centerTargetBox}>
-              <Text style={styles.characterBig}>
-                {question.targetText || question.card.character}
-              </Text>
-              {question.subText ? (
-                <Text
-                  style={[
-                    styles.subTextHint,
-                    {
-                      color:
-                        question.type === "meaning_choice"
-                          ? Colors.duolingo.blue
-                          : Colors.duolingo.green,
-                    },
-                  ]}
-                >
-                  {question.subText}
-                </Text>
+              {question.clozeTranslation ? (
+                <Text style={styles.clozeTranslationText}>"{question.clozeTranslation}"</Text>
               ) : null}
-              <AudioButton
-                onPress={() => playTTS(question.card.character)}
-                isPlaying={speaking}
-                size="md"
-                style={{ marginTop: 6 }}
-              />
             </View>
-          )}
-
-          {question.type === "listening" && (
-            <View style={styles.audioTargetBox}>
+          ) : question.type === "listening" ? (
+            <View style={styles.listeningContainer}>
               <AudioButton
                 onPress={() => playTTS(question.audioText || question.card.character)}
                 isPlaying={speaking}
                 size="lg"
               />
+              <Text style={styles.listeningHintText}>Bấm nút loa để nghe lại âm thanh</Text>
+            </View>
+          ) : (
+            <View style={styles.targetCharContainer}>
+              <Text style={styles.targetCharText}>{question.targetText || question.card.character}</Text>
               {question.subText ? (
-                <Text style={[styles.subTextHint, { color: Colors.duolingo.green, marginTop: 10 }]}>
+                <Text
+                  style={[
+                    styles.targetSubText,
+                    { color: getPinyinToneColor(question.subText) },
+                  ]}
+                >
                   {question.subText}
                 </Text>
               ) : null}
             </View>
           )}
-
-          {question.type === "cloze" && (
-            <View style={styles.clozeTargetBox}>
-              <Text style={styles.clozeSentenceText}>{question.clozeSentence}</Text>
-              {question.clozeTranslation ? (
-                <Text style={styles.clozeTranslationText}>"{question.clozeTranslation}"</Text>
-              ) : null}
-            </View>
-          )}
         </Animated.View>
 
-        {/* 3D Tactile Option Cards List */}
-        <View style={[styles.optionsList, { width: cardWidth }]}>
-          {question.options.map((option, index) => {
-            const isSelected = selectedIndex === index;
-            const letter = OPTION_LETTERS[index] || `${index + 1}`;
-
-            let tileStyle = styles.optionTileDefault;
-            let badgeStyle = styles.letterBadgeDefault;
-            let badgeTextStyle = styles.letterTextDefault;
-
-            if (isSelected) {
-              tileStyle = styles.optionTileSelected;
-              badgeStyle = styles.letterBadgeSelected;
-              badgeTextStyle = styles.letterTextSelected;
-            }
-
-            if (isChecked) {
-              if (option === question.correctAnswer) {
-                tileStyle = styles.optionTileCorrect;
-                badgeStyle = styles.letterBadgeCorrect;
-                badgeTextStyle = styles.letterTextCorrect;
-              } else if (isSelected && !isCorrect) {
-                tileStyle = styles.optionTileWrong;
-                badgeStyle = styles.letterBadgeWrong;
-                badgeTextStyle = styles.letterTextWrong;
-              }
-            }
+        {/* 4 Multiple Choice Option Cards */}
+        <View style={[styles.optionsGrid, { width: cardWidth }]}>
+          {question.options.map((option, idx) => {
+            const isSelected = selectedIndex === idx;
+            const isRight = option === question.correctAnswer;
 
             return (
               <TouchableOpacity
-                key={`${option}-${index}`}
-                activeOpacity={0.85}
+                key={idx}
+                activeOpacity={0.8}
+                style={[
+                  styles.optionCard,
+                  isSelected && styles.optionCardSelected,
+                  isChecked && isRight && styles.optionCardCorrect,
+                  isChecked && isSelected && !isRight && styles.optionCardWrong,
+                ]}
+                onPress={() => handleSelectOption(idx)}
                 disabled={isChecked}
-                onPress={() => handleSelectOption(index)}
-                style={[styles.optionTileBase, tileStyle]}
               >
-                {/* 3D Letter Badge A, B, C, D */}
-                <View style={[styles.letterBadgeBase, badgeStyle]}>
-                  <Text style={[styles.letterTextBase, badgeTextStyle]}>{letter}</Text>
+                <View
+                  style={[
+                    styles.letterBox,
+                    isSelected && styles.letterBoxSelected,
+                    isChecked && isRight && styles.letterBoxCorrect,
+                    isChecked && isSelected && !isRight && styles.letterBoxWrong,
+                  ]}
+                >
+                  <Text style={styles.letterText}>{OPTION_LETTERS[idx]}</Text>
                 </View>
-
-                {/* Option Text Content */}
                 <Text
                   style={[
                     styles.optionText,
-                    isSelected && { color: "#FFFFFF" },
-                    isChecked && option === question.correctAnswer && { color: "#FFFFFF" },
+                    isChecked && isRight && styles.optionTextCorrect,
+                    isChecked && isSelected && !isRight && styles.optionTextWrong,
                   ]}
                   numberOfLines={2}
                 >
                   {option}
                 </Text>
-
-                {/* Status Indicator Icon */}
-                {isChecked && option === question.correctAnswer && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={24}
-                    color="#FFFFFF"
-                    style={{ marginLeft: "auto" }}
-                  />
-                )}
-                {isChecked && isSelected && !isCorrect && (
-                  <Ionicons
-                    name="close-circle"
-                    size={24}
-                    color="#FFFFFF"
-                    style={{ marginLeft: "auto" }}
-                  />
-                )}
               </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Check Action Bar */}
+      {/* Check Action Button */}
       {!isChecked && (
-        <View style={styles.bottomBar}>
+        <View style={styles.footerActionBox}>
           <DuolingoButton
             title="KIỂM TRA"
             variant="primary"
             size="lg"
             disabled={selectedIndex === null}
             onPress={handleCheck}
+            style={{ width: "100%" }}
           />
         </View>
       )}
 
-      {/* Instant Feedback Result Sheet */}
+      {/* Result Bottom Drawer Panel */}
       {isChecked && (
         <Animated.View
           style={[
@@ -357,41 +175,39 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
             { transform: [{ translateY: drawerAnim }] },
           ]}
         >
-          <View style={styles.resultHeader}>
-            <View style={styles.resultTitleRow}>
+          <View style={styles.resultHeaderRow}>
+            <View style={styles.resultIconWrap}>
               <Ionicons
                 name={isCorrect ? "checkmark-circle" : "close-circle"}
-                size={26}
+                size={36}
                 color={isCorrect ? Colors.duolingo.green : Colors.duolingo.red}
               />
+            </View>
+            <View style={{ flex: 1 }}>
               <Text
                 style={[
                   styles.resultTitleText,
                   { color: isCorrect ? Colors.duolingo.green : Colors.duolingo.red },
                 ]}
               >
-                {isCorrect ? "Chính xác!" : "Đáp án đúng:"}
+                {isCorrect ? "CHÍNH XÁC!" : "CHƯA ĐÚNG RỒI!"}
               </Text>
+              {!isCorrect && (
+                <Text style={styles.correctAnswerLabelText}>
+                  Đáp án đúng: <Text style={{ fontWeight: "900", color: "#FFFFFF" }}>{question.correctAnswer}</Text>
+                </Text>
+              )}
             </View>
 
-            {/* Unified Answer Explanation: Character + Pinyin + Translation */}
-            <View style={styles.answerExplainBox}>
-              <Text style={styles.explainChar}>
-                {question.card.character}
-                {question.card.pinyin ? ` · ${question.card.pinyin}` : ""}
-              </Text>
-              {question.card.translation ? (
-                <Text style={styles.explainTrans}>{question.card.translation}</Text>
-              ) : null}
-            </View>
+            <AudioButton onPress={() => playTTS(question.card.character)} size="sm" />
           </View>
 
           <DuolingoButton
-            title={isCorrect ? "TIẾP TỤC" : "ĐÃ HIỂU"}
-            variant={isCorrect ? "primary" : "error"}
+            title="TIẾP TỤC"
+            variant={isCorrect ? "primary" : "secondary"}
             size="lg"
             onPress={handleContinue}
-            style={{ marginTop: Spacing.sm }}
+            style={{ width: "100%", marginTop: 12 }}
           />
         </Animated.View>
       )}
@@ -403,273 +219,202 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.duolingo.bg,
-    position: "relative",
   },
   scrollContent: {
-    paddingHorizontal: Spacing.pageMargin,
+    alignItems: "center",
     paddingTop: Spacing.md,
-    paddingBottom: 110,
-    alignItems: "center",
+    paddingBottom: 100,
   },
-
-  speechCard: {
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    borderRadius: Radii.xl,
-    padding: Spacing.space4,
-    borderWidth: 0,
-    borderBottomWidth: 4,
-    borderBottomColor: "#18242B",
-    marginBottom: Spacing.space6,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    marginBottom: 8,
-  },
-  typeBadge: {
+  timerHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(28, 176, 246, 0.15)",
+    gap: 8,
+    backgroundColor: Colors.duolingo.cardBg,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: Radii.full,
+    borderWidth: 2,
+    borderColor: Colors.duolingo.yellow,
+    marginBottom: 14,
+  },
+  timerTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: Colors.duolingo.yellow,
+  },
+  timerBadge: {
+    backgroundColor: Colors.duolingo.yellowDim,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: Radii.sm,
   },
-  typeBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
+  timerText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: Colors.duolingo.yellow,
   },
-
-  promptText: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    lineHeight: 26,
+  questionCard: {
+    backgroundColor: Colors.duolingo.cardBg,
+    borderRadius: Radii.xl,
+    borderWidth: 2,
+    borderColor: Colors.duolingo.cardBorder,
+    padding: Spacing.xl,
+    alignItems: "center",
     marginBottom: Spacing.md,
   },
-
-  centerTargetBox: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing.md,
-    backgroundColor: "#131F24",
-    borderRadius: Radii.lg,
-  },
-  characterBig: {
-    fontSize: 48,
+  questionPromptText: {
+    fontSize: 14,
     fontWeight: "800",
-    color: Colors.text.white,
-    marginBottom: 4,
-  },
-  subTextHint: {
-    fontSize: 16,
-    fontWeight: "800",
-    marginTop: 2,
-    marginBottom: 6,
+    color: Colors.duolingo.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
     textAlign: "center",
   },
-  speakBtn: {
-    flexDirection: "row",
+  targetCharContainer: {
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(28, 176, 246, 0.15)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: Radii.full,
+    marginTop: 14,
   },
-  speakBtnText: {
-    fontSize: 13,
+  targetCharText: {
+    fontSize: 48,
+    fontWeight: "900",
+    color: Colors.text.white,
+  },
+  targetSubText: {
+    fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
+    marginTop: 4,
   },
-
-  audioTargetBox: {
+  listeningContainer: {
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing.lg,
+    marginTop: 20,
+    gap: 10,
   },
-  bigAudioBtn: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.duolingo.blue,
-    borderBottomWidth: 5,
-    borderBottomColor: Colors.duolingo.blueDark,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  audioHintText: {
-    fontSize: 13,
+  listeningHintText: {
+    fontSize: 12,
     color: Colors.duolingo.textMuted,
     fontWeight: "600",
   },
-
-  clozeTargetBox: {
-    backgroundColor: "#131F24",
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
+  clozeContainer: {
+    alignItems: "center",
+    marginTop: 16,
   },
   clozeSentenceText: {
     fontSize: 22,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontWeight: "800",
+    color: Colors.text.white,
+    textAlign: "center",
     lineHeight: 30,
   },
   clozeTranslationText: {
     fontSize: 14,
     color: Colors.duolingo.textMuted,
-    marginTop: 6,
-    fontStyle: "italic",
+    marginTop: 8,
+    fontWeight: "600",
+    textAlign: "center",
   },
-
-  optionsList: {
-    gap: 12,
+  optionsGrid: {
+    gap: 10,
   },
-
-  optionTileBase: {
-    width: "100%",
-    borderRadius: Radii.lg,
-    padding: Spacing.md,
+  optionCard: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: Colors.duolingo.cardBg,
+    borderRadius: Radii.lg,
+    borderWidth: 2,
+    borderColor: Colors.duolingo.cardBorder,
+    padding: Spacing.md,
     gap: 12,
-    minHeight: 60,
   },
-  optionTileDefault: {
+  optionCardSelected: {
+    borderColor: Colors.duolingo.blue,
     backgroundColor: Colors.duolingo.bgSoftDark,
-    borderWidth: 0,
-    borderBottomWidth: 4,
-    borderBottomColor: "#18242B",
   },
-  optionTileSelected: {
-    backgroundColor: "#1D3545",
-    borderWidth: 0,
-    borderBottomWidth: 4,
-    borderBottomColor: Colors.duolingo.blueDark,
+  optionCardCorrect: {
+    borderColor: Colors.duolingo.green,
+    backgroundColor: "rgba(88, 204, 2, 0.15)",
   },
-  optionTileCorrect: {
-    backgroundColor: Colors.duolingo.green,
-    borderWidth: 0,
-    borderBottomWidth: 4,
-    borderBottomColor: Colors.duolingo.greenDark,
+  optionCardWrong: {
+    borderColor: Colors.duolingo.red,
+    backgroundColor: "rgba(255, 75, 75, 0.15)",
   },
-  optionTileWrong: {
-    backgroundColor: Colors.duolingo.red,
-    borderWidth: 0,
-    borderBottomWidth: 4,
-    borderBottomColor: Colors.duolingo.redDark,
-  },
-
-  letterBadgeBase: {
+  letterBox: {
     width: 32,
     height: 32,
-    borderRadius: Radii.md,
+    borderRadius: 16,
+    backgroundColor: Colors.duolingo.cardBottom,
     alignItems: "center",
     justifyContent: "center",
   },
-  letterBadgeDefault: {
-    backgroundColor: "#131F24",
-    borderBottomWidth: 2,
-    borderBottomColor: "#0D1518",
-  },
-  letterBadgeSelected: {
+  letterBoxSelected: {
     backgroundColor: Colors.duolingo.blue,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.duolingo.blueDark,
   },
-  letterBadgeCorrect: {
-    backgroundColor: Colors.duolingo.greenDark,
-    borderBottomWidth: 2,
-    borderBottomColor: "#3B7200",
+  letterBoxCorrect: {
+    backgroundColor: Colors.duolingo.green,
   },
-  letterBadgeWrong: {
-    backgroundColor: Colors.duolingo.redDark,
-    borderBottomWidth: 2,
-    borderBottomColor: "#A81E1E",
+  letterBoxWrong: {
+    backgroundColor: Colors.duolingo.red,
   },
-
-  letterTextBase: {
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  letterTextDefault: {
-    color: Colors.duolingo.textMuted,
-  },
-  letterTextSelected: {
+  letterText: {
+    fontSize: 14,
+    fontWeight: "900",
     color: "#FFFFFF",
   },
-  letterTextCorrect: {
-    color: "#FFFFFF",
-  },
-  letterTextWrong: {
-    color: "#FFFFFF",
-  },
-
   optionText: {
-    flex: 1,
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.white,
+    flex: 1,
   },
-
-  bottomBar: {
+  optionTextCorrect: {
+    color: Colors.duolingo.green,
+  },
+  optionTextWrong: {
+    color: Colors.duolingo.red,
+  },
+  footerActionBox: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.duolingo.bg,
-    paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: Spacing.md,
-    paddingTop: Spacing.xs,
+    bottom: 20,
+    left: Spacing.pageMargin,
+    right: Spacing.pageMargin,
   },
-
   resultDrawer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: Spacing.pageMargin,
-    paddingTop: Spacing.md,
-    paddingBottom: Math.max(Spacing.lg, 24),
+    backgroundColor: Colors.duolingo.cardBg,
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
     borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    padding: Spacing.md,
+    paddingBottom: 24,
   },
   resultDrawerCorrect: {
-    backgroundColor: "#193318",
-    borderTopColor: Colors.duolingo.greenDark,
+    borderColor: Colors.duolingo.green,
   },
   resultDrawerWrong: {
-    backgroundColor: "#381616",
-    borderTopColor: Colors.duolingo.redDark,
+    borderColor: Colors.duolingo.red,
   },
-  resultHeader: {
-    marginBottom: Spacing.xs,
-  },
-  resultTitleRow: {
+  resultHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
+    gap: 10,
+  },
+  resultIconWrap: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   resultTitleText: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 18,
+    fontWeight: "900",
   },
-  answerExplainBox: {
-    marginTop: 4,
-  },
-  explainChar: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: Colors.text.white,
-  },
-  explainTrans: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: Colors.duolingo.green,
+  correctAnswerLabelText: {
+    fontSize: 13,
+    color: Colors.duolingo.textMuted,
     marginTop: 2,
   },
 });

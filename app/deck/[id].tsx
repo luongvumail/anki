@@ -1,130 +1,51 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
-  Alert,
   TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import * as Speech from "expo-speech";
-import { useStore, Card } from "../../store/useStore";
-import { getPinyinToneColor } from "../../lib/pinyinColor";
-import { Colors, Spacing, Radii, triggerHaptic } from "../../constants/theme";
-import { DeckIcon } from "../../components/ui/DeckIcon";
+import { Card } from "../../store/useStore";
+import { Colors, Spacing, Radii } from "../../constants/theme";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { DuolingoCard } from "../../components/ui/DuolingoCard";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { AudioButton } from "../../components/ui/AudioButton";
 import { ProgressBar } from "../../components/ui/ProgressBar";
-
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
+import { SkeletonCard } from "../../components/ui/SkeletonCard";
+import { useDeckDetail } from "../../hooks/useDeckDetail";
 
 export default function DeckDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const decks = useStore((s) => s.decks);
-  const cards = useStore((s) => s.cards);
-  const fetchCards = useStore((s) => s.fetchCards);
-  const fetchMoreCards = useStore((s) => s.fetchMoreCards);
-  const isFetchingMore = useStore((s) => s.isFetchingMoreCards[id || ""]);
-  const hasMore = useStore((s) => s.hasMoreCards[id || ""]);
-  const deleteDeck = useStore((s) => s.deleteDeck);
-  const resetDeckProgress = useStore((s) => s.resetDeckProgress);
-  const isLoading = useStore((s) => s.isLoading);
 
-  const [showAIAddModal, setShowAIAddModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const deck = useMemo(() => decks.find((d) => d.id === id), [decks, id]);
-  const deckCards = useMemo(() => cards[id] || [], [cards, id]);
-
-  const filteredCards = useMemo(() => {
-    if (!searchQuery.trim()) return deckCards;
-    const q = searchQuery.toLowerCase().trim();
-    return deckCards.filter((c) => {
-      const hanzi = (c.character || "").toLowerCase();
-      const pinyin = (c.pinyin || "").toLowerCase();
-      const trans = (c.translation || "").toLowerCase();
-      return hanzi.includes(q) || pinyin.includes(q) || trans.includes(q);
-    });
-  }, [deckCards, searchQuery]);
-
-  const learnedCardsCount = useMemo(() => {
-    return deckCards.filter((c) => c.srs && c.srs.repetitions > 0).length;
-  }, [deckCards]);
-
-  const weakCards = useMemo(() => {
-    return deckCards.filter((c) => c.srs && c.srs.easeFactor < 2.1 && c.srs.repetitions > 0);
-  }, [deckCards]);
-
-  const masteryPct = useMemo(() => {
-    if (deckCards.length === 0) return 0;
-    return Math.round((learnedCardsCount / deckCards.length) * 100);
-  }, [deckCards.length, learnedCardsCount]);
-
-  useEffect(() => {
-    if (id) fetchCards(id);
-    return () => {
-      Speech.stop();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const handleDeleteDeck = () => {
-    Alert.alert(
-      "Xóa bộ thẻ này",
-      `Bạn có chắc chắn muốn xóa bộ thẻ "${deck?.name || ""}"? Tất cả từ vựng trong bộ thẻ sẽ bị xóa vĩnh viễn!`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Xóa vĩnh viễn",
-          style: "destructive",
-          onPress: async () => {
-            triggerHaptic("heavy");
-            await deleteDeck(id);
-            router.back();
-          },
-        },
-      ],
-    );
-  };
-
-  const handleResetProgress = () => {
-    Alert.alert(
-      "Đặt lại tiến độ học",
-      `Bạn có chắc muốn đặt lại trạng thái học của tất cả ${deckCards.length} từ vựng về trạng thái từ mới?`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Reset ngay",
-          style: "destructive",
-          onPress: async () => {
-            triggerHaptic("heavy");
-            await resetDeckProgress(id);
-          },
-        },
-      ],
-    );
-  };
-
-  const speak = (character: string) => {
-    Speech.speak(character, {
-      language: "zh-CN",
-      rate: 0.8,
-    });
-  };
+  const {
+    deck,
+    deckCards,
+    filteredCards,
+    weakCards,
+    masteryPct,
+    isLoading,
+    isFetchingMore,
+    showAIAddModal,
+    setShowAIAddModal,
+    searchQuery,
+    setSearchQuery,
+    handleDeleteDeck,
+    handleResetProgress,
+    speak,
+    handleEndReached,
+  } = useDeckDetail(id);
 
   const renderCardItem = useCallback(
     ({ item }: { item: Card }) => {
-      const pinyinColor = getPinyinToneColor(item.pinyin);
-
       return (
         <DuolingoCard
           style={styles.cardItem}
@@ -153,21 +74,26 @@ export default function DeckDetailScreen() {
             </View>
 
             {/* Speaker Audio Btn */}
-            <AudioButton
-              onPress={() => speak(item.character)}
-              size="sm"
-            />
+            <AudioButton onPress={() => speak(item.character)} size="sm" />
           </View>
         </DuolingoCard>
       );
     },
-    [id],
+    [id, speak]
   );
 
   if (!deck) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color={Colors.duolingo.blue} />
+      <View style={styles.container}>
+        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + 8, 44) }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color={Colors.text.white} />
+          </TouchableOpacity>
+        </View>
+        <View style={{ paddingHorizontal: Spacing.pageMargin, marginTop: Spacing.md }}>
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={2} />
+        </View>
       </View>
     );
   }
@@ -207,19 +133,13 @@ export default function DeckDetailScreen() {
         maxToRenderPerBatch={10}
         windowSize={5}
         removeClippedSubviews={true}
-        onEndReached={() => {
-          if (id && !searchQuery) {
-            fetchMoreCards(id);
-          }
-        }}
+        onEndReached={handleEndReached}
         onEndReachedThreshold={0.4}
         ListFooterComponent={
           isFetchingMore ? (
-            <ActivityIndicator
-              size="small"
-              color={Colors.duolingo.blue}
-              style={{ marginVertical: 16 }}
-            />
+            <View style={{ marginVertical: 8 }}>
+              <SkeletonCard lines={1} />
+            </View>
           ) : null
         }
         ListHeaderComponent={
@@ -307,11 +227,10 @@ export default function DeckDetailScreen() {
         }
         ListEmptyComponent={
           isLoading ? (
-            <ActivityIndicator
-              size="small"
-              color={Colors.duolingo.blue}
-              style={{ marginVertical: 30 }}
-            />
+            <View style={{ marginTop: Spacing.md }}>
+              <SkeletonCard lines={2} />
+              <SkeletonCard lines={2} />
+            </View>
           ) : searchQuery.trim().length > 0 ? (
             <DuolingoCard style={styles.emptyCard}>
               <Ionicons name="search-outline" size={36} color={Colors.duolingo.textMuted} style={{ marginBottom: 8 }} />
@@ -353,160 +272,195 @@ export default function DeckDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.duolingo.bg },
-  loadingContainer: {
+  container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: Colors.duolingo.bg,
   },
-
   headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: Spacing.xs,
+    paddingBottom: Spacing.sm,
     backgroundColor: Colors.duolingo.bg,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     borderBottomColor: Colors.duolingo.cardBorder,
   },
-  backBtn: { padding: 4 },
+  backBtn: {
+    padding: 6,
+  },
   headerTitle: {
-    flex: 1,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "800",
     color: Colors.text.white,
+    flex: 1,
     textAlign: "center",
-    marginHorizontal: Spacing.sm,
+    marginHorizontal: 12,
   },
-  deleteDeckBtn: { padding: 4 },
-
-  listContent: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.md },
-  listHeader: { marginBottom: Spacing.xs },
-
-  summaryCard: { padding: Spacing.lg, marginBottom: Spacing.lg },
-  summaryTopRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: Spacing.xs },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: Colors.duolingo.blueDim,
-    alignItems: "center",
-    justifyContent: "center",
+  deleteDeckBtn: {
+    padding: 6,
   },
-  summaryTextMain: { flex: 1 },
-  summaryTitle: { fontSize: 22, fontWeight: "800", color: Colors.text.white },
-  summarySub: { fontSize: 13, color: Colors.duolingo.textMuted, fontWeight: "600" },
-  deckDescText: { fontSize: 14, color: Colors.duolingo.textMuted, marginTop: 4 },
-
-  cardItem: { marginBottom: 10, padding: Spacing.md },
-  cardItemRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  cardMainInfo: { flex: 1, paddingRight: 8 },
-  charRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  cardCharacter: { fontSize: 24, fontWeight: "800", color: Colors.text.white },
-  cardPinyin: { fontSize: 16, fontWeight: "700", color: Colors.duolingo.blue },
-  cardMeaning: { fontSize: 15, color: Colors.duolingo.green, marginTop: 2, fontWeight: "600" },
-  cardRadicalTag: {
+  listContent: {
+    paddingHorizontal: Spacing.pageMargin,
+    paddingTop: Spacing.md,
+  },
+  listHeader: {
+    marginBottom: Spacing.sm,
+  },
+  summaryCard: {
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  summaryTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.duolingo.purpleDim,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radii.sm,
-    marginTop: 6,
-    alignSelf: "flex-start",
+    justifyContent: "space-between",
   },
-  cardRadicalText: {
-    fontSize: 11,
+  summaryTextMain: {
+    flex: 1,
+  },
+  summaryTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: Colors.text.white,
+  },
+  summarySub: {
+    fontSize: 13,
+    color: Colors.duolingo.textMuted,
+    marginTop: 2,
     fontWeight: "600",
-    color: Colors.duolingo.purple,
-    flexShrink: 1,
   },
-  speakSmallBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.duolingo.blueDim,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  emptyCard: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: Spacing.xl,
-    marginTop: Spacing.md,
+  deckDescText: {
+    fontSize: 13,
+    color: Colors.text.white,
+    marginTop: 8,
+    lineHeight: 18,
   },
   masteryBarRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginTop: Spacing.sm,
+    gap: 12,
+    marginTop: 14,
   },
   masteryPctText: {
     fontSize: 13,
     fontWeight: "800",
     color: Colors.duolingo.green,
   },
-  emptyTitle: { fontSize: 20, fontWeight: "800", color: Colors.text.white },
-  emptySub: { fontSize: 13, color: Colors.duolingo.textMuted, marginTop: 4, textAlign: "center" },
-
   weakWarningCard: {
-    backgroundColor: Colors.duolingo.yellowDim,
     padding: Spacing.md,
     marginBottom: Spacing.md,
-    borderColor: "rgba(255, 200, 0, 0.3)",
-    borderWidth: 1,
+    backgroundColor: "rgba(255, 75, 75, 0.1)",
+    borderColor: Colors.duolingo.red,
   },
   weakWarningHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
+    gap: 6,
   },
   weakWarningTitle: {
     fontSize: 13,
     fontWeight: "800",
-    color: Colors.duolingo.yellow,
+    color: Colors.duolingo.red,
   },
   weakWarningSub: {
     fontSize: 12,
     color: Colors.duolingo.textMuted,
+    marginTop: 4,
     lineHeight: 16,
   },
   searchBarBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    borderRadius: Radii.lg,
+    backgroundColor: Colors.duolingo.cardBg,
     borderWidth: 2,
-    borderColor: Colors.duolingo.border,
-    paddingHorizontal: Spacing.md,
-    height: 46,
-    marginVertical: Spacing.xs,
-    gap: 8,
+    borderColor: Colors.duolingo.cardBorder,
+    borderRadius: Radii.lg,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    height: 44,
   },
   searchInput: {
     flex: 1,
-    color: Colors.text.white,
     fontSize: 14,
+    color: Colors.text.white,
     fontWeight: "600",
   },
-  clearSearchBtn: { padding: 4 },
-  resetSearchBtn: {
+  clearSearchBtn: {
+    padding: 4,
+  },
+  cardItem: {
+    padding: Spacing.md,
+    marginBottom: 10,
+  },
+  cardItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cardMainInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  charRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+  },
+  cardCharacter: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: Colors.text.white,
+  },
+  cardPinyin: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.duolingo.blue,
+  },
+  cardMeaning: {
+    fontSize: 13,
+    color: Colors.duolingo.textMuted,
+    marginTop: 2,
+    fontWeight: "500",
+  },
+  cardRadicalTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 6,
+  },
+  cardRadicalText: {
+    fontSize: 11,
+    color: Colors.duolingo.purple,
+    fontWeight: "600",
+  },
+  emptyCard: {
+    padding: Spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: Spacing.md,
-    backgroundColor: Colors.duolingo.bgSoftDark,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: Radii.full,
-    borderWidth: 1,
-    borderColor: Colors.duolingo.border,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: Colors.text.white,
+  },
+  emptySub: {
+    fontSize: 13,
+    color: Colors.duolingo.textMuted,
+    textAlign: "center",
+    marginTop: 4,
+  },
+  resetSearchBtn: {
+    marginTop: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.duolingo.cardBottom,
+    borderRadius: Radii.md,
   },
   resetSearchText: {
-    color: Colors.text.white,
     fontSize: 12,
-    fontWeight: "800",
+    color: Colors.duolingo.blue,
+    fontWeight: "700",
   },
 });

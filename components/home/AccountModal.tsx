@@ -8,7 +8,6 @@ import {
   ScrollView,
   Switch,
   Alert,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -68,8 +67,9 @@ export function AccountModal({
       Alert.alert("Thành công", "Đã cập nhật mật khẩu mới!");
       setCurrentPassword("");
       setNewPassword("");
-    } catch (e: any) {
-      Alert.alert("Lỗi đổi mật khẩu", e?.message || "Không thể cập nhật mật khẩu.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert("Lỗi đổi mật khẩu", msg || "Không thể cập nhật mật khẩu.");
     } finally {
       setLoadingPass(false);
     }
@@ -83,12 +83,15 @@ export function AccountModal({
         "Đã gửi email khôi phục",
         "Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn.",
       );
-    } catch (e: any) {
-      Alert.alert("Không thể gửi email", e?.message || "Vui lòng thử lại sau.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert("Không thể gửi email", msg || "Vui lòng thử lại sau.");
     } finally {
       setLoadingReset(false);
     }
   };
+
+  if (!visible) return null;
 
   return (
     <Modal
@@ -98,56 +101,57 @@ export function AccountModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalContainer}>
-        {/* Header Bar */}
-        <View
-          style={[
-            styles.modalHeader,
-            { paddingTop: Math.max(insets.top + 8, 16) },
-          ]}
-        >
+        {/* Top App Header */}
+        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top + 8, 44) }]}>
+          <Text style={styles.headerTitle}>TÀI KHOẢN &amp; CÀI ĐẶT</Text>
+
           <TouchableOpacity
-            style={styles.doneBtn}
-            onPress={onClose}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.closeBtn}
+            onPress={() => {
+              triggerHaptic("selection");
+              onClose();
+            }}
           >
-            <Ionicons name="close" size={26} color={Colors.duolingo.textMuted} />
+            <Ionicons name="close" size={24} color={Colors.duolingo.textMuted} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>HỒ SƠ CÁ NHÂN</Text>
-          <View style={{ width: 26 }} />
         </View>
 
-        <ScrollView
-          contentContainerStyle={[
-            styles.modalScroll,
-            { paddingBottom: Math.max(insets.bottom + 20, 30) },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Profile Hero Avatar Card - Sleek & Compact */}
-          <DuolingoCard style={styles.profileHeroCard}>
-            <Text style={styles.displayNameText}>{displayName}</Text>
-            <Text style={styles.emailText}>{email || "Chưa cập nhật email"}</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* User Account Info Header */}
+          <DuolingoCard style={styles.userInfoCard}>
+            <View style={styles.userRow}>
+              <View style={styles.avatarCircle}>
+                <Ionicons name="person" size={32} color={Colors.duolingo.blue} />
+              </View>
+              <View style={styles.userTextCol}>
+                <Text style={styles.userName}>{displayName || "Học viên Anki"}</Text>
+                <Text style={styles.userEmail}>{email || "chua_cap_nhat@email.com"}</Text>
+              </View>
+            </View>
           </DuolingoCard>
 
-          {/* Daily Reminder Section */}
-          <SectionTitle>NHẮC NHỞ HỌC HÀNG NGÀY</SectionTitle>
-          <DuolingoCard style={{ marginBottom: Spacing.md }}>
-            <View style={styles.switchRow}>
+          {/* Daily Reminder Settings Section */}
+          <SectionTitle>NHẮC NHỞ HỌC TẬP HÀNG NGÀY</SectionTitle>
+          <DuolingoCard style={styles.settingCard}>
+            <View style={styles.reminderToggleRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.switchLabel}>Bật nhắc học hàng ngày</Text>
-                <Text style={styles.switchSub}>Nhận thông báo nhắc ôn tập từ vựng đúng giờ</Text>
+                <Text style={styles.reminderTitle}>Thông báo nhắc ôn bài</Text>
+                <Text style={styles.reminderSub}>Đẩy thông báo vào giờ đã chọn mỗi ngày</Text>
               </View>
               <Switch
                 value={reminderEnabled}
-                onValueChange={onToggleReminder}
-                trackColor={{ false: Colors.duolingo.disabledBg, true: Colors.duolingo.green }}
+                onValueChange={(val) => {
+                  triggerHaptic("selection");
+                  onToggleReminder(val);
+                }}
+                trackColor={{ false: Colors.duolingo.cardBottom, true: Colors.duolingo.green }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
-            {/* Clean borderless time picker container */}
             {reminderEnabled && (
-              <View style={styles.pickerContainer}>
+              <View style={styles.pickerBox}>
+                <Text style={styles.pickerLabel}>Chọn giờ nhắc học:</Text>
                 <WheelTimePicker
                   hour={reminderHour}
                   minute={reminderMinute}
@@ -158,60 +162,52 @@ export function AccountModal({
             )}
           </DuolingoCard>
 
-          {/* Password Security Section */}
-          <SectionTitle>BẢO MẬT & MẬT KHẨU</SectionTitle>
-          <DuolingoCard style={{ marginBottom: Spacing.lg }}>
-            <View style={{ gap: Spacing.md }}>
-              <FormField
-                label="Mật khẩu hiện tại"
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                placeholder="Nhập mật khẩu hiện tại"
-                secureTextEntry
-              />
+          {/* Account Security Section */}
+          <SectionTitle>BẢO MẬT &amp; MẬT KHẨU</SectionTitle>
+          <DuolingoCard style={styles.settingCard}>
+            <FormField
+              label="Mật khẩu hiện tại"
+              placeholder="••••••••"
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+            />
 
-              <FormField
-                label="Mật khẩu mới"
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="Tối thiểu 6 ký tự"
-                secureTextEntry
-              />
+            <FormField
+              label="Mật khẩu mới (ít nhất 6 ký tự)"
+              placeholder="••••••••"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+            />
 
-              <DuolingoButton
-                title={loadingPass ? "ĐANG ĐỔI MẬT KHẨU..." : "CẬP NHẬT MẬT KHẨU"}
-                variant="primary"
-                size="lg"
-                disabled={!newPassword || loadingPass}
-                onPress={handlePasswordSubmit}
-              />
+            <DuolingoButton
+              title={loadingPass ? "ĐANG ĐỔI..." : "ĐỔI MẬT KHẨU"}
+              variant="primary"
+              size="md"
+              disabled={loadingPass || !newPassword}
+              onPress={handlePasswordSubmit}
+              style={{ marginTop: Spacing.sm }}
+            />
 
-              <TouchableOpacity
-                style={styles.forgotPassBtn}
-                onPress={handleResetSubmit}
-                disabled={loadingReset}
-              >
-                <Text style={styles.forgotPassText}>Quên mật khẩu? Gửi email khôi phục</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.resetEmailBtn} onPress={handleResetSubmit} disabled={loadingReset}>
+              <Text style={styles.resetEmailText}>
+                {loadingReset ? "Đang gửi..." : "Gửi email đặt lại mật khẩu"}
+              </Text>
+            </TouchableOpacity>
           </DuolingoCard>
 
-          {/* Sign Out 3D Red Button */}
+          {/* Sign Out Action */}
           <DuolingoButton
             title="ĐĂNG XUẤT TÀI KHOẢN"
             variant="error"
             size="lg"
             onPress={() => {
               triggerHaptic("heavy");
-              Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?", [
-                { text: "Hủy", style: "cancel" },
-                {
-                  text: "Đăng xuất",
-                  style: "destructive",
-                  onPress: onSignOut,
-                },
-              ]);
+              onSignOut();
+              onClose();
             }}
+            style={{ marginTop: Spacing.xl, marginBottom: Spacing.xl }}
           />
         </ScrollView>
       </View>
@@ -220,80 +216,103 @@ export function AccountModal({
 }
 
 const styles = StyleSheet.create({
-  modalContainer: { flex: 1, backgroundColor: Colors.duolingo.bg },
-  modalHeader: {
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.duolingo.bg,
+  },
+  headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: Spacing.sm,
-    borderBottomWidth: 2,
+    paddingBottom: 12,
+    backgroundColor: Colors.duolingo.bg,
+    borderBottomWidth: 1,
     borderBottomColor: Colors.duolingo.cardBorder,
   },
-  modalTitle: {
-    fontSize: 17,
+  headerTitle: {
+    fontSize: 16,
     fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
+    color: Colors.text.white,
   },
-  doneBtn: { padding: 4 },
-  modalScroll: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.sm },
-
-  profileHeroCard: {
-    alignItems: "center",
+  closeBtn: {
+    padding: 6,
+  },
+  scrollContent: {
+    paddingHorizontal: Spacing.pageMargin,
+    paddingTop: Spacing.md,
+  },
+  userInfoCard: {
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
+  userRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
   avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: Colors.duolingo.blueDim,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6,
-    borderWidth: 0,
   },
-  displayNameText: {
-    fontSize: 20,
+  userTextCol: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: Colors.text.white,
   },
-  emailText: {
+  userEmail: {
     fontSize: 13,
     color: Colors.duolingo.textMuted,
     marginTop: 2,
+    fontWeight: "600",
   },
-
-  switchRow: {
+  settingCard: {
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  reminderToggleRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.xs,
+    justifyContent: "space-between",
   },
-  switchLabel: {
-    fontSize: 15,
-    color: "#FFFFFF",
-    fontWeight: "700",
+  reminderTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: Colors.text.white,
   },
-  switchSub: {
+  reminderSub: {
     fontSize: 12,
     color: Colors.duolingo.textMuted,
     marginTop: 2,
+    fontWeight: "600",
   },
-  pickerContainer: {
-    borderTopWidth: 0,
-    marginTop: Spacing.xs,
-    paddingTop: Spacing.xs,
+  pickerBox: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.duolingo.cardBorder,
   },
-
-  forgotPassBtn: {
-    alignSelf: "center",
-    paddingVertical: 4,
-  },
-  forgotPassText: {
+  pickerLabel: {
     fontSize: 13,
-    color: "#FFFFFF",
     fontWeight: "700",
-    textDecorationLine: "underline",
+    color: Colors.duolingo.textMuted,
+    marginBottom: 8,
+  },
+  resetEmailBtn: {
+    alignItems: "center",
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  resetEmailText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.duolingo.blue,
   },
 });

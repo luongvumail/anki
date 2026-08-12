@@ -19,6 +19,7 @@ import { DuolingoHeader } from "../../components/ui/DuolingoHeader";
 import { DuolingoButton } from "../../components/ui/DuolingoButton";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { ProgressBar } from "../../components/ui/ProgressBar";
+import { SkeletonCard } from "../../components/ui/SkeletonCard";
 import { SpeedMatchModal } from "../../components/practice/SpeedMatchModal";
 import { SentenceBuilderModal } from "../../components/practice/SentenceBuilderModal";
 import { PronunciationTrainerModal } from "../../components/practice/PronunciationTrainerModal";
@@ -174,7 +175,7 @@ export default function PracticeScreen() {
             <View style={styles.modeTextCol}>
               <Text style={styles.modeTitle}>PHÒNG LUYỆN PHÁT ÂM AI</Text>
               <Text style={styles.modeDesc}>
-                Thu âm giọng đọc Tiếng Trung, AI phân tích nhận diện Pinyin & 4 thanh điệu chuẩn xác.
+                Thu âm giọng đọc Tiếng Trung, AI phân tích nhận diện Pinyin &amp; 4 thanh điệu chuẩn xác.
               </Text>
             </View>
           </View>

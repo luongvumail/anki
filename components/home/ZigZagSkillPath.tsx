@@ -12,6 +12,92 @@ interface ZigZagSkillPathProps {
   onSelectDeck: (deck: Deck) => void;
 }
 
+interface PathNodeItemProps {
+  deck: Deck;
+  offset: number;
+  dueCount: number;
+  isPriority: boolean;
+  isCompleted: boolean;
+  pulseAnim: Animated.Value;
+  onSelect: (deck: Deck) => void;
+}
+
+const PathNodeItem = React.memo(
+  ({
+    deck,
+    offset,
+    dueCount,
+    isPriority,
+    isCompleted,
+    pulseAnim,
+    onSelect,
+  }: PathNodeItemProps) => {
+    return (
+      <View style={[styles.nodeRow, { transform: [{ translateX: offset }] }]}>
+        <View style={styles.nodeWrapper}>
+          {/* Floating Due Count Badge */}
+          {dueCount > 0 ? (
+            <Animated.View
+              style={[
+                styles.dueBadge,
+                {
+                  transform: isPriority ? [{ scale: pulseAnim }] : [],
+                  backgroundColor: isPriority
+                    ? Colors.duolingo.yellow
+                    : Colors.duolingo.blue,
+                },
+              ]}
+            >
+              <Text style={styles.dueBadgeText}>{dueCount}</Text>
+            </Animated.View>
+          ) : isCompleted ? (
+            <View style={styles.completedBadge}>
+              <Ionicons name="checkmark-sharp" size={12} color="#FFFFFF" />
+            </View>
+          ) : null}
+
+          {/* Duolingo 3D Button Node */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => onSelect(deck)}
+            style={[
+              styles.nodeButton,
+              isPriority && styles.nodeButtonPriority,
+              isCompleted && styles.nodeButtonCompleted,
+            ]}
+          >
+            <View style={styles.nodeInnerCircle}>
+              {isCompleted ? (
+                <Ionicons name="star" size={28} color={Colors.duolingo.yellow} />
+              ) : (
+                <DeckIcon
+                  name={deck.icon}
+                  size={26}
+                  color={isPriority ? Colors.duolingo.blue : Colors.duolingo.textMuted}
+                />
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Deck Title Card Banner */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => onSelect(deck)}
+          style={[styles.nodeTextCard, isPriority && styles.nodeTextCardPriority]}
+        >
+          <Text style={styles.nodeDeckName} numberOfLines={1}>
+            {deck.name}
+          </Text>
+          <Text style={styles.nodeDeckSub}>
+            {deck.cardCount || 0} từ · {dueCount > 0 ? `Cần ôn ${dueCount}` : "Đã xong"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+);
+
 export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkillPathProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -28,7 +114,7 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
           duration: 900,
           useNativeDriver: true,
         }),
-      ]),
+      ])
     );
     animation.start();
     return () => animation.stop();
@@ -36,10 +122,8 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 
   if (!decks || decks.length === 0) return null;
 
-  // Offsets for Zig-Zag layout (0, 50, 70, 40, -40, -70, -50)
   const offsets = [0, 50, 70, 40, -40, -70, -50];
 
-  // Find the priority deck index (deck with highest dueCount)
   let priorityIdx = 0;
   let maxDue = -1;
   decks.forEach((deck, idx) => {
@@ -57,7 +141,7 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
         <View style={styles.unitBannerContent}>
           <Text style={styles.unitBannerTitle}>KHO BỘ THẺ CỦA TÔI</Text>
           <Text style={styles.unitBannerSub}>
-            Chọn bộ thẻ bên dưới để bắt đầu lật thẻ Flashcard & làm bài tập SRS!
+            Chọn bộ thẻ bên dưới để bắt đầu lật thẻ Flashcard &amp; làm bài tập SRS!
           </Text>
         </View>
       </View>
@@ -92,62 +176,15 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
                 </View>
               )}
 
-              {/* Node Row for Real Deck */}
-              <View style={[styles.nodeRow, { transform: [{ translateX: offset }] }]}>
-                <View style={styles.nodeWrapper}>
-                  {/* Floating Due Count Badge */}
-                  {dueCount > 0 ? (
-                    <Animated.View
-                      style={[
-                        styles.startBadge,
-                        styles.startBadgeDue,
-                        { transform: [{ scale: pulseAnim }] },
-                      ]}
-                    >
-                      <View style={styles.badgeTextRow}>
-                        <Text style={styles.startBadgeText}>{dueCount} CẦN ÔN</Text>
-                      </View>
-                      <View style={[styles.badgeArrow, styles.badgeArrowDue]} />
-                    </Animated.View>
-                  ) : isCompleted ? (
-                    <View style={[styles.startBadge, styles.startBadgeDone]}>
-                      <View style={styles.badgeTextRow}>
-                        <Text style={styles.startBadgeText}>HOÀN THÀNH</Text>
-                      </View>
-                      <View style={[styles.badgeArrow, styles.badgeArrowDone]} />
-                    </View>
-                  ) : (
-                    <View style={[styles.startBadge, styles.startBadgeNew]}>
-                      <View style={styles.badgeTextRow}>
-                        <Text style={styles.startBadgeText}>BẮT ĐẦU</Text>
-                      </View>
-                      <View style={[styles.badgeArrow, styles.badgeArrowNew]} />
-                    </View>
-                  )}
-
-                  {/* Real Deck Node Circle Button */}
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => onSelectDeck(deck)}
-                    style={[
-                      styles.nodeCircle,
-                      dueCount > 0
-                        ? styles.nodeCircleDue
-                        : isCompleted
-                          ? styles.nodeCircleDone
-                          : styles.nodeCircleNew,
-                    ]}
-                  >
-                    <DeckIcon name={deck.icon} size={32} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Deck Name & Card Count Subtitle */}
-              <View style={[styles.nodeLabelRow, { transform: [{ translateX: offset }] }]}>
-                <Text style={styles.deckNameText}>{deck.name}</Text>
-                <Text style={styles.deckCardCountText}>{deck.cardCount || 0} từ vựng</Text>
-              </View>
+              <PathNodeItem
+                deck={deck}
+                offset={offset}
+                dueCount={dueCount}
+                isPriority={isPriority}
+                isCompleted={isCompleted}
+                pulseAnim={pulseAnim}
+                onSelect={onSelectDeck}
+              />
             </React.Fragment>
           );
         })}
@@ -157,135 +194,128 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 }
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+  },
   unitBanner: {
-    backgroundColor: Colors.duolingo.cardBg,
+    width: "100%",
+    backgroundColor: Colors.duolingo.blue,
     borderRadius: Radii.lg,
     padding: Spacing.md,
-    borderBottomWidth: 4,
-    borderBottomColor: Colors.duolingo.cardBottom,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
+    shadowColor: Colors.duolingo.blue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   unitBannerContent: {
-    flex: 1,
+    gap: 4,
   },
   unitBannerTitle: {
-    fontSize: 13,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "900",
     color: "#FFFFFF",
     letterSpacing: 0.8,
   },
   unitBannerSub: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.duolingo.textMuted,
-    marginTop: 4,
+    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "600",
+    lineHeight: 16,
   },
-
   pathList: {
     alignItems: "center",
-    paddingVertical: Spacing.md,
+    gap: 28,
+    width: "100%",
   },
   mascotPathContainer: {
-    marginVertical: Spacing.xs,
+    marginBottom: -10,
+    zIndex: 10,
   },
-
   nodeRow: {
-    marginVertical: 12,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 14,
   },
   nodeWrapper: {
     alignItems: "center",
-    position: "relative",
+    justifyContent: "center",
   },
-  startBadge: {
+  dueBadge: {
     position: "absolute",
-    top: -38,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: Radii.md,
-    zIndex: 10,
+    top: -12,
+    zIndex: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radii.full,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
-  startBadgeDue: {
-    backgroundColor: Colors.duolingo.red,
+  dueBadgeText: {
+    fontSize: 11,
+    fontWeight: "900",
+    color: "#FFFFFF",
   },
-  startBadgeDone: {
+  completedBadge: {
+    position: "absolute",
+    top: -8,
+    zIndex: 5,
     backgroundColor: Colors.duolingo.green,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
-  startBadgeNew: {
+  nodeButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.duolingo.cardBottom,
+    paddingBottom: 6,
+    justifyContent: "flex-start",
+  },
+  nodeButtonPriority: {
     backgroundColor: Colors.duolingo.blue,
   },
-  startBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.5,
+  nodeButtonCompleted: {
+    backgroundColor: Colors.duolingo.green,
   },
-  badgeTextRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  badgeArrow: {
-    position: "absolute",
-    bottom: -5,
-    alignSelf: "center",
-    width: 0,
-    height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 5,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-  },
-  badgeArrowDue: {
-    borderTopColor: Colors.duolingo.red,
-  },
-  badgeArrowDone: {
-    borderTopColor: Colors.duolingo.green,
-  },
-  badgeArrowNew: {
-    borderTopColor: Colors.duolingo.blue,
-  },
-
-  nodeCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+  nodeInnerCircle: {
+    width: "100%",
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: Colors.duolingo.cardBg,
+    borderWidth: 3,
+    borderColor: Colors.duolingo.cardBorder,
     alignItems: "center",
     justifyContent: "center",
   },
-  nodeCircleDue: {
-    backgroundColor: Colors.duolingo.red,
-    borderBottomWidth: 6,
-    borderBottomColor: Colors.duolingo.redDark,
+  nodeTextCard: {
+    backgroundColor: Colors.duolingo.cardBg,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: Radii.md,
+    borderWidth: 2,
+    borderColor: Colors.duolingo.cardBorder,
+    maxWidth: 160,
   },
-  nodeCircleDone: {
-    backgroundColor: Colors.duolingo.green,
-    borderBottomWidth: 6,
-    borderBottomColor: Colors.duolingo.greenDark,
+  nodeTextCardPriority: {
+    borderColor: Colors.duolingo.blue,
   },
-  nodeCircleNew: {
-    backgroundColor: Colors.duolingo.blue,
-    borderBottomWidth: 6,
-    borderBottomColor: Colors.duolingo.blueDark,
-  },
-
-  nodeLabelRow: {
-    alignItems: "center",
-    marginBottom: Spacing.lg,
-  },
-  deckNameText: {
-    fontSize: 15,
+  nodeDeckName: {
+    fontSize: 13,
     fontWeight: "800",
-    color: "#FFFFFF",
-    marginTop: 4,
-    textAlign: "center",
+    color: Colors.text.white,
   },
-  deckCardCountText: {
-    fontSize: 12,
-    fontWeight: "700",
+  nodeDeckSub: {
+    fontSize: 11,
     color: Colors.duolingo.textMuted,
     marginTop: 2,
+    fontWeight: "600",
   },
 });

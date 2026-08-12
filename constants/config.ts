@@ -21,7 +21,29 @@ export const APP_CONFIG = {
 
   // Debounce & Timeout
   GEMINI_DEBOUNCE_MS: 500,
+  FIRESTORE_TIMEOUT_MS: 10000,
+
+  // Audio Speech
+  SPEECH_RATE: 0.8,
 
   // User Levels (XP required per level step)
   XP_PER_LEVEL: 100,
+
+  // Quiz Fallback Distractors
+  QUIZ_FALLBACKS: {
+    CHARACTERS: ["好", "你", "学", "中", "国", "人", "爱", "生", "水", "大", "小", "日"],
+    PINYINS: ["hǎo", "nǐ", "xué", "zhōng", "guó", "rén", "ài", "shēng", "shuǐ", "dà"],
+    TRANSLATIONS: [
+      "Xin chào",
+      "Tốt / Hảo",
+      "Học sinh",
+      "Cảm ơn",
+      "Nước uống",
+      "To lớn",
+      "Tạm biệt",
+      "Yêu thương",
+      "Bạn bè",
+      "Thức ăn",
+    ],
+  },
 } as const;
