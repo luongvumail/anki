@@ -4,6 +4,7 @@ import { CardSlice } from "./cardSlice";
 import { SessionSlice } from "./sessionSlice";
 import { UserProgressState } from "./types";
 import { clearReviewTrackerCache } from "../../lib/reviewTracker";
+import { clearHeaderUserCache } from "../../lib/userHeaderCache";
 
 export interface AuthSlice {
   userId: string | null;
@@ -21,6 +22,7 @@ export const createAuthSlice: StateCreator<
   setUserId: (id) => set({ userId: id }),
   resetUserState: () => {
     clearReviewTrackerCache();
+    clearHeaderUserCache();
     set({
       userId: null,
       decks: [],

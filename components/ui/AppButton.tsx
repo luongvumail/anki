@@ -14,6 +14,7 @@ export interface AppButtonProps {
   variant?: AppButtonVariant;
   size?: AppButtonSize;
   disabled?: boolean;
+  loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
   icon?: React.ReactNode;
@@ -26,6 +27,7 @@ export function AppButton({
   variant = "primary",
   size = "lg",
   disabled = false,
+  loading = false,
   style,
   textStyle,
   icon,
@@ -61,6 +63,27 @@ export function AppButton({
   const sizeStyle = getSizeStyle();
 
   const getVariantStyles = () => {
+    if (loading) {
+      switch (variant) {
+        case "primary":
+        case "blue":
+          return { bg: theme.blue, text: "#FFFFFF" };
+        case "success":
+          return { bg: theme.green, text: "#FFFFFF" };
+        case "error":
+          return { bg: theme.red, text: "#FFFFFF" };
+        case "yellow":
+          return { bg: theme.yellow, text: "#FFFFFF" };
+        case "purple":
+          return { bg: theme.purple, text: "#FFFFFF" };
+        case "secondary":
+          return { bg: theme.bgSoft, text: theme.blue };
+        case "ghost":
+        default:
+          return { bg: "transparent", text: theme.blue };
+      }
+    }
+
     if (disabled) {
       return {
         bg: theme.bgSoft,

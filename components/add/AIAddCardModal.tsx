@@ -121,6 +121,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
               title={loading ? "AI ĐANG TẠO..." : "TẠO TỪ VỰNG BẰNG AI"}
               variant="blue"
               size="lg"
+              loading={loading}
               disabled={loading || !prompt.trim()}
               onPress={handleGenerate}
               style={{ marginTop: Spacing.md }}
