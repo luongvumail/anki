@@ -7,6 +7,8 @@ import { useTheme } from "../../hooks/useTheme";
 import { useStore } from "../../store/useStore";
 import { supabase } from "../../lib/supabase";
 
+import { getCachedUserName, setCachedUserName } from "../../lib/userHeaderCache";
+
 export interface AppHeaderProps {
   userName?: string;
   courseName?: string;
@@ -28,19 +30,22 @@ export function AppHeader({
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const openAccountModal = useStore((s) => s.openAccountModal);
-  const [fetchedName, setFetchedName] = useState<string | null>(null);
+  const [fetchedName, setFetchedName] = useState<string | null>(getCachedUserName());
 
   useEffect(() => {
+    if (getCachedUserName()) return;
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
         const full = data.user.user_metadata?.full_name;
         const email = data.user.email ? data.user.email.split("@")[0] : null;
-        setFetchedName(full || email || "Bạn");
+        const name = full || email || "Bạn";
+        setCachedUserName(name);
+        setFetchedName(name);
       }
     });
   }, []);
 
-  const resolvedName = userName || fetchedName || "Bạn";
+  const resolvedName = userName || fetchedName || getCachedUserName() || "Bạn";
   const handleAvatarPress = onProfilePress || openAccountModal;
 
   return (

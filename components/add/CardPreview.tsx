@@ -70,7 +70,16 @@ export const CardPreview = React.memo(function CardPreview({
         </View>
       </View>
 
-      <View style={[styles.previewCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+      <View
+        style={[
+          styles.previewCard,
+          {
+            backgroundColor: theme.cardBg,
+            borderColor: theme.cardBorder,
+            shadowOpacity: theme.isDark ? 0.3 : 0.08,
+          },
+        ]}
+      >
         {/* Hanzi Header */}
         <View style={[styles.previewTop, { borderBottomColor: theme.cardBorder }]}>
           <Text style={[styles.characterBig, { color: theme.textPrimary }]}>{cardData.character}</Text>
@@ -152,6 +161,10 @@ const styles = StyleSheet.create({
     borderRadius: Radii.card,
     borderWidth: BorderWidths.thin,
     padding: Spacing.cellHorizontal,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 16,
+    elevation: 4,
   },
   previewTop: {
     alignItems: "center",

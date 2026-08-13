@@ -6,9 +6,7 @@ const proxyUrl = process.env.EXPO_PUBLIC_AI_PROXY_URL || "";
 const appToken = process.env.EXPO_PUBLIC_APP_TOKEN || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// gemini-3.5-flash: latest GA model, fast & capable
-// gemini-3.1-flash-lite: cheapest fallback
-const CANDIDATE_MODELS = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
+const CANDIDATE_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash"];
 
 /**
  * Sends request to Cloudflare Worker proxy if EXPO_PUBLIC_AI_PROXY_URL is configured.
@@ -60,12 +58,15 @@ async function generateWithModels(
   let lastError: unknown = null;
 
   if (proxyUrl) {
-    try {
-      if (__DEV__) console.log(`[Gemini/Proxy] Sending request via proxy`);
-      return await generateViaProxy(CANDIDATE_MODELS[0], prompt, responseMimeType, temperature);
-    } catch (proxyErr) {
-      console.warn(`[Gemini/Proxy] Proxy request failed:`, proxyErr);
-      lastError = proxyErr;
+    for (const modelName of CANDIDATE_MODELS) {
+      try {
+        if (__DEV__)
+          console.log(`[Gemini/Proxy] Sending request via proxy with model ${modelName}`);
+        return await generateViaProxy(modelName, prompt, responseMimeType, temperature);
+      } catch (proxyErr) {
+        console.warn(`[Gemini/Proxy] Proxy request with model ${modelName} failed:`, proxyErr);
+        lastError = proxyErr;
+      }
     }
   }
 
@@ -104,22 +105,27 @@ function generateWithFallbackText(prompt: string): Promise<string> {
 function sanitizeInput(input: string): string {
   return input
     .trim()
-    .slice(0, 50)
+    .slice(0, 1000)
     .replace(/[`"'{}\\[\]\n\r]/g, " ")
     .replace(/\s+/g, " ");
 }
 
 /**
- * Debounce helper for AI requests to prevent API spamming
+ * Debounce & queue helper for AI requests to prevent API spamming and concurrency stampedes
  */
 let lastRequestTime = 0;
+let rateLimitQueue = Promise.resolve();
+
 async function enforceRateLimit(): Promise<void> {
-  const now = Date.now();
-  const elapsed = now - lastRequestTime;
-  if (elapsed < APP_CONFIG.GEMINI_DEBOUNCE_MS) {
-    await new Promise((resolve) => setTimeout(resolve, APP_CONFIG.GEMINI_DEBOUNCE_MS - elapsed));
-  }
-  lastRequestTime = Date.now();
+  rateLimitQueue = rateLimitQueue.then(async () => {
+    const now = Date.now();
+    const elapsed = now - lastRequestTime;
+    if (elapsed < APP_CONFIG.GEMINI_DEBOUNCE_MS) {
+      await new Promise((resolve) => setTimeout(resolve, APP_CONFIG.GEMINI_DEBOUNCE_MS - elapsed));
+    }
+    lastRequestTime = Date.now();
+  });
+  return rateLimitQueue;
 }
 
 /**
@@ -243,16 +249,9 @@ export function validateSingleCardData(raw: unknown): CardData {
   };
 }
 
-/**
- * Uses a SINGLE Gemini request to generate card data for multiple Chinese words at once.
- * Much faster and cheaper than calling generateCardData() separately for each word.
- * Falls back to parallel individual calls if the batch prompt fails.
- */
-export async function generateCardDataBatch(inputs: string[]): Promise<CardData[]> {
-  if (inputs.length === 0) return [];
-  if (inputs.length === 1) return [await generateCardData(inputs[0])];
-
-  const cleanInputs = inputs.map(sanitizeInput);
+async function generateSingleSubBatch(chunkInputs: string[]): Promise<CardData[]> {
+  await enforceRateLimit();
+  const cleanInputs = chunkInputs.map(sanitizeInput);
   const wordList = cleanInputs.map((w, i) => `${i + 1}. "${w}"`).join("\n");
 
   const prompt = `Bạn là chuyên gia Hán-Việt. Phân tích chi tiết các từ tiếng Trung sau đây:
@@ -290,17 +289,40 @@ Trả về JSON array (CHỈ JSON array, không markdown), với mỗi phần t�
     const text = await generateWithFallback(prompt);
     const jsonText = extractCleanJson(text);
     const rawResults = JSON.parse(jsonText);
-    if (!Array.isArray(rawResults) || rawResults.length !== inputs.length) {
+    if (!Array.isArray(rawResults) || rawResults.length !== chunkInputs.length) {
       throw new Error(
-        `Expected ${inputs.length} results, got ${Array.isArray(rawResults) ? rawResults.length : "non-array"}`,
+        `Expected ${chunkInputs.length} results, got ${Array.isArray(rawResults) ? rawResults.length : "non-array"}`,
       );
     }
     return rawResults.map(validateSingleCardData);
   } catch (err) {
-    // Fallback: parallel individual calls if batch fails
-    console.warn("[Gemini] Batch failed, falling back to parallel individual calls:", err);
-    return Promise.all(inputs.map((input) => generateCardData(input)));
+    console.warn("[Gemini] Sub-batch failed, falling back to sequential calls:", err);
+    const results: CardData[] = [];
+    for (const input of chunkInputs) {
+      results.push(await generateCardData(input));
+    }
+    return results;
   }
+}
+
+/**
+ * Uses Gemini request batching with automatic sub-chunking (max 12 words per chunk) to generate card data for multiple words safely.
+ * Handles rate-limiting and token limits gracefully.
+ */
+export async function generateCardDataBatch(inputs: string[]): Promise<CardData[]> {
+  if (inputs.length === 0) return [];
+  if (inputs.length === 1) return [await generateCardData(inputs[0])];
+
+  const BATCH_CHUNK_SIZE = 12;
+  const allResults: CardData[] = [];
+
+  for (let i = 0; i < inputs.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = inputs.slice(i, i + BATCH_CHUNK_SIZE);
+    const chunkResults = await generateSingleSubBatch(chunk);
+    allResults.push(...chunkResults);
+  }
+
+  return allResults;
 }
 
 /**

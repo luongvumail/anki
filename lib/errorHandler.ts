@@ -52,13 +52,23 @@ export function getGeminiErrorMessage(error: unknown): string {
   if (!error) return "Không thể tạo từ vựng bằng AI. Vui lòng thử lại.";
 
   const { message } = extractErrorDetails(error);
+  const msgLower = message.toLowerCase();
 
   if (
     message.includes("RESOURCE_EXHAUSTED") ||
     message.includes("429") ||
-    message.includes("quota")
+    msgLower.includes("quota") ||
+    msgLower.includes("rate limit")
   ) {
     return "Hệ thống AI đang quá tải lượt tra cứu. Vui lòng đợi 30 giây rồi bấm thử lại.";
+  }
+
+  if (msgLower.includes("not found") || msgLower.includes("404")) {
+    return "Mô hình AI chưa sẵn sàng hoặc đang bảo trì. Vui lòng bấm thử lại.";
+  }
+
+  if (msgLower.includes("api key") || msgLower.includes("unauthorized") || msgLower.includes("token")) {
+    return "Lỗi xác thực dịch vụ AI. Vui lòng kiểm tra lại cấu hình ứng dụng.";
   }
 
   if (message.includes("JSON") || message.includes("parse") || message.includes("SyntaxError")) {
@@ -66,14 +76,15 @@ export function getGeminiErrorMessage(error: unknown): string {
   }
 
   if (
-    message.includes("network") ||
-    message.includes("Failed to fetch") ||
-    message.includes("offline")
+    msgLower.includes("network") ||
+    msgLower.includes("failed to fetch") ||
+    msgLower.includes("offline") ||
+    msgLower.includes("abort")
   ) {
     return "Không thể kết nối với AI. Vui lòng kiểm tra mạng Internet của bạn.";
   }
 
-  return "Không thể phân tích từ vựng lúc này. Vui lòng thử lại sau.";
+  return message || "Không thể phân tích từ vựng lúc này. Vui lòng thử lại sau.";
 }
 
 /**

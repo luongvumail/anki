@@ -9,6 +9,8 @@ import { getDatabaseErrorMessage } from "../../lib/errorHandler";
 import { APP_CONFIG } from "../../constants/config";
 import { enqueueOfflineUpdates, flushOfflineQueue } from "../../lib/offlineQueue";
 
+import { sanitizeForSupabase } from "./supabaseHelpers";
+
 export const PAGE_SIZE = APP_CONFIG.PAGE_SIZE;
 
 // Helper to map DB row (snake_case) to Card model (camelCase)
@@ -42,6 +44,7 @@ export interface CardSlice {
   fetchMoreCards: (deckId: string) => Promise<void>;
   fetchAllCardsForStats: (deckId: string) => Promise<void>;
   addCard: (card: Omit<Card, "id" | "createdAt" | "updatedAt">) => Promise<void>;
+  addCardsBatch: (cards: Omit<Card, "id" | "createdAt" | "updatedAt">[]) => Promise<void>;
   updateCard: (cardId: string, deckId: string, updates: Partial<Card>) => Promise<void>;
   batchUpdateCards: (
     items: { cardId: string; deckId: string; updates: Partial<Card> }[],
@@ -151,25 +154,27 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     const defaultFSRS = cardData.srs || createDefaultFSRSState();
     const nextReview = defaultFSRS.dueDate || new Date().toISOString();
 
+    const payload = sanitizeForSupabase({
+      deck_id: cardData.deckId,
+      user_id: user.id,
+      character: cardData.character,
+      traditional: cardData.traditional,
+      pinyin: cardData.pinyin,
+      hanviet: cardData.hanviet,
+      translation: cardData.translation,
+      examples: cardData.examples || [],
+      radical: cardData.radical,
+      stroke_count: cardData.strokeCount,
+      hsk_level: cardData.hskLevel,
+      tags: cardData.tags || [],
+      srs: defaultFSRS,
+      srs_next_review: nextReview,
+    });
+
     try {
       const { data, error } = await supabase
         .from("cards")
-        .insert({
-          deck_id: cardData.deckId,
-          user_id: user.id,
-          character: cardData.character,
-          traditional: cardData.traditional,
-          pinyin: cardData.pinyin,
-          hanviet: cardData.hanviet,
-          translation: cardData.translation,
-          examples: cardData.examples || [],
-          radical: cardData.radical,
-          stroke_count: cardData.strokeCount,
-          hsk_level: cardData.hskLevel,
-          tags: cardData.tags || [],
-          srs: defaultFSRS,
-          srs_next_review: nextReview,
-        })
+        .insert(payload)
         .select()
         .single();
 
@@ -195,6 +200,70 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       }));
     } catch (err) {
       console.error("[addCard] Supabase insert failed:", err);
+      throw err;
+    }
+  },
+
+  addCardsBatch: async (cardsData) => {
+    if (cardsData.length === 0) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
+    const rowsToInsert = cardsData.map((cardData) => {
+      const defaultFSRS = cardData.srs || createDefaultFSRSState();
+      const nextReview = defaultFSRS.dueDate || new Date().toISOString();
+      return sanitizeForSupabase({
+        deck_id: cardData.deckId,
+        user_id: user.id,
+        character: cardData.character,
+        traditional: cardData.traditional,
+        pinyin: cardData.pinyin,
+        hanviet: cardData.hanviet,
+        translation: cardData.translation,
+        examples: cardData.examples || [],
+        radical: cardData.radical,
+        stroke_count: cardData.strokeCount,
+        hsk_level: cardData.hskLevel,
+        tags: cardData.tags || [],
+        srs: defaultFSRS,
+        srs_next_review: nextReview,
+      });
+    });
+
+    try {
+      const { data, error } = await supabase
+        .from("cards")
+        .insert(rowsToInsert)
+        .select();
+
+      if (error) throw error;
+
+      const insertedCards = (data || []).map(mapRowToCard);
+      if (insertedCards.length === 0) return;
+
+      const deckId = insertedCards[0].deckId;
+      const existingCards = get().cards[deckId] || [];
+      const updatedCards = [...insertedCards, ...existingCards];
+      const realDueCount = computeDueCount(updatedCards);
+      const realNewCount = computeNewCount(updatedCards);
+
+      set((s) => ({
+        cards: { ...s.cards, [deckId]: updatedCards },
+        decks: s.decks.map((deck) =>
+          deck.id === deckId
+            ? {
+                ...deck,
+                cardCount: (deck.cardCount || 0) + insertedCards.length,
+                dueCount: realDueCount,
+                newCount: realNewCount,
+              }
+            : deck,
+        ),
+      }));
+    } catch (err) {
+      console.error("[addCardsBatch] Supabase batch insert failed:", err);
       throw err;
     }
   },

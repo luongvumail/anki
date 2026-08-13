@@ -121,12 +121,13 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
               title={loading ? "AI ĐANG TẠO..." : "TẠO TỪ VỰNG BẰNG AI"}
               variant="blue"
               size="lg"
+              loading={loading}
               disabled={loading || !prompt.trim()}
               onPress={handleGenerate}
               style={{ marginTop: Spacing.md }}
               icon={
                 loading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={theme.blue} />
                 ) : (
                   <Ionicons name="sparkles" size={Layout.iconMd} color="#FFFFFF" />
                 )
