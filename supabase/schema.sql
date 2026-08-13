@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.cards (
   stroke_count     INTEGER,
   hsk_level        INTEGER,
   tags             TEXT[] DEFAULT '{}',
-  srs              JSONB NOT NULL DEFAULT '{"repetitions":0,"easeFactor":2.5,"interval":0}'::jsonb,
+  srs              JSONB NOT NULL DEFAULT '{"repetitions":0,"interval":0,"easeFactor":2.5,"stability":0.4025,"difficulty":5.0,"state":0}'::jsonb,
   srs_next_review  TIMESTAMPTZ DEFAULT now() NOT NULL,
   created_at       TIMESTAMPTZ DEFAULT now() NOT NULL,
   updated_at       TIMESTAMPTZ DEFAULT now() NOT NULL,
@@ -64,7 +64,7 @@ SELECT
   d.updated_at,
   COALESCE(COUNT(c.id), 0)::int AS card_count,
   COALESCE(COUNT(c.id) FILTER (WHERE c.srs_next_review <= now()), 0)::int AS due_count,
-  COALESCE(COUNT(c.id) FILTER (WHERE (c.srs->>'repetitions')::int = 0), 0)::int AS new_count
+  COALESCE(COUNT(c.id) FILTER (WHERE (c.srs->>'state')::int = 0), 0)::int AS new_count
 FROM public.decks d
 LEFT JOIN public.cards c ON c.deck_id = d.id
 GROUP BY d.id;

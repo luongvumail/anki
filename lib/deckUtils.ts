@@ -1,5 +1,5 @@
 import { Card } from "../store/slices/types";
-import { isDue } from "./srs";
+import { isDue, FSRSState } from "./srs";
 
 /**
  * Calculates total cards due for study today (both new cards + review due cards).
@@ -10,11 +10,11 @@ export function computeDueCount(cards: Card[]): number {
 }
 
 /**
- * Calculates new card count (0 repetitions, never reviewed before).
+ * Calculates new card count (FSRSState.New, never reviewed before).
  */
 export function computeNewCount(cards: Card[]): number {
   if (!cards || cards.length === 0) return 0;
-  return cards.filter((c) => !c.srs || c.srs.repetitions === 0).length;
+  return cards.filter((c) => !c.srs || c.srs.state === FSRSState.New).length;
 }
 
 /**
@@ -22,7 +22,7 @@ export function computeNewCount(cards: Card[]): number {
  */
 export function computeReviewDueCount(cards: Card[]): number {
   if (!cards || cards.length === 0) return 0;
-  return cards.filter((c) => c.srs && c.srs.repetitions > 0 && isDue(c.srs)).length;
+  return cards.filter((c) => c.srs && c.srs.state !== FSRSState.New && isDue(c.srs)).length;
 }
 
 /**
@@ -30,7 +30,7 @@ export function computeReviewDueCount(cards: Card[]): number {
  */
 export function computeLearnedCount(cards: Card[]): number {
   if (!cards || cards.length === 0) return 0;
-  return cards.filter((c) => c.srs && c.srs.repetitions > 0 && !isDue(c.srs)).length;
+  return cards.filter((c) => c.srs && c.srs.state !== FSRSState.New && !isDue(c.srs)).length;
 }
 
 /**

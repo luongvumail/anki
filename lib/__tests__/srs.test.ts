@@ -32,7 +32,7 @@ export function runFSRSTests() {
   // Test 2: AGAIN grade (Forget)
   const initial = createDefaultFSRSState();
   const nextAgain = calculateFSRS(FSRS_GRADES.AGAIN, initial);
-  assertStrictEqual(nextAgain.repetitions, 0, "AGAIN resets reps");
+  assertStrictEqual(nextAgain.repetitions, 1, "AGAIN increments reps count");
   assertStrictEqual(nextAgain.interval, 0, "AGAIN resets interval for immediate review");
   assertStrictEqual(nextAgain.state, FSRSState.Learning, "New card gets Learning state on AGAIN");
 
@@ -51,7 +51,7 @@ export function runFSRSTests() {
   );
 
   // Test 5: Quiz Speed Evaluation
-  // Fast response (<= 2500ms) -> EASY
+  // Fast response (<= 2450ms) -> EASY
   const fastEval = calculateQuizFSRS(true, false, 1200, initial);
   assertStrictEqual(fastEval.grade, FSRS_GRADES.EASY, "Fast response should yield EASY grade");
   assertStrictEqual(fastEval.speedCategory, "fast");
@@ -61,8 +61,8 @@ export function runFSRSTests() {
   assertStrictEqual(normalEval.grade, FSRS_GRADES.GOOD, "Normal response should yield GOOD grade");
   assertStrictEqual(normalEval.speedCategory, "normal");
 
-  // Slow response (6000ms) -> HARD
-  const slowEval = calculateQuizFSRS(true, false, 6000, initial);
+  // Slow response (4000ms > 3500ms threshold) -> HARD
+  const slowEval = calculateQuizFSRS(true, false, 4000, initial);
   assertStrictEqual(slowEval.grade, FSRS_GRADES.HARD, "Slow response should yield HARD grade");
   assertStrictEqual(slowEval.speedCategory, "slow");
 

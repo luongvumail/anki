@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { isDue, FSRS_GRADES, FSRSGrade } from "../../lib/srs";
+import { isDue, FSRS_GRADES, FSRSGrade, FSRSState } from "../../lib/srs";
 import { Card, StudySession } from "./types";
 import { CardSlice } from "./cardSlice";
 
@@ -29,9 +29,13 @@ export const createSessionSlice: StateCreator<SessionSlice & CardSlice, [], [], 
       dueCards = cards.filter((c) => isDue(c.srs));
     }
 
-    // Separate new cards (0 reps) and review cards
-    const newCards = dueCards.filter((c) => c.srs.repetitions === 0);
-    const reviewCards = dueCards.filter((c) => c.srs.repetitions > 0);
+    // Separate new cards and review cards by FSRS state
+    const newCards = dueCards.filter(
+      (c) => !c.srs || c.srs.state === FSRSState.New || c.srs.state === FSRSState.Learning,
+    );
+    const reviewCards = dueCards.filter(
+      (c) => c.srs && c.srs.state !== FSRSState.New && c.srs.state !== FSRSState.Learning,
+    );
     const queue = [...newCards, ...reviewCards];
 
     set({

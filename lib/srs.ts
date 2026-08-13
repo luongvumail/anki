@@ -206,7 +206,7 @@ export function calculateSRS(grade: SRSGrade, currentInput?: Partial<SRSState>):
     newInterval = clamp(Math.round(targetInterval), 1, FSRS_DEFAULT_PARAMS.maximumInterval);
   }
 
-  const repetitions = grade === SRS_GRADES.AGAIN ? 0 : current.repetitions + 1;
+  const repetitions = current.repetitions + 1;
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + newInterval);
   dueDate.setHours(0, 0, 0, 0);
@@ -274,8 +274,8 @@ export function calculateQuizSRS(
   let speedCategory: "fast" | "normal" | "slow" | "wrong";
   let feedbackLabel: string;
 
-  const FAST_THRESHOLD_MS = 2500;
-  const SLOW_THRESHOLD_MS = 5000;
+  const FAST_THRESHOLD_MS = Math.round(APP_CONFIG.SLOW_RESPONSE_THRESHOLD_MS * 0.7);
+  const SLOW_THRESHOLD_MS = APP_CONFIG.SLOW_RESPONSE_THRESHOLD_MS;
 
   if (!isCorrect) {
     grade = SRS_GRADES.AGAIN;

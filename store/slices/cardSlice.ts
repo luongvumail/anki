@@ -1,11 +1,10 @@
 import { StateCreator } from "zustand";
 import { supabase } from "../../lib/supabase";
-import { createDefaultFSRSState, FSRSGrade, calculateFSRS } from "../../lib/srs";
+import { createDefaultFSRSState } from "../../lib/srs";
 import { Card } from "./types";
 import { UISlice } from "./uiSlice";
 import { DeckSlice } from "./deckSlice";
 import { computeDueCount, computeNewCount } from "../../lib/deckUtils";
-import { recordReviewToday } from "../../lib/reviewTracker";
 import { getDatabaseErrorMessage } from "../../lib/errorHandler";
 import { APP_CONFIG } from "../../constants/config";
 
@@ -43,9 +42,11 @@ export interface CardSlice {
   fetchAllCardsForStats: (deckId: string) => Promise<void>;
   addCard: (card: Omit<Card, "id" | "createdAt" | "updatedAt">) => Promise<void>;
   updateCard: (cardId: string, deckId: string, updates: Partial<Card>) => Promise<void>;
+  batchUpdateCards: (
+    items: { cardId: string; deckId: string; updates: Partial<Card> }[],
+  ) => Promise<void>;
   deleteCard: (cardId: string, deckId: string) => Promise<void>;
   clearDeckCards: (deckId: string) => Promise<void>;
-  gradeCard: (card: Card, grade: FSRSGrade) => Promise<void>;
   resetDeckProgress: (deckId: string) => Promise<void>;
   findExistingCard: (character: string, deckId?: string) => Card | undefined;
 }
@@ -236,6 +237,66 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     }
   },
 
+  batchUpdateCards: async (items) => {
+    if (items.length === 0) return;
+
+    const state = get();
+    const newCardsState = { ...state.cards };
+    const updatedDeckIds = new Set<string>();
+
+    for (const { cardId, deckId, updates } of items) {
+      updatedDeckIds.add(deckId);
+      const existing = newCardsState[deckId] || [];
+      newCardsState[deckId] = existing.map((c) => (c.id === cardId ? { ...c, ...updates } : c));
+    }
+
+    const updatedDecks = state.decks.map((d) => {
+      if (updatedDeckIds.has(d.id)) {
+        const deckCards = newCardsState[d.id] || [];
+        return {
+          ...d,
+          dueCount: computeDueCount(deckCards),
+          newCount: computeNewCount(deckCards),
+        };
+      }
+      return d;
+    });
+
+    set({ cards: newCardsState, decks: updatedDecks });
+
+    try {
+      await Promise.all(
+        items.map(async ({ cardId, updates }) => {
+          const payload: Record<string, any> = {
+            updated_at: new Date().toISOString(),
+          };
+          if (updates.character !== undefined) payload.character = updates.character;
+          if (updates.traditional !== undefined) payload.traditional = updates.traditional;
+          if (updates.pinyin !== undefined) payload.pinyin = updates.pinyin;
+          if (updates.hanviet !== undefined) payload.hanviet = updates.hanviet;
+          if (updates.translation !== undefined) payload.translation = updates.translation;
+          if (updates.examples !== undefined) payload.examples = updates.examples;
+          if (updates.radical !== undefined) payload.radical = updates.radical;
+          if (updates.strokeCount !== undefined) payload.stroke_count = updates.strokeCount;
+          if (updates.hskLevel !== undefined) payload.hsk_level = updates.hskLevel;
+          if (updates.tags !== undefined) payload.tags = updates.tags;
+          if (updates.srs !== undefined) {
+            payload.srs = updates.srs;
+            if (updates.srs.dueDate) {
+              payload.srs_next_review = updates.srs.dueDate;
+            }
+          }
+          if (updates.lastReviewedAt !== undefined)
+            payload.last_reviewed_at = updates.lastReviewedAt;
+
+          return supabase.from("cards").update(payload).eq("id", cardId);
+        }),
+      );
+    } catch (err) {
+      console.error("[batchUpdateCards] Supabase batch update failed:", err);
+    }
+  },
+
   deleteCard: async (cardId, deckId) => {
     const existingCards = get().cards[deckId] || [];
     const updatedCards = existingCards.filter((c) => c.id !== cardId);
@@ -278,13 +339,6 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     } catch (err) {
       console.error("[clearDeckCards] Supabase delete failed:", err);
     }
-  },
-
-  gradeCard: async (card, grade) => {
-    const newFSRS = calculateFSRS(grade, card.srs);
-    const now = new Date().toISOString();
-    await get().updateCard(card.id, card.deckId, { srs: newFSRS, lastReviewedAt: now });
-    await recordReviewToday();
   },
 
   resetDeckProgress: async (deckId) => {

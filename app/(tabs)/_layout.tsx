@@ -4,13 +4,14 @@ import { StyleSheet, Platform, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Spacing, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { GlobalAccountModal } from "../../components/home/GlobalAccountModal";
+import { AccountModal } from "../../components/home/AccountModal";
 
 export default function TabLayout() {
   const { theme } = useTheme();
 
   return (
     <View style={{ flex: 1 }}>
+      {/* Tab Screens ... */}
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -64,7 +65,7 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-      <GlobalAccountModal />
+      <AccountModal />
     </View>
   );
 }

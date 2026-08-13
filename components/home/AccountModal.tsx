@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,55 +7,82 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Spacing, Typography, Layout, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
+import { useStore } from "../../store/useStore";
+import { supabase } from "../../lib/supabase";
+import { cancelDailyStudyReminder } from "../../lib/notificationService";
 import { WheelTimePicker } from "./WheelTimePicker";
 import { SectionTitle } from "../ui/SectionTitle";
 import { AppCard } from "../ui/AppCard";
 import { AppButton } from "../ui/AppButton";
 import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 
-interface AccountModalProps {
-  visible: boolean;
-  onClose: () => void;
-  displayName: string;
-  email: string | null;
-  reminderEnabled: boolean;
-  reminderHour: number;
-  reminderMinute: number;
-  onToggleReminder: (value: boolean) => void;
-  onHourChange: (hour: number) => void;
-  onMinuteChange: (minute: number) => void;
-  onSignOut: () => void;
-}
-
-export function AccountModal({
-  visible,
-  onClose,
-  displayName,
-  email,
-  reminderEnabled,
-  reminderHour,
-  reminderMinute,
-  onToggleReminder,
-  onHourChange,
-  onMinuteChange,
-  onSignOut,
-}: AccountModalProps) {
+export function AccountModal() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
 
-  if (!visible) return null;
+  const isAccountModalOpen = useStore((s) => s.isAccountModalOpen);
+  const closeAccountModal = useStore((s) => s.closeAccountModal);
+  const resetUserState = useStore((s) => s.resetUserState);
+
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderHour, setReminderHour] = useState(20);
+  const [reminderMinute, setReminderMinute] = useState(0);
+
+  useEffect(() => {
+    if (!isAccountModalOpen) return;
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setUserEmail(data.user.email || null);
+        setUserName(
+          data.user.user_metadata?.full_name ||
+            (data.user.email ? data.user.email.split("@")[0] : "Bạn"),
+        );
+      }
+    });
+  }, [isAccountModalOpen]);
+
+  const displayName = userName || (userEmail ? userEmail.split("@")[0] : "Bạn");
+  const email = userEmail;
+
+  const handleToggleReminder = async (val: boolean) => {
+    setReminderEnabled(val);
+    if (!val) {
+      await cancelDailyStudyReminder();
+    }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất tài khoản?", [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Đăng xuất",
+        style: "destructive",
+        onPress: async () => {
+          closeAccountModal();
+          await supabase.auth.signOut();
+          resetUserState();
+        },
+      },
+    ]);
+  };
+
+  if (!isAccountModalOpen) return null;
 
   return (
     <Modal
-      visible={visible}
+      visible={isAccountModalOpen}
       animationType="slide"
       presentationStyle="fullScreen"
-      onRequestClose={onClose}
+      onRequestClose={closeAccountModal}
     >
       <View style={[styles.modalContainer, { backgroundColor: theme.bg }]}>
         {/* Top App Header */}
@@ -72,7 +99,7 @@ export function AccountModal({
             style={styles.closeBtn}
             onPress={() => {
               triggerHaptic("selection");
-              onClose();
+              closeAccountModal();
             }}
           >
             <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
@@ -130,7 +157,7 @@ export function AccountModal({
                 value={reminderEnabled}
                 onValueChange={(val) => {
                   triggerHaptic("selection");
-                  onToggleReminder(val);
+                  handleToggleReminder(val);
                 }}
                 trackColor={{
                   false: theme.isDark ? "#334155" : "#CBD5E1",
@@ -145,8 +172,8 @@ export function AccountModal({
                 <WheelTimePicker
                   hour={reminderHour}
                   minute={reminderMinute}
-                  onHourChange={onHourChange}
-                  onMinuteChange={onMinuteChange}
+                  onHourChange={setReminderHour}
+                  onMinuteChange={setReminderMinute}
                 />
               </View>
             )}
@@ -159,8 +186,7 @@ export function AccountModal({
             size="lg"
             onPress={() => {
               triggerHaptic("heavy");
-              onSignOut();
-              onClose();
+              handleSignOut();
             }}
             style={{ marginTop: Spacing.xl, marginBottom: Spacing.xl }}
           />

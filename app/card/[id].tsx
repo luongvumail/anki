@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Speech from "expo-speech";
 import { useStore } from "../../store/useStore";
-import { isDue } from "../../lib/srs";
+import { isDue, FSRSState } from "../../lib/srs";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
 import {
   Spacing,
@@ -238,7 +238,7 @@ export default function CardDetailScreen() {
                 styles.statusBadge,
                 {
                   backgroundColor:
-                    !card.srs || card.srs.repetitions === 0
+                    !card.srs || card.srs.state === FSRSState.New
                       ? theme.blue
                       : isDue(card.srs)
                         ? theme.yellow
@@ -247,7 +247,7 @@ export default function CardDetailScreen() {
               ]}
             >
               <Text style={styles.statusBadgeText}>
-                {!card.srs || card.srs.repetitions === 0
+                {!card.srs || card.srs.state === FSRSState.New
                   ? "MỚI CHƯA HỌC"
                   : isDue(card.srs)
                     ? "CẦN ÔN TẬP"

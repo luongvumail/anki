@@ -22,43 +22,27 @@ function extractErrorDetails(error: unknown): { code: string; message: string; s
 }
 
 /**
- * Maps Authentication error codes to friendly Vietnamese messages (Supabase & legacy).
+ * Maps Authentication error codes to friendly Vietnamese messages (OAuth & Supabase).
  */
 export function getAuthErrorMessage(error: unknown): string {
-  if (!error) return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
+  if (!error) return "Đã xảy ra lỗi đăng nhập. Vui lòng thử lại.";
 
   const { code, message } = extractErrorDetails(error);
   const msgLower = message.toLowerCase();
 
-  if (code === "auth/invalid-credential" || msgLower.includes("invalid login credentials")) {
-    return "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.";
-  }
-
-  if (code === "auth/user-not-found" || msgLower.includes("user not found")) {
-    return "Không tìm thấy tài khoản với email này. Vui lòng kiểm tra chính tả hoặc tạo tài khoản mới.";
-  }
-
-  if (code === "auth/email-already-in-use" || msgLower.includes("already registered") || msgLower.includes("already exists")) {
-    return "Địa chỉ email này đã được đăng ký tài khoản khác. Vui lòng đăng nhập hoặc dùng email khác.";
-  }
-
-  if (code === "auth/weak-password" || msgLower.includes("password should be at least")) {
-    return "Mật khẩu quá ngắn. Vui lòng nhập mật khẩu từ 6 ký tự trở lên.";
-  }
-
-  if (code === "auth/invalid-email" || msgLower.includes("unable to validate email")) {
-    return "Địa chỉ email không hợp lệ. Vui lòng nhập đúng dạng example@domain.com.";
-  }
-
   if (code === "auth/too-many-requests" || msgLower.includes("rate limit")) {
-    return "Tài khoản tạm thời bị giới hạn thao tác do nhập sai quá nhiều lần. Vui lòng thử lại sau vài phút.";
+    return "Thao tác đăng nhập bị giới hạn do thử quá nhiều lần. Vui lòng đợi vài phút.";
   }
 
-  if (msgLower.includes("network") || msgLower.includes("fetch")) {
-    return "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối Wi-Fi hoặc 4G của bạn.";
+  if (msgLower.includes("network") || msgLower.includes("fetch") || msgLower.includes("offline")) {
+    return "Không thể kết nối máy chủ đăng nhập. Vui lòng kiểm tra Wi-Fi hoặc 4G.";
   }
 
-  return message || "Không thể thực hiện thao tác. Vui lòng thử lại sau.";
+  if (msgLower.includes("canceled") || msgLower.includes("dismissed")) {
+    return "Đã hủy thao tác đăng nhập Google.";
+  }
+
+  return message || "Đăng nhập không thành công. Vui lòng thử lại sau.";
 }
 
 /**

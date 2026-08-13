@@ -10,7 +10,10 @@ export type SessionStage = "loading" | "empty" | "preview" | "validation" | "rep
 
 export function useStudySession(deckId: string) {
   const cardsMap = useStore((s) => s.cards);
-  const updateCard = useStore((s) => s.updateCard);
+  const batchUpdateCards = useStore((s) => s.batchUpdateCards);
+  const pendingUpdatesRef = useRef<{ cardId: string; deckId: string; updates: Partial<Card> }[]>(
+    [],
+  );
 
   const deckCards: Card[] = useMemo(() => cardsMap[deckId] || [], [cardsMap, deckId]);
 
@@ -82,8 +85,12 @@ export function useStudySession(deckId: string) {
     return () => {
       active = false;
       clearTimeout(timer);
+      if (pendingUpdatesRef.current.length > 0) {
+        batchUpdateCards(pendingUpdatesRef.current);
+        pendingUpdatesRef.current = [];
+      }
     };
-  }, [deckId, deckCards]);
+  }, [batchUpdateCards, deckId, deckCards]);
 
   const handleNextPreview = useCallback(() => {
     setPreviewIndex((prev) => {
@@ -115,10 +122,23 @@ export function useStudySession(deckId: string) {
       if (!isRetry || !isCorrect) {
         ratedCardIdsInSession.current.add(card.id);
         const { newSRS } = calculateQuizSRS(isCorrect, isRetry, responseTimeMs, currentSRS);
-        await updateCard(card.id, deckId, { srs: newSRS });
+        const nowIso = new Date().toISOString();
+        // Optimistically update card in Zustand store instantly
+        useStore.setState((s) => ({
+          cards: {
+            ...s.cards,
+            [deckId]: (s.cards[deckId] || []).map((c) =>
+              c.id === card.id ? { ...c, srs: newSRS, lastReviewedAt: nowIso } : c,
+            ),
+          },
+        }));
+        pendingUpdatesRef.current.push({
+          cardId: card.id,
+          deckId,
+          updates: { srs: newSRS, lastReviewedAt: nowIso },
+        });
+        await recordReviewToday();
       }
-
-      await recordReviewToday();
 
       const isSlowOrMissed = !isCorrect || responseTimeMs > APP_CONFIG.REPAIR_SLOW_THRESHOLD_MS;
       let nextMissed = missedOrSlowCardIds;
@@ -173,13 +193,21 @@ export function useStudySession(deckId: string) {
             setStage("repair");
           } else {
             setStage("done");
+            if (pendingUpdatesRef.current.length > 0) {
+              await batchUpdateCards(pendingUpdatesRef.current);
+              pendingUpdatesRef.current = [];
+            }
           }
         } else {
           setStage("done");
+          if (pendingUpdatesRef.current.length > 0) {
+            await batchUpdateCards(pendingUpdatesRef.current);
+            pendingUpdatesRef.current = [];
+          }
         }
       }
     },
-    [deckCards, deckId, missedOrSlowCardIds, questions, session, targetCards, updateCard],
+    [batchUpdateCards, deckCards, deckId, missedOrSlowCardIds, questions, session, targetCards],
   );
 
   const handleRepairAnswer = useCallback(
@@ -189,7 +217,20 @@ export function useStudySession(deckId: string) {
         const card = currentQuestion.card;
         const currentSRS = card.srs || createDefaultSRSState();
         const { newSRS } = calculateQuizSRS(isCorrect, true, responseTimeMs, currentSRS);
-        await updateCard(card.id, deckId, { srs: newSRS });
+        const nowIso = new Date().toISOString();
+        useStore.setState((s) => ({
+          cards: {
+            ...s.cards,
+            [deckId]: (s.cards[deckId] || []).map((c) =>
+              c.id === card.id ? { ...c, srs: newSRS, lastReviewedAt: nowIso } : c,
+            ),
+          },
+        }));
+        pendingUpdatesRef.current.push({
+          cardId: card.id,
+          deckId,
+          updates: { srs: newSRS, lastReviewedAt: nowIso },
+        });
         await recordReviewToday();
       }
 
@@ -197,9 +238,13 @@ export function useStudySession(deckId: string) {
       setRepairIndex(nextIdx);
       if (nextIdx >= repairQuestions.length) {
         setStage("done");
+        if (pendingUpdatesRef.current.length > 0) {
+          await batchUpdateCards(pendingUpdatesRef.current);
+          pendingUpdatesRef.current = [];
+        }
       }
     },
-    [deckId, repairIndex, repairQuestions, updateCard],
+    [batchUpdateCards, deckId, repairIndex, repairQuestions],
   );
 
   return {
