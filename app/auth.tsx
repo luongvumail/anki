@@ -1,227 +1,109 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { supabase } from "../lib/supabase";
+import { signInWithGoogle } from "../lib/supabase";
 import { getAuthErrorMessage } from "../lib/errorHandler";
-import {
-  Spacing,
-  Radii,
-  Typography,
-  Layout,
-  BorderWidths,
-  triggerHaptic,
-} from "../constants/theme";
+import { Spacing, Typography, Radii, triggerHaptic } from "../constants/theme";
 import { useTheme } from "../hooks/useTheme";
-import { AppButton } from "../components/ui/AppButton";
-import { AuthField } from "../components/ui/AuthField";
+import { SocialAuthButton } from "../components/ui/SocialAuthButton";
 import { AppMascot } from "../components/ui/AppMascot";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resettingPassword, setResettingPassword] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!email.trim() || !password) {
-      triggerHaptic("warning");
-      Alert.alert("Thông báo", "Vui lòng nhập địa chỉ email và mật khẩu.");
-      return;
-    }
+  const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        if (error) throw error;
-        triggerHaptic("success");
-      } else {
-        if (!name.trim()) {
-          triggerHaptic("warning");
-          Alert.alert("Thông báo", "Vui lòng nhập họ tên của bạn.");
-          setLoading(false);
-          return;
-        }
-        const { error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            data: {
-              full_name: name.trim(),
-            },
-          },
-        });
-        if (error) throw error;
-        triggerHaptic("success");
-      }
+      await signInWithGoogle();
+      triggerHaptic("success");
     } catch (e: unknown) {
       triggerHaptic("error");
-      Alert.alert("Lỗi xác thực", getAuthErrorMessage(e));
+      Alert.alert("Đăng nhập thất bại", getAuthErrorMessage(e));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      triggerHaptic("warning");
-      Alert.alert(
-        "Quên mật khẩu",
-        'Vui lòng nhập địa chỉ email của bạn vào ô Email rồi bấm lại "Quên mật khẩu?".',
-      );
-      return;
-    }
-    setResettingPassword(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-      if (error) throw error;
-      triggerHaptic("success");
-      Alert.alert(
-        "Đã gửi email khôi phục",
-        `Hướng dẫn đặt lại mật khẩu đã được gửi tới ${email.trim()}.\nVui lòng mở hộp thư để đặt lại mật khẩu.`,
-      );
-    } catch (e: unknown) {
-      triggerHaptic("error");
-      Alert.alert("Không thể gửi email", getAuthErrorMessage(e));
-    } finally {
-      setResettingPassword(false);
-    }
-  };
-
-  const toggleMode = (newMode: "login" | "register") => {
-    triggerHaptic("selection");
-    setMode(newMode);
-  };
-
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.bg }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <View
+        style={[
+          styles.centeredCard,
           {
-            paddingTop: Math.max(insets.top + Spacing.lg, 64),
-            paddingBottom: Math.max(insets.bottom + Spacing.lg, 48),
+            backgroundColor: theme.cardBg,
+            borderColor: theme.cardBorder,
+            marginTop: insets.top > 0 ? insets.top : Spacing.xl,
+            marginBottom: insets.bottom > 0 ? insets.bottom : Spacing.xl,
           },
         ]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
       >
-        {/* Header / Branding */}
+        {/* Branding Header */}
         <View style={styles.header}>
-          <AppMascot size={88} useAppLogo />
+          <View style={styles.mascotWrapper}>
+            <AppMascot size={112} useAppLogo />
+          </View>
 
-          <Text style={[styles.appName, { color: theme.textPrimary }]}>Anki Chinese</Text>
+          <Text style={[styles.appName, { color: theme.textPrimary }]}>Anki</Text>
           <Text style={[styles.tagline, { color: theme.textMuted }]}>
-            HỌC TIẾNG TRUNG THEO PHƯƠNG PHÁP SRS
+            HỌC TIẾNG TRUNG THEO PHƯƠNG PHÁP FSRS (Free Spaced Repetition Scheduler) & AI
           </Text>
         </View>
 
-        {/* Form Fields */}
-        <View style={styles.formGroup}>
-          {mode === "register" && (
-            <AuthField
-              placeholder="Họ và tên"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
-          )}
-
-          <AuthField
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <AuthField
-            placeholder="Mật khẩu"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
+        {/* Primary Action Button: Google Sign-In */}
+        <View style={styles.actionSection}>
+          <SocialAuthButton
+            provider="google"
+            onPress={handleGoogleSignIn}
+            loading={loading}
+            disabled={loading}
           />
         </View>
 
-        {/* Forgot Password link */}
-        {mode === "login" && (
-          <TouchableOpacity
-            style={styles.forgotBtn}
-            onPress={handleForgotPassword}
-            disabled={resettingPassword}
-          >
-            <Text style={[styles.forgotBtnText, { color: theme.blue }]}>
-              {resettingPassword ? "Đang gửi..." : "Quên mật khẩu?"}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* 3D Primary Button */}
-        <AppButton
-          title={loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
-          variant="primary"
-          size="lg"
-          disabled={loading}
-          onPress={handleSubmit}
-          style={{ marginTop: Spacing.md }}
-        />
-
-        {/* Footer Toggle */}
-        <View style={styles.footerToggle}>
-          <Text style={[styles.footerText, { color: theme.textMuted }]}>
-            {mode === "login" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}
+        {/* Terms & Privacy Note */}
+        <View style={styles.footer}>
+          <Text style={[styles.disclaimer, { color: theme.textMuted }]}>
+            Bằng việc đăng nhập, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của Anki.
           </Text>
-          <TouchableOpacity
-            onPress={() => toggleMode(mode === "login" ? "register" : "login")}
-            hitSlop={Layout.hitSlopSm}
-          >
-            <Text style={[styles.footerLink, { color: theme.blue }]}>
-              {mode === "login" ? " Tạo ngay" : " Đăng nhập"}
-            </Text>
-          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
+  container: {
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: Spacing.pageMargin,
   },
-
-  header: { alignItems: "center", marginBottom: Spacing.xl },
-  appIconBox: {
-    width: Layout.avatarXl,
-    height: Layout.avatarXl,
+  centeredCard: {
+    width: "100%",
+    maxWidth: 400,
     borderRadius: Radii.xl,
-    overflow: "hidden",
-    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xxl,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
   },
-  appIconImage: { width: Layout.avatarXl, height: Layout.avatarXl },
+
+  header: {
+    alignItems: "center",
+    marginBottom: Spacing.xxl,
+  },
+  mascotWrapper: {
+    marginBottom: Spacing.md,
+  },
   appName: {
-    fontSize: Typography.titleLG.fontSize,
+    fontSize: Typography.title1.fontSize,
     fontWeight: Typography.weight.extraBold,
     letterSpacing: 0.5,
   },
@@ -229,58 +111,21 @@ const styles = StyleSheet.create({
     fontSize: Typography.text.caption2.fontSize,
     textAlign: "center",
     marginTop: Spacing.xs,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     fontWeight: Typography.weight.bold,
   },
 
-  segmentedControl: {
-    flexDirection: "row",
-    borderRadius: Radii.lg,
-    padding: Spacing.xs,
-    marginBottom: Spacing.lg,
-    borderWidth: BorderWidths.thin,
+  actionSection: {
+    width: "100%",
+    marginBottom: Spacing.xl,
   },
-  segmentBtn: {
-    flex: 1,
-    height: Layout.btnHeightMd,
+  footer: {
+    width: "100%",
     alignItems: "center",
-    justifyContent: "center",
-    borderRadius: Radii.md,
   },
-  segmentText: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: Typography.weight.bold,
-  },
-
-  formGroup: {
-    gap: Spacing.cellPadding,
-    marginBottom: Spacing.md,
-  },
-
-  forgotBtn: {
-    alignSelf: "flex-end",
-    marginBottom: Spacing.lg,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xs,
-  },
-  forgotBtnText: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: Typography.weight.bold,
-    textDecorationLine: "underline",
-  },
-
-  footerToggle: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: Spacing.xl,
-  },
-  footerText: {
+  disclaimer: {
     fontSize: Typography.caption1.fontSize,
-  },
-  footerLink: {
-    fontSize: Typography.caption1.fontSize,
-    fontWeight: Typography.weight.extraBold,
-    textDecorationLine: "underline",
+    textAlign: "center",
+    lineHeight: 18,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -7,13 +7,11 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
-  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Spacing, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import { Spacing, Typography, Layout, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { FormField } from "../ui/FormField";
 import { WheelTimePicker } from "./WheelTimePicker";
 import { SectionTitle } from "../ui/SectionTitle";
 import { AppCard } from "../ui/AppCard";
@@ -31,8 +29,6 @@ interface AccountModalProps {
   onToggleReminder: (value: boolean) => void;
   onHourChange: (hour: number) => void;
   onMinuteChange: (minute: number) => void;
-  onChangePassword: (curr: string, next: string) => Promise<void>;
-  onSendResetEmail: () => Promise<void>;
   onSignOut: () => void;
 }
 
@@ -47,53 +43,10 @@ export function AccountModal({
   onToggleReminder,
   onHourChange,
   onMinuteChange,
-  onChangePassword,
-  onSendResetEmail,
   onSignOut,
 }: AccountModalProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [loadingPass, setLoadingPass] = useState(false);
-  const [loadingReset, setLoadingReset] = useState(false);
-
-  const handlePasswordSubmit = async () => {
-    if (!newPassword) return;
-    if (newPassword.length < 6) {
-      Alert.alert("Thông báo", "Mật khẩu mới phải chứa ít nhất 6 ký tự.");
-      return;
-    }
-    setLoadingPass(true);
-    try {
-      await onChangePassword(currentPassword, newPassword);
-      Alert.alert("Thành công", "Đã cập nhật mật khẩu mới!");
-      setCurrentPassword("");
-      setNewPassword("");
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert("Lỗi đổi mật khẩu", msg || "Không thể cập nhật mật khẩu.");
-    } finally {
-      setLoadingPass(false);
-    }
-  };
-
-  const handleResetSubmit = async () => {
-    setLoadingReset(true);
-    try {
-      await onSendResetEmail();
-      Alert.alert(
-        "Đã gửi email khôi phục",
-        "Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn.",
-      );
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert("Không thể gửi email", msg || "Vui lòng thử lại sau.");
-    } finally {
-      setLoadingReset(false);
-    }
-  };
 
   if (!visible) return null;
 
@@ -179,8 +132,11 @@ export function AccountModal({
                   triggerHaptic("selection");
                   onToggleReminder(val);
                 }}
-                trackColor={{ false: theme.bgSoft, true: theme.green }}
-                thumbColor="#FFFFFF"
+                trackColor={{
+                  false: theme.isDark ? "#334155" : "#CBD5E1",
+                  true: theme.green,
+                }}
+                thumbColor={reminderEnabled ? "#FFFFFF" : theme.isDark ? "#94A3B8" : "#64748B"}
               />
             </View>
 
@@ -196,47 +152,6 @@ export function AccountModal({
             )}
           </AppCard>
 
-          {/* Account Security Section */}
-          <SectionTitle style={{ marginTop: Spacing.md, marginBottom: 2 }}>
-            BẢO MẬT & MẬT KHẨU
-          </SectionTitle>
-          <AppCard style={styles.settingCard}>
-            <FormField
-              label="Mật khẩu hiện tại"
-              placeholder="••••••••"
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-              secureTextEntry
-            />
-
-            <FormField
-              label="Mật khẩu mới (ít nhất 6 ký tự)"
-              placeholder="••••••••"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-            />
-
-            <AppButton
-              title={loadingPass ? "ĐANG ĐỔI..." : "ĐỔI MẬT KHẨU"}
-              variant="primary"
-              size="md"
-              disabled={loadingPass || !newPassword}
-              onPress={handlePasswordSubmit}
-              style={{ marginTop: Spacing.sm }}
-            />
-
-            <TouchableOpacity
-              style={styles.resetEmailBtn}
-              onPress={handleResetSubmit}
-              disabled={loadingReset}
-            >
-              <Text style={[styles.resetEmailText, { color: theme.blue }]}>
-                {loadingReset ? "Đang gửi..." : "Gửi email đặt lại mật khẩu"}
-              </Text>
-            </TouchableOpacity>
-          </AppCard>
-
           {/* Sign Out Action */}
           <AppButton
             title="ĐĂNG XUẤT TÀI KHOẢN"
@@ -247,7 +162,7 @@ export function AccountModal({
               onSignOut();
               onClose();
             }}
-            style={{ marginTop: Spacing.lg, marginBottom: Spacing.lg }}
+            style={{ marginTop: Spacing.xl, marginBottom: Spacing.xl }}
           />
         </ScrollView>
       </View>
@@ -334,30 +249,10 @@ const styles = StyleSheet.create({
   },
   reminderTitle: {
     fontSize: Typography.subhead.fontSize,
-    fontWeight: Typography.weight.extraBold,
-  },
-  reminderSub: {
-    fontSize: Typography.caption1.fontSize,
-    marginTop: 2,
     fontWeight: Typography.weight.semibold,
   },
   pickerBox: {
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.lg,
-    borderTopWidth: BorderWidths.thin,
-  },
-  pickerLabel: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: Typography.weight.bold,
-    marginBottom: Spacing.sm,
-  },
-  resetEmailBtn: {
-    alignItems: "center",
-    marginTop: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  resetEmailText: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: Typography.weight.bold,
+    marginTop: Spacing.xs,
+    paddingTop: Spacing.xs,
   },
 });

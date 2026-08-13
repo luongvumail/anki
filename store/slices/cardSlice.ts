@@ -1,6 +1,6 @@
 import { StateCreator } from "zustand";
 import { supabase } from "../../lib/supabase";
-import { createDefaultSRSState, SRSGrade, calculateSRS } from "../../lib/srs";
+import { createDefaultFSRSState, FSRSGrade, calculateFSRS } from "../../lib/srs";
 import { Card } from "./types";
 import { UISlice } from "./uiSlice";
 import { DeckSlice } from "./deckSlice";
@@ -26,7 +26,7 @@ export function mapRowToCard(row: any): Card {
     strokeCount: row.stroke_count ?? undefined,
     hskLevel: row.hsk_level ?? undefined,
     tags: Array.isArray(row.tags) ? row.tags : [],
-    srs: row.srs || createDefaultSRSState(),
+    srs: row.srs || createDefaultFSRSState(),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastReviewedAt: row.last_reviewed_at || undefined,
@@ -45,7 +45,7 @@ export interface CardSlice {
   updateCard: (cardId: string, deckId: string, updates: Partial<Card>) => Promise<void>;
   deleteCard: (cardId: string, deckId: string) => Promise<void>;
   clearDeckCards: (deckId: string) => Promise<void>;
-  gradeCard: (card: Card, grade: SRSGrade) => Promise<void>;
+  gradeCard: (card: Card, grade: FSRSGrade) => Promise<void>;
   resetDeckProgress: (deckId: string) => Promise<void>;
   findExistingCard: (character: string, deckId?: string) => Card | undefined;
 }
@@ -143,8 +143,8 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       return;
     }
 
-    const defaultSRS = cardData.srs || createDefaultSRSState();
-    const nextReview = defaultSRS.dueDate || new Date().toISOString();
+    const defaultFSRS = cardData.srs || createDefaultFSRSState();
+    const nextReview = defaultFSRS.dueDate || new Date().toISOString();
 
     try {
       const { data, error } = await supabase
@@ -162,7 +162,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
           stroke_count: cardData.strokeCount,
           hsk_level: cardData.hskLevel,
           tags: cardData.tags || [],
-          srs: defaultSRS,
+          srs: defaultFSRS,
           srs_next_review: nextReview,
         })
         .select()
@@ -281,16 +281,16 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
   },
 
   gradeCard: async (card, grade) => {
-    const newSRS = calculateSRS(grade, card.srs);
+    const newFSRS = calculateFSRS(grade, card.srs);
     const now = new Date().toISOString();
-    await get().updateCard(card.id, card.deckId, { srs: newSRS, lastReviewedAt: now });
+    await get().updateCard(card.id, card.deckId, { srs: newFSRS, lastReviewedAt: now });
     await recordReviewToday();
   },
 
   resetDeckProgress: async (deckId) => {
     const existingCards = get().cards[deckId] || [];
     const now = new Date().toISOString();
-    const defaultSRS = createDefaultSRSState();
+    const defaultFSRS = createDefaultFSRSState();
     const cardCount = existingCards.length;
 
     set((s) => ({
@@ -298,7 +298,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
         ...s.cards,
         [deckId]: (s.cards[deckId] || []).map((c) => ({
           ...c,
-          srs: defaultSRS,
+          srs: defaultFSRS,
           updatedAt: now,
         })),
       },
@@ -311,8 +311,8 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       const { error } = await supabase
         .from("cards")
         .update({
-          srs: defaultSRS,
-          srs_next_review: defaultSRS.dueDate || now,
+          srs: defaultFSRS,
+          srs_next_review: defaultFSRS.dueDate || now,
           updated_at: now,
         })
         .eq("deck_id", deckId);

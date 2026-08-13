@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Alert } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { useStore } from "../../store/useStore";
-import { getAuthErrorMessage } from "../../lib/errorHandler";
 import { cancelDailyStudyReminder } from "../../lib/notificationService";
 import { AccountModal } from "./AccountModal";
 
 export function GlobalAccountModal() {
   const isAccountModalOpen = useStore((s) => s.isAccountModalOpen);
   const closeAccountModal = useStore((s) => s.closeAccountModal);
+  const resetUserState = useStore((s) => s.resetUserState);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
 
@@ -20,7 +20,10 @@ export function GlobalAccountModal() {
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
         setUserEmail(data.user.email || null);
-        setUserName(data.user.user_metadata?.full_name || (data.user.email ? data.user.email.split("@")[0] : "Bạn"));
+        setUserName(
+          data.user.user_metadata?.full_name ||
+            (data.user.email ? data.user.email.split("@")[0] : "Bạn"),
+        );
       }
     });
   }, [isAccountModalOpen]);
@@ -44,37 +47,10 @@ export function GlobalAccountModal() {
         onPress: async () => {
           closeAccountModal();
           await supabase.auth.signOut();
-          useStore.setState({ decks: [], cards: {}, session: null, userId: null });
+          resetUserState();
         },
       },
     ]);
-  };
-
-  const handleChangePassword = async (_currentPassword: string, newPassword: string) => {
-    if (!newPassword || newPassword.length < 6) {
-      Alert.alert("Thông báo", "Mật khẩu mới cần ít nhất 6 ký tự");
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-      Alert.alert("Thành công", "Mật khẩu của bạn đã được cập nhật thành công!");
-    } catch (e: any) {
-      Alert.alert("Đổi mật khẩu thất bại", getAuthErrorMessage(e));
-      throw e;
-    }
-  };
-
-  const handleSendResetEmail = async () => {
-    if (!userEmail) return;
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(userEmail);
-      if (error) throw error;
-      Alert.alert("Thành công", "Đã gửi email khôi phục mật khẩu.");
-    } catch (e: any) {
-      Alert.alert("Gửi email thất bại", getAuthErrorMessage(e));
-    }
   };
 
   if (!isAccountModalOpen) return null;
@@ -91,8 +67,6 @@ export function GlobalAccountModal() {
       onToggleReminder={handleToggleReminder}
       onHourChange={setReminderHour}
       onMinuteChange={setReminderMinute}
-      onChangePassword={handleChangePassword}
-      onSendResetEmail={handleSendResetEmail}
       onSignOut={handleSignOut}
     />
   );

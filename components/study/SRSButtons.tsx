@@ -1,17 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SRS_GRADES, getIntervalLabel, SRSState } from '../../lib/srs';
-import { Typography, Spacing, Radii, Layout } from '../../constants/theme';
-import { useTheme } from '../../hooks/useTheme';
-import { AnimatedButton } from '../ui/AnimatedButton';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SRS_GRADES, getIntervalLabel, SRSState } from "../../lib/srs";
+import { Typography, Spacing, Radii, Layout } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
+import { AnimatedButton } from "../ui/AnimatedButton";
 
-interface SRSButtonsProps {
-  cardSRS: SRSState;
-  onGrade: (grade: number, direction: 'left' | 'right' | 'up' | 'down') => void;
+interface FSRSButtonsProps {
+  cardFSRS: SRSState;
+  onGrade: (grade: number, direction: "left" | "right" | "up" | "down") => void;
 }
 
-export const SRSButtons = React.memo(function SRSButtons({ cardSRS, onGrade }: SRSButtonsProps) {
+export const FSRSButtons = React.memo(function FSRSButtons({
+  cardFSRS,
+  onGrade,
+}: FSRSButtonsProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
 
@@ -19,33 +22,33 @@ export const SRSButtons = React.memo(function SRSButtons({ cardSRS, onGrade }: S
     <View style={[styles.srsArea, { paddingBottom: Math.max(insets.top, Spacing.xl) }]}>
       <Text style={[styles.srsLabel, { color: theme.textMuted }]}>ĐÁNH GIÁ MỨC ĐỘ GHI NHỚ</Text>
       <View style={styles.srsRow}>
-        <SRSButtonPropsItem
+        <FSRSButtonPropsItem
           label="QUÊN"
-          sub={getIntervalLabel(SRS_GRADES.AGAIN, cardSRS)}
+          sub={getIntervalLabel(SRS_GRADES.AGAIN, cardFSRS)}
           color={theme.red}
           subColor={theme.textMuted}
-          onPress={() => onGrade(SRS_GRADES.AGAIN, 'left')}
+          onPress={() => onGrade(SRS_GRADES.AGAIN, "left")}
         />
-        <SRSButtonPropsItem
+        <FSRSButtonPropsItem
           label="KHÓ"
-          sub={getIntervalLabel(SRS_GRADES.HARD, cardSRS)}
-          color={theme.purple}
+          sub={getIntervalLabel(SRS_GRADES.HARD, cardFSRS)}
+          color={theme.yellow}
           subColor={theme.textMuted}
-          onPress={() => onGrade(SRS_GRADES.HARD, 'up')}
+          onPress={() => onGrade(SRS_GRADES.HARD, "up")}
         />
-        <SRSButtonPropsItem
+        <FSRSButtonPropsItem
           label="THUỘC"
-          sub={getIntervalLabel(SRS_GRADES.EASY, cardSRS)}
+          sub={getIntervalLabel(SRS_GRADES.EASY, cardFSRS)}
           color={theme.green}
           subColor={theme.textMuted}
-          onPress={() => onGrade(SRS_GRADES.EASY, 'right')}
+          onPress={() => onGrade(SRS_GRADES.EASY, "right")}
         />
       </View>
     </View>
   );
 });
 
-const SRSButtonPropsItem = React.memo(function SRSButtonPropsItem({
+const FSRSButtonPropsItem = React.memo(function FSRSButtonPropsItem({
   label,
   sub,
   color,
@@ -60,7 +63,7 @@ const SRSButtonPropsItem = React.memo(function SRSButtonPropsItem({
 }) {
   return (
     <AnimatedButton
-      style={[styles.srsBtn, { backgroundColor: color + '15' }]}
+      style={[styles.srsBtn, { backgroundColor: color + "15" }]}
       onPress={onPress}
       activeScale={0.93}
     >
@@ -72,22 +75,32 @@ const SRSButtonPropsItem = React.memo(function SRSButtonPropsItem({
 
 const styles = StyleSheet.create({
   srsArea: { paddingHorizontal: Spacing.pageMargin, paddingTop: Spacing.xs },
-  srsLabel: { fontSize: Typography.caption.fontSize, textAlign: 'center', marginBottom: Spacing.xs, letterSpacing: 1, fontWeight: Typography.weight.semibold },
-  srsRow: { flexDirection: 'row', gap: Spacing.xs },
+  srsLabel: {
+    fontSize: Typography.caption.fontSize,
+    textAlign: "center",
+    marginBottom: Spacing.xs,
+    letterSpacing: 1,
+    fontWeight: Typography.weight.semibold,
+  },
+  srsRow: { flexDirection: "row", gap: Spacing.xs },
   srsBtn: {
     flex: 1,
     borderRadius: Radii.card,
     height: Layout.btnHeightXl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   srsBtnLabel: {
     fontSize: Typography.subhead.fontSize,
     fontWeight: Typography.weight.bold,
     letterSpacing: 0.5,
-    textAlign: 'center',
-    textAlignVertical: 'center',
+    textAlign: "center",
+    textAlignVertical: "center",
     includeFontPadding: false,
   },
-  srsBtnSub: { fontSize: Typography.caption2.fontSize, marginTop: 2, fontWeight: Typography.weight.semibold },
+  srsBtnSub: {
+    fontSize: Typography.caption2.fontSize,
+    marginTop: 2,
+    fontWeight: Typography.weight.semibold,
+  },
 });

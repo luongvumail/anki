@@ -1,7 +1,9 @@
-import { StateCreator } from 'zustand';
-import { DeckSlice } from './deckSlice';
-import { CardSlice } from './cardSlice';
-import { SessionSlice } from './sessionSlice';
+import { StateCreator } from "zustand";
+import { DeckSlice } from "./deckSlice";
+import { CardSlice } from "./cardSlice";
+import { SessionSlice } from "./sessionSlice";
+import { UserProgressState } from "./types";
+import { clearReviewTrackerCache } from "../../lib/reviewTracker";
 
 export interface AuthSlice {
   userId: string | null;
@@ -9,8 +11,23 @@ export interface AuthSlice {
   resetUserState: () => void;
 }
 
-export const createAuthSlice: StateCreator<AuthSlice & DeckSlice & CardSlice & SessionSlice, [], [], AuthSlice> = (set) => ({
+export const createAuthSlice: StateCreator<
+  AuthSlice & DeckSlice & CardSlice & SessionSlice & UserProgressState,
+  [],
+  [],
+  AuthSlice
+> = (set) => ({
   userId: null,
   setUserId: (id) => set({ userId: id }),
-  resetUserState: () => set({ userId: null, decks: [], cards: {}, session: null }),
+  resetUserState: () => {
+    clearReviewTrackerCache();
+    set({
+      userId: null,
+      decks: [],
+      cards: {},
+      session: null,
+      xp: 0,
+      unlockedBadgeIds: [],
+    });
+  },
 });

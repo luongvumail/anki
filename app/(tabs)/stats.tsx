@@ -216,7 +216,7 @@ export default function StatsScreen() {
             {/* Achievements Badges Gallery Section */}
             <BadgesGallery streakCount={streakCount} learnedCards={learnedCount} />
 
-            {/* Comprehensive User Guide & SRS Mechanics Section */}
+            {/* Comprehensive User Guide & FSRS Mechanics Section */}
             <StudyGuideSection />
           </Animated.View>
         )}

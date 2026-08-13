@@ -11,6 +11,7 @@ import { useTheme } from "../hooks/useTheme";
 
 export default function RootLayout() {
   const setUserId = useStore((s) => s.setUserId);
+  const resetUserState = useStore((s) => s.resetUserState);
   const [showSplash, setShowSplash] = useState(true);
   const { theme, isDark } = useTheme();
 
@@ -69,7 +70,7 @@ export default function RootLayout() {
         }
         router.replace("/(tabs)");
       } else {
-        setUserId(null);
+        resetUserState();
         router.replace("/auth");
       }
 

@@ -1,6 +1,6 @@
 # Anki - Hệ Thống Học Từ Vựng Tiếng Trung Tích Hợp AI & Chuẩn Thiết Kế Clean Surface
 
-Ứng dụng học từ vựng tiếng Trung thông minh dựa trên phương pháp lặp lại ngắt quãng khoa học (**Spaced Repetition System - SRS SuperMemo-2 / FSRS**), kết hợp với trí tuệ nhân tạo (**Google Gemini AI**) và hệ thống giao diện **Clean Surface Design System**.
+Ứng dụng học từ vựng tiếng Trung thông minh dựa trên phương pháp lặp lại ngắt quãng khoa học (**Spaced Repetition System - FSRS SuperMemo-2 / FFSRS**), kết hợp với trí tuệ nhân tạo (**Google Gemini AI**) và hệ thống giao diện **Clean Surface Design System**.
 
 ---
 
@@ -16,7 +16,7 @@
 
 ## 🧠 Cơ Sở Khoa Học & Thuật Toán Học Tập
 
-### 1. Thuật Toán Lặp Lại Ngắt Quãng (SuperMemo-2 SRS / FSRS)
+### 1. Thuật Toán Lặp Lại Ngắt Quãng (SuperMemo-2 FSRS / FFSRS)
 
 - Áp dụng đường cong quên của Ebbinghaus để tự động tính toán thời điểm lật lại từ vựng chuẩn xác từng ngày.
 - Người học đánh giá thẻ dựa trên các mức độ phản xạ để tự động điều chỉnh khoảng thời gian ôn tập.
@@ -66,7 +66,7 @@ Anki/
 │   ├── (tabs)/               # Bottom Tabs: Học (index), Từ vựng (decks), Luyện tập (practice), Thống kê (stats)
 │   ├── auth.tsx              # Màn hình Đăng nhập / Đăng ký tài khoản
 │   ├── deck/[id].tsx         # Màn hình Chi tiết Bộ thẻ & Danh sách từ vựng
-│   ├── study/[deckId].tsx    # Màn hình Ôn tập Flashcard & Quiz SRS
+│   ├── study/[deckId].tsx    # Màn hình Ôn tập Flashcard & Quiz FSRS
 │   └── _layout.tsx           # Root Layout & Bottom Tab configuration
 ├── components/               # Các Reusable Component chuẩn App
 │   ├── add/                  # AIAddCardModal, CardPreview, DeckPicker
@@ -76,7 +76,7 @@ Anki/
 │   ├── study/                # FlashcardView, QuizCardView, SessionDoneScreen
 │   └── ui/                   # AppButton, AppCard, AppHeader, FloatingAddButton, SectionTitle, ProgressBar
 ├── constants/                # Design Tokens: Colors, Typography, Spacing, Radii (theme.ts)
-├── lib/                      # Services (Firebase, AI, SRS Algorithm, Quiz Generator, Notifications)
+├── lib/                      # Services (Firebase, AI, FSRS Algorithm, Quiz Generator, Notifications)
 ├── store/                    # Zustand Global Store & Slices (`userProgressSlice.ts`)
 ├── DESIGN.md                 # Single source of truth cho Design Tokens & Specs
 ├── README.md                 # Tài liệu hướng dẫn & tổng quan dự án

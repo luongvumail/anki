@@ -237,7 +237,7 @@ export default function DeckDetailScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.weakWarningSub, { color: theme.textPrimary }]}>
-                  Thuật toán SRS ghi nhận các từ vựng này có thời gian suy nghĩ &gt;4 giây hoặc bị
+                  Thuật toán FSRS ghi nhận các từ vựng này có thời gian suy nghĩ &gt;4 giây hoặc bị
                   trả lời sai nhiều lần. Hãy bấm "ÔN TẬP" để luyện lại ngay!
                 </Text>
               </AppCard>

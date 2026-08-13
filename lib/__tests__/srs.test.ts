@@ -1,10 +1,10 @@
 import {
-  calculateSRS,
-  createDefaultSRSState,
-  SRS_GRADES,
+  calculateFSRS,
+  createDefaultFSRSState,
+  FSRS_GRADES,
   isDue,
   FSRSState,
-  calculateQuizSRS,
+  calculateQuizFSRS,
 } from "../srs";
 
 function assertStrictEqual<T>(actual: T, expected: T, message?: string) {
@@ -19,9 +19,9 @@ function assertOk(value: unknown, message?: string) {
   }
 }
 
-export function runSRSTests() {
+export function runFSRSTests() {
   // Test 1: Default FSRS state creation
-  const defaultState = createDefaultSRSState();
+  const defaultState = createDefaultFSRSState();
   assertStrictEqual(defaultState.repetitions, 0, "repetitions should be 0");
   assertStrictEqual(defaultState.interval, 0, "interval should be 0");
   assertStrictEqual(defaultState.state, FSRSState.New, "state should be New (0)");
@@ -30,52 +30,63 @@ export function runSRSTests() {
   assertOk(typeof defaultState.dueDate === "string", "dueDate should be string");
 
   // Test 2: AGAIN grade (Forget)
-  const initial = createDefaultSRSState();
-  const nextAgain = calculateSRS(SRS_GRADES.AGAIN, initial);
+  const initial = createDefaultFSRSState();
+  const nextAgain = calculateFSRS(FSRS_GRADES.AGAIN, initial);
   assertStrictEqual(nextAgain.repetitions, 0, "AGAIN resets reps");
   assertStrictEqual(nextAgain.interval, 0, "AGAIN resets interval for immediate review");
   assertStrictEqual(nextAgain.state, FSRSState.Learning, "New card gets Learning state on AGAIN");
 
   // Test 3: GOOD grade (Recall)
-  const firstGood = calculateSRS(SRS_GRADES.GOOD, initial);
+  const firstGood = calculateFSRS(FSRS_GRADES.GOOD, initial);
   assertStrictEqual(firstGood.repetitions, 1, "GOOD increases reps");
   assertOk(firstGood.interval >= 1, "GOOD interval should be >= 1 day");
   assertStrictEqual(firstGood.state, FSRSState.Review, "GOOD moves card to Review state");
 
   // Test 4: EASY grade (Fast recall boost)
-  const firstEasy = calculateSRS(SRS_GRADES.EASY, initial);
+  const firstEasy = calculateFSRS(FSRS_GRADES.EASY, initial);
   assertStrictEqual(firstEasy.repetitions, 1);
-  assertOk(firstEasy.stability > firstGood.stability, "EASY stability should be higher than GOOD stability");
+  assertOk(
+    firstEasy.stability > firstGood.stability,
+    "EASY stability should be higher than GOOD stability",
+  );
 
   // Test 5: Quiz Speed Evaluation
   // Fast response (<= 2500ms) -> EASY
-  const fastEval = calculateQuizSRS(true, false, 1200, initial);
-  assertStrictEqual(fastEval.grade, SRS_GRADES.EASY, "Fast response should yield EASY grade");
+  const fastEval = calculateQuizFSRS(true, false, 1200, initial);
+  assertStrictEqual(fastEval.grade, FSRS_GRADES.EASY, "Fast response should yield EASY grade");
   assertStrictEqual(fastEval.speedCategory, "fast");
 
   // Normal response (3000ms) -> GOOD
-  const normalEval = calculateQuizSRS(true, false, 3000, initial);
-  assertStrictEqual(normalEval.grade, SRS_GRADES.GOOD, "Normal response should yield GOOD grade");
+  const normalEval = calculateQuizFSRS(true, false, 3000, initial);
+  assertStrictEqual(normalEval.grade, FSRS_GRADES.GOOD, "Normal response should yield GOOD grade");
   assertStrictEqual(normalEval.speedCategory, "normal");
 
   // Slow response (6000ms) -> HARD
-  const slowEval = calculateQuizSRS(true, false, 6000, initial);
-  assertStrictEqual(slowEval.grade, SRS_GRADES.HARD, "Slow response should yield HARD grade");
+  const slowEval = calculateQuizFSRS(true, false, 6000, initial);
+  assertStrictEqual(slowEval.grade, FSRS_GRADES.HARD, "Slow response should yield HARD grade");
   assertStrictEqual(slowEval.speedCategory, "slow");
 
   // Incorrect response -> AGAIN
-  const wrongEval = calculateQuizSRS(false, false, 1500, initial);
-  assertStrictEqual(wrongEval.grade, SRS_GRADES.AGAIN, "Incorrect answer should yield AGAIN grade");
+  const wrongEval = calculateQuizFSRS(false, false, 1500, initial);
+  assertStrictEqual(
+    wrongEval.grade,
+    FSRS_GRADES.AGAIN,
+    "Incorrect answer should yield AGAIN grade",
+  );
   assertStrictEqual(wrongEval.speedCategory, "wrong");
 
   // Test 6: isDue comparison
   const pastDate = new Date();
   pastDate.setDate(pastDate.getDate() - 1);
-  assertStrictEqual(isDue({ repetitions: 1, interval: 1, easeFactor: 2.5, dueDate: pastDate.toISOString() }), true);
+  assertStrictEqual(
+    isDue({ repetitions: 1, interval: 1, easeFactor: 2.5, dueDate: pastDate.toISOString() }),
+    true,
+  );
 
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 5);
-  assertStrictEqual(isDue({ repetitions: 1, interval: 5, easeFactor: 2.5, dueDate: futureDate.toISOString() }), false);
+  assertStrictEqual(
+    isDue({ repetitions: 1, interval: 5, easeFactor: 2.5, dueDate: futureDate.toISOString() }),
+    false,
+  );
 }
-
-

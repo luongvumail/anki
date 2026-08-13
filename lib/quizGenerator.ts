@@ -90,7 +90,7 @@ function generateToneVariations(pinyin: string): string[] {
 function getCharacterDistractors(card: Card, allCards: Card[]): string[] {
   const target = card.character || "";
   const uniquePool = Array.from(
-    new Set(allCards.map((c) => c.character).filter((ch) => ch && ch !== target))
+    new Set(allCards.map((c) => c.character).filter((ch) => ch && ch !== target)),
   );
 
   for (const fallback of FALLBACK_CHARACTERS) {
@@ -110,7 +110,7 @@ function getCharacterDistractors(card: Card, allCards: Card[]): string[] {
 function getTranslationDistractors(card: Card, allCards: Card[]): string[] {
   const target = card.translation || "";
   const uniquePool = Array.from(
-    new Set(allCards.map((c) => c.translation).filter((tr) => tr && tr !== target))
+    new Set(allCards.map((c) => c.translation).filter((tr) => tr && tr !== target)),
   );
 
   for (const fallback of FALLBACK_TRANSLATIONS) {
@@ -144,8 +144,8 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
       new Set(
         allCards
           .map((c) => c.pinyin)
-          .filter((py) => py && py !== target && !distractors.includes(py))
-      )
+          .filter((py) => py && py !== target && !distractors.includes(py)),
+      ),
     );
 
     for (const py of shuffleArray(otherPinyins)) {
@@ -167,9 +167,12 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
 }
 
 /**
- * Select question type adaptively based on SRS repetitions & weak tag:
+ * Select question type adaptively based on FSRS repetitions & weak tag:
  */
-export function determineQuestionType(card: Card, weakTag?: "pinyin" | "character" | "meaning"): QuestionType {
+export function determineQuestionType(
+  card: Card,
+  weakTag?: "pinyin" | "character" | "meaning",
+): QuestionType {
   if (weakTag === "pinyin") return "pinyin_choice";
   if (weakTag === "meaning") return "meaning_choice";
   if (weakTag === "character") return "listening";
@@ -197,10 +200,9 @@ export function generateQuizQuestion(
   card: Card,
   allCards: Card[],
   forcedType?: QuestionType,
-  weakTag?: "pinyin" | "character" | "meaning"
+  weakTag?: "pinyin" | "character" | "meaning",
 ): QuizQuestion {
   const type = forcedType || determineQuestionType(card, weakTag);
-
 
   if (type === "meaning_choice") {
     const distractors = getTranslationDistractors(card, allCards);

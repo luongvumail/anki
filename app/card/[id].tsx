@@ -228,11 +228,11 @@ export default function CardDetailScreen() {
           )}
         </AppCard>
 
-        {/* SRS Parameters & Level Detail Card */}
-        <SectionTitle>THÔNG SỐ LẶP LẠI TỰ ĐỘNG (SRS)</SectionTitle>
+        {/* FSRS Parameters & Level Detail Card */}
+        <SectionTitle>THÔNG SỐ LẶP LẠI TỰ ĐỘNG (FSRS)</SectionTitle>
         <AppCard style={styles.detailCard}>
           <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Trạng thái SRS</Text>
+            <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Trạng thái FSRS</Text>
             <View
               style={[
                 styles.statusBadge,

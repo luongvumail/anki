@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { isDue, SRS_GRADES, SRSGrade } from "../../lib/srs";
+import { isDue, FSRS_GRADES, FSRSGrade } from "../../lib/srs";
 import { Card, StudySession } from "./types";
 import { CardSlice } from "./cardSlice";
 
@@ -7,7 +7,7 @@ export interface SessionSlice {
   session: StudySession | null;
   startSession: (deckId: string) => Promise<void>;
   endSession: () => void;
-  advanceSession: (card: Card, grade: SRSGrade) => void;
+  advanceSession: (card: Card, grade: FSRSGrade) => void;
 }
 
 export const createSessionSlice: StateCreator<SessionSlice & CardSlice, [], [], SessionSlice> = (
@@ -22,7 +22,10 @@ export const createSessionSlice: StateCreator<SessionSlice & CardSlice, [], [], 
 
     // 2. Fallback to loaded deck cards if fetchDueCards returned empty or wasn't cached
     if (dueCards.length === 0) {
-      const cards = (get().cards[deckId] || []).length > 0 ? get().cards[deckId] : await get().fetchCards(deckId);
+      const cards =
+        (get().cards[deckId] || []).length > 0
+          ? get().cards[deckId]
+          : await get().fetchCards(deckId);
       dueCards = cards.filter((c) => isDue(c.srs));
     }
 
@@ -49,7 +52,7 @@ export const createSessionSlice: StateCreator<SessionSlice & CardSlice, [], [], 
     set((s) => {
       if (!s.session) return { session: null };
       const updatedQueue = [...s.session.queue];
-      if (grade === SRS_GRADES.AGAIN) {
+      if (grade === FSRS_GRADES.AGAIN) {
         const currentCards = s.cards[card.deckId] || [];
         const latestCard = currentCards.find((c) => c.id === card.id) || card;
         updatedQueue.push(latestCard);

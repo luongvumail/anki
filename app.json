@@ -5,13 +5,13 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "scheme": "anki",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#08090C"
+      "backgroundColor": "#F8FAFC"
     },
     "ios": {
       "supportsTablet": false,
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#08090C"
+        "backgroundColor": "#F8FAFC"
       },
       "package": "com.luongvu.anki"
     },
@@ -36,7 +36,8 @@
         {
           "microphonePermission": "Ứng dụng cần truy cập microphone để luyện phát âm tiếng Trung cùng AI."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

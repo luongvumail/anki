@@ -44,7 +44,7 @@ export default function StudyScreen() {
     if (session && session.reviewedCount > 0) {
       Alert.alert(
         "Thoát phiên học?",
-        "Tiến trình SRS của các thẻ đã làm Quiz đã được tự động lưu. Bạn có muốn thoát không?",
+        "Tiến trình FSRS của các thẻ đã làm Quiz đã được tự động lưu. Bạn có muốn thoát không?",
         [
           { text: "Tiếp tục học", style: "cancel" },
           { text: "Thoát", style: "destructive", onPress: () => router.back() },

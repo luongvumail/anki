@@ -1,95 +1,111 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useStore } from "../store/useStore";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card, StudySession } from "../store/slices/types";
-import { QuizQuestion, generateQuizQuestion } from "../lib/quizGenerator";
-import { isDue, calculateQuizSRS, createDefaultSRSState } from "../lib/srs";
-import { recordReviewToday } from "../lib/reviewTracker";
-import { WeakTagType } from "../components/study/QuizCardView";
+import { useStore } from "../store/useStore";
 import { APP_CONFIG } from "../constants/config";
+import { isDue, calculateQuizSRS, createDefaultSRSState } from "../lib/srs";
+import { generateQuizQuestion, QuizQuestion } from "../lib/quizGenerator";
+import { recordReviewToday } from "../lib/reviewTracker";
 
-export type SessionStage = "preview" | "validation" | "repair" | "done";
+export type SessionStage = "loading" | "empty" | "preview" | "validation" | "repair" | "done";
 
 export function useStudySession(deckId: string) {
-  const cards = useStore((s) => s.cards);
+  const cardsMap = useStore((s) => s.cards);
   const updateCard = useStore((s) => s.updateCard);
-  const fetchCards = useStore((s) => s.fetchCards);
-  const isLoading = useStore((s) => s.isLoading);
 
-  const deckCards = useMemo(() => cards[deckId] || [], [cards, deckId]);
+  const deckCards: Card[] = useMemo(() => cardsMap[deckId] || [], [cardsMap, deckId]);
 
-  const [stage, setStage] = useState<SessionStage>("preview");
   const [session, setSession] = useState<StudySession | null>(null);
-  const [previewIndex, setPreviewIndex] = useState(0);
-  const [targetCards, setTargetCards] = useState<Card[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [isExtraPractice, setIsExtraPractice] = useState(false);
+  const [targetCards, setTargetCards] = useState<Card[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [stage, setStage] = useState<SessionStage>("loading");
+  const [isLoading, setIsLoading] = useState(true);
 
   const [missedOrSlowCardIds, setMissedOrSlowCardIds] = useState<string[]>([]);
   const [repairQuestions, setRepairQuestions] = useState<QuizQuestion[]>([]);
   const [repairIndex, setRepairIndex] = useState(0);
 
   const ratedCardIdsInSession = useRef<Set<string>>(new Set());
-  const sessionInitialized = useRef(false);
-
-  const stageRef = useRef(stage);
-  useEffect(() => {
-    stageRef.current = stage;
-  }, [stage]);
 
   useEffect(() => {
-    if (deckId) fetchCards(deckId);
-  }, [deckId, fetchCards]);
+    let active = true;
 
-  useEffect(() => {
-    if (deckCards.length > 0 && !sessionInitialized.current && stageRef.current !== "done") {
-      sessionInitialized.current = true;
-      ratedCardIdsInSession.current = new Set();
-      const dueCards = deckCards.filter((c) => isDue(c.srs));
-      const isExtra = dueCards.length === 0;
-      setIsExtraPractice(isExtra);
-      const pool = isExtra ? deckCards : dueCards;
+    const timer = setTimeout(() => {
+      if (!active) return;
 
-      const sorted = [...pool].sort((a, b) => (a.srs?.repetitions ?? 0) - (b.srs?.repetitions ?? 0));
-      const chosenCards = sorted.slice(0, APP_CONFIG.MAX_SESSION_CARDS);
-      const generatedQuestions: QuizQuestion[] = chosenCards
-        .map((c) => generateQuizQuestion(c, deckCards))
-        .filter((q): q is QuizQuestion => q !== null);
+      if (!deckId) {
+        setIsLoading(false);
+        setStage("empty");
+        return;
+      }
 
-      setTargetCards(chosenCards);
-      setQuestions(generatedQuestions);
+      let due = deckCards.filter((c: Card) => isDue(c.srs));
+      if (due.length === 0) {
+        due = [...deckCards].sort(() => Math.random() - 0.5);
+      }
+      const sessionCards = due.slice(0, APP_CONFIG.MAX_SESSION_CARDS);
+
+      if (sessionCards.length === 0) {
+        setIsLoading(false);
+        setStage("empty");
+        return;
+      }
+
+      const generated: QuizQuestion[] = [];
+      sessionCards.forEach((c: Card) => {
+        const q = generateQuizQuestion(c, deckCards);
+        if (q) generated.push(q);
+      });
+
+      if (generated.length === 0) {
+        setIsLoading(false);
+        setStage("empty");
+        return;
+      }
+
+      setTargetCards(sessionCards);
+      setQuestions(generated);
       setPreviewIndex(0);
-      setStage("preview");
       setSession({
         deckId,
-        queue: chosenCards,
+        queue: sessionCards,
         currentIndex: 0,
-        correctCount: 0,
         reviewedCount: 0,
+        correctCount: 0,
         startTime: new Date(),
       });
-    }
-  }, [deckCards, deckId]);
+      setIsLoading(false);
+      setStage("preview");
+      ratedCardIdsInSession.current.clear();
+    }, 0);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [deckId, deckCards]);
 
   const handleNextPreview = useCallback(() => {
-    if (previewIndex < targetCards.length - 1) {
-      setPreviewIndex((prev) => prev + 1);
-    } else {
-      setStage("validation");
-      setSession((prev) => (prev ? { ...prev, currentIndex: 0 } : null));
-    }
-  }, [previewIndex, targetCards.length]);
+    setPreviewIndex((prev) => {
+      const next = prev + 1;
+      if (next >= targetCards.length) {
+        setStage("validation");
+        return prev;
+      }
+      return next;
+    });
+  }, [targetCards.length]);
 
   const handlePrevPreview = useCallback(() => {
-    if (previewIndex > 0) {
-      setPreviewIndex((prev) => prev - 1);
-    }
-  }, [previewIndex]);
+    setPreviewIndex((prev) => Math.max(0, prev - 1));
+  }, []);
 
   const handleQuizAnswer = useCallback(
-    async (isCorrect: boolean, responseTimeMs: number, weakTag?: WeakTagType) => {
-      if (!session || questions.length === 0) return;
-
+    async (isCorrect: boolean, responseTimeMs: number) => {
+      if (!session) return;
       const currIdx = session.currentIndex;
+      if (currIdx >= questions.length) return;
+
       const currentQuestion = questions[currIdx];
       const card = currentQuestion.card;
 
@@ -117,10 +133,12 @@ export function useStudySession(deckId: string) {
       let updatedCards = [...targetCards];
 
       if (!isCorrect) {
-        const nextQuestion = generateQuizQuestion(card, deckCards, undefined, weakTag);
-        const targetPos = Math.min(updatedQuestions.length, currIdx + 3);
-        updatedQuestions.splice(targetPos, 0, nextQuestion);
-        updatedCards.splice(targetPos, 0, card);
+        const nextQuestion = generateQuizQuestion(card, deckCards);
+        if (nextQuestion) {
+          const targetPos = Math.min(updatedQuestions.length, currIdx + 3);
+          updatedQuestions.splice(targetPos, 0, nextQuestion);
+          updatedCards.splice(targetPos, 0, card);
+        }
       }
 
       const nextIndex = currIdx + 1;
@@ -139,25 +157,29 @@ export function useStudySession(deckId: string) {
               correctCount: newCorrect,
               reviewedCount: newReviewed,
             }
-          : null
+          : null,
       );
 
       if (nextIndex >= updatedQuestions.length) {
-        const weakCards = targetCards.filter((c) => nextMissed.includes(c.id));
+        const weakCards = targetCards.filter((c: Card) => nextMissed.includes(c.id));
 
         if (weakCards.length > 0) {
           const repairQs = weakCards
-            .map((c) => generateQuizQuestion(c, deckCards))
+            .map((c: Card) => generateQuizQuestion(c, deckCards))
             .filter((q): q is QuizQuestion => q !== null);
-          setRepairQuestions(repairQs);
-          setRepairIndex(0);
-          setStage("repair");
+          if (repairQs.length > 0) {
+            setRepairQuestions(repairQs);
+            setRepairIndex(0);
+            setStage("repair");
+          } else {
+            setStage("done");
+          }
         } else {
           setStage("done");
         }
       }
     },
-    [deckCards, deckId, missedOrSlowCardIds, questions, session, targetCards, updateCard]
+    [deckCards, deckId, missedOrSlowCardIds, questions, session, targetCards, updateCard],
   );
 
   const handleRepairAnswer = useCallback(
@@ -177,7 +199,7 @@ export function useStudySession(deckId: string) {
         setStage("done");
       }
     },
-    [deckId, repairIndex, repairQuestions, updateCard]
+    [deckId, repairIndex, repairQuestions, updateCard],
   );
 
   return {
@@ -190,11 +212,9 @@ export function useStudySession(deckId: string) {
     questions,
     repairQuestions,
     repairIndex,
-    isExtraPractice,
     handleNextPreview,
     handlePrevPreview,
     handleQuizAnswer,
     handleRepairAnswer,
-    setStage,
   };
 }

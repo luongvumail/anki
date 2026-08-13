@@ -17,7 +17,7 @@ export function useTheme(): {
   styles: ReturnType<typeof createCommonStyles>;
 } {
   const systemColorScheme = useColorScheme();
-  const themeMode = useStore((s) => s.themeMode) || "system";
+  const themeMode = useStore((s) => s.themeMode) || "light";
   const setThemeMode = useStore((s) => s.setThemeMode);
 
   const isDark =

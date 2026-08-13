@@ -13,7 +13,7 @@ export const APP_CONFIG = {
   PAGE_SIZE: 20,
   MAX_SESSION_CARDS: 10,
 
-  // SRS & Study Thresholds
+  // FSRS & Study Thresholds
   SLOW_RESPONSE_THRESHOLD_MS: 3500,
   REPAIR_SLOW_THRESHOLD_MS: 4000,
   DEFAULT_EASE_FACTOR: 2.5,

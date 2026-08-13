@@ -17,7 +17,7 @@ import { AppButton } from "../ui/AppButton";
 import { AudioButton } from "../ui/AudioButton";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
 import { useQuizCard, WeakTagType } from "../../hooks/useQuizCard";
-import { calculateQuizSRS } from "../../lib/srs";
+import { calculateQuizFSRS } from "../../lib/srs";
 
 export { WeakTagType };
 
@@ -51,7 +51,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
   const chosenOption = selectedIndex !== null ? question.options[selectedIndex] : null;
   const isCorrect = chosenOption === question.correctAnswer;
   const fsrsEval = isChecked
-    ? calculateQuizSRS(isCorrect, false, responseTimeMs, question.card.srs)
+    ? calculateQuizFSRS(isCorrect, false, responseTimeMs, question.card.srs)
     : null;
 
   return (

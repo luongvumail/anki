@@ -61,7 +61,7 @@ export function ActiveDeckHeroCard({
         </TouchableOpacity>
       </View>
 
-      {/* SRS Stats Row: Due, Learned, New */}
+      {/* FSRS Stats Row: Due, Learned, New */}
       <View style={styles.statsGrid}>
         {/* DUE COUNT (RED) */}
         <View

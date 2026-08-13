@@ -8,7 +8,7 @@ import {
 } from "../lib/notificationService";
 
 export function useAccountSettings() {
-  const setUserId = useStore((s) => s.setUserId);
+  const resetUserState = useStore((s) => s.resetUserState);
   const [currentUser, setCurrentUser] = useState<{ email?: string; id?: string } | null>(null);
 
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>({
@@ -16,9 +16,6 @@ export function useAccountSettings() {
     hour: 20,
     minute: 0,
   });
-
-  const [loadingPass, setLoadingPass] = useState(false);
-  const [loadingReset, setLoadingReset] = useState(false);
 
   useEffect(() => {
     getReminderSettings().then(setReminderSettings);
@@ -54,49 +51,21 @@ export function useAccountSettings() {
     });
   }, []);
 
-  const handleChangePassword = useCallback(
-    async (_currentPass: string, newPass: string) => {
-      setLoadingPass(true);
-      try {
-        const { error } = await supabase.auth.updateUser({ password: newPass });
-        if (error) throw error;
-      } finally {
-        setLoadingPass(false);
-      }
-    },
-    [],
-  );
-
-  const handleSendResetEmail = useCallback(async () => {
-    if (!currentUser?.email) throw new Error("Không tìm thấy địa chỉ email");
-    setLoadingReset(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(currentUser.email);
-      if (error) throw error;
-    } finally {
-      setLoadingReset(false);
-    }
-  }, [currentUser]);
-
   const handleSignOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
-      setUserId(null);
+      resetUserState();
     } catch (err) {
       console.warn("[useAccountSettings] Sign out failed:", err);
     }
-  }, [setUserId]);
+  }, [resetUserState]);
 
   return {
     currentUser,
     reminderSettings,
-    loadingPass,
-    loadingReset,
     handleToggleReminder,
     handleHourChange,
     handleMinuteChange,
-    handleChangePassword,
-    handleSendResetEmail,
     handleSignOut,
   };
 }
