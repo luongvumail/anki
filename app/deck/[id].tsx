@@ -13,7 +13,7 @@ import { AudioButton } from "../../components/ui/AudioButton";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
-import { SkeletonCard } from "../../components/ui/SkeletonCard";
+import { LoadingIndicator } from "../../components/ui/LoadingIndicator";
 import { useDeckDetail } from "../../hooks/useDeckDetail";
 
 export default function DeckDetailScreen() {
@@ -95,10 +95,7 @@ export default function DeckDetailScreen() {
             <Ionicons name="chevron-back" size={Layout.iconLg} color={theme.textPrimary} />
           </TouchableOpacity>
         </View>
-        <View style={{ paddingHorizontal: Spacing.pageMargin, marginTop: Spacing.md }}>
-          <SkeletonCard lines={3} />
-          <SkeletonCard lines={2} />
-        </View>
+        <LoadingIndicator message="Đang nạp chi tiết bộ thẻ..." />
       </View>
     );
   }
@@ -278,10 +275,7 @@ export default function DeckDetailScreen() {
         }
         ListEmptyComponent={
           isLoading ? (
-            <View>
-              <SkeletonCard lines={2} />
-              <SkeletonCard lines={2} />
-            </View>
+            <LoadingIndicator message="Đang nạp từ vựng..." />
           ) : deckCards.length === 0 ? (
             <AppCard style={styles.emptyCard}>
               <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
@@ -312,9 +306,7 @@ export default function DeckDetailScreen() {
         }
         ListFooterComponent={
           isFetchingMore ? (
-            <View style={{ paddingVertical: Spacing.md }}>
-              <SkeletonCard lines={1} />
-            </View>
+            <LoadingIndicator size="small" message="" style={{ paddingVertical: Spacing.xs }} />
           ) : null
         }
       />

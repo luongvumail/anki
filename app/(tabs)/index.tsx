@@ -10,10 +10,11 @@ import { useTheme } from "../../hooks/useTheme";
 import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { AppHeader } from "../../components/ui/AppHeader";
+import { AppMascot } from "../../components/ui/AppMascot";
 import { ZigZagSkillPath } from "../../components/home/ZigZagSkillPath";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
-import { SkeletonCard } from "../../components/ui/SkeletonCard";
+import { LoadingIndicator } from "../../components/ui/LoadingIndicator";
 import { Deck } from "../../store/slices/types";
 import { computeDueCount } from "../../lib/deckUtils";
 
@@ -67,24 +68,23 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         {isLoading && decks.length === 0 ? (
-          <View style={{ marginTop: Spacing.md }}>
-            <SkeletonCard lines={3} />
-            <SkeletonCard lines={2} />
-          </View>
+          <LoadingIndicator message="Đang nạp lộ trình học..." />
         ) : decks.length === 0 ? (
           <AppCard style={styles.emptyCard}>
+            <AppMascot expression="waving" size={80} speechBubbleText="Sẵn sàng học Tiếng Trung?" />
             <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>
               Chưa có bộ thẻ nào!
             </Text>
             <Text style={[styles.emptySub, { color: theme.textMuted }]}>
-              Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng.
+              Hãy tạo bộ thẻ mới hoặc dùng AI để nạp từ vựng và bắt đầu lộ trình FSRS.
             </Text>
             <AppButton
               title="TẠO BỘ THẺ MỚI"
               icon={<Ionicons name="add-circle" size={Layout.iconMd} color="#FFFFFF" />}
               variant="primary"
+              size="lg"
               onPress={() => router.push("/(tabs)/decks")}
-              style={{ marginTop: Spacing.md }}
+              style={{ marginTop: Spacing.lg }}
             />
           </AppCard>
         ) : (
@@ -126,12 +126,13 @@ const styles = StyleSheet.create({
   emptyCard: {
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.xl,
-    marginTop: Spacing.xl,
+    padding: Spacing.lg,
+    marginTop: 0,
   },
   emptyTitle: {
     fontSize: Typography.title3.fontSize,
     fontWeight: Typography.weight.extraBold,
+    marginTop: Spacing.xs,
   },
   emptySub: {
     fontSize: Typography.caption.fontSize,

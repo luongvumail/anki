@@ -8,9 +8,17 @@ let _reviewHistoryCache: Record<string, number> | null = null;
 let _currentCachedUserId: string | null = null;
 let _writeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-async function getStorageKey(): Promise<string> {
-  const { data } = await supabase.auth.getUser();
-  const uid = data?.user?.id;
+async function getStorageKey(providedUid?: string | null): Promise<string> {
+  let uid = providedUid;
+  if (uid === undefined) {
+    if (_currentCachedUserId) {
+      uid = _currentCachedUserId;
+    } else {
+      const { data } = await supabase.auth.getUser();
+      uid = data?.user?.id || null;
+      _currentCachedUserId = uid;
+    }
+  }
   return uid ? `${BASE_REVIEW_HISTORY_KEY}_${uid}` : BASE_REVIEW_HISTORY_KEY;
 }
 
@@ -34,18 +42,21 @@ export function getLocalDateString(d: Date = new Date()): string {
  * Returns a map of YYYY-MM-DD -> count of reviews completed on that day for the current user.
  */
 export async function getReviewHistory(): Promise<Record<string, number>> {
-  const { data } = await supabase.auth.getUser();
-  const uid = data?.user?.id || null;
+  let uid = _currentCachedUserId;
+  if (!uid) {
+    const { data } = await supabase.auth.getUser();
+    uid = data?.user?.id || null;
+    _currentCachedUserId = uid;
+  }
 
-  if (_reviewHistoryCache !== null && _currentCachedUserId === uid) {
+  if (_reviewHistoryCache !== null) {
     return _reviewHistoryCache;
   }
 
   try {
-    const key = await getStorageKey();
+    const key = await getStorageKey(uid);
     const json = await AsyncStorage.getItem(key);
     _reviewHistoryCache = json ? JSON.parse(json) : {};
-    _currentCachedUserId = uid;
     return _reviewHistoryCache!;
   } catch (e) {
     console.warn("[reviewTracker] Error reading review history:", e);

@@ -3,6 +3,7 @@ import { Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Spacing, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
+import { flushOfflineQueue } from "../../lib/offlineQueue";
 
 export const OfflineBanner = React.memo(function OfflineBanner() {
   const { theme } = useTheme();
@@ -18,12 +19,19 @@ export const OfflineBanner = React.memo(function OfflineBanner() {
       const NetInfo = require("@react-native-community/netinfo");
       if (NetInfo && typeof NetInfo.addEventListener === "function") {
         unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
-          setIsOffline(state.isConnected === false);
+          const offline = state.isConnected === false;
+          setIsOffline(offline);
+          if (!offline) {
+            flushOfflineQueue();
+          }
         });
       }
     } catch {
       // Fallback for Web or environments without NetInfo
-      const handleOnline = () => setIsOffline(false);
+      const handleOnline = () => {
+        setIsOffline(false);
+        flushOfflineQueue();
+      };
       const handleOffline = () => setIsOffline(true);
 
       if (typeof window !== "undefined" && window.addEventListener) {

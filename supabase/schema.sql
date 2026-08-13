@@ -51,8 +51,8 @@ CREATE INDEX IF NOT EXISTS idx_cards_due ON public.cards(deck_id, srs_next_revie
 CREATE INDEX IF NOT EXISTS idx_cards_user ON public.cards(user_id, deck_id);
 
 -- 4. View deck_with_stats (Tự động đếm card_count, due_count, new_count bằng SQL)
--- Giải quyết triệt để vấn đề fetch toàn bộ thẻ để đếm
-CREATE OR REPLACE VIEW public.deck_with_stats AS
+-- Giải quyết triệt để vấn đề fetch toàn bộ thẻ để đếm (kèm security_invoker = true để áp dụng RLS)
+CREATE OR REPLACE VIEW public.deck_with_stats WITH (security_invoker = true) AS
 SELECT
   d.id,
   d.user_id,

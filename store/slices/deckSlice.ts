@@ -35,11 +35,25 @@ export const createDeckSlice: StateCreator<DeckSlice & UISlice & CardSlice, [], 
       );
 
       // Query deck_with_stats view (calculates card_count, due_count, new_count in SQL)
-      const fetchPromise = supabase
-        .from("deck_with_stats")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      const fetchPromise = (async () => {
+        const primaryRes = await supabase
+          .from("deck_with_stats")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (!primaryRes.error && primaryRes.data) {
+          return primaryRes;
+        }
+
+        // Fallback: If view query fails or view doesn't exist, query standard decks table directly
+        console.warn("[fetchDecks] deck_with_stats view query failed, falling back to decks table:", primaryRes.error?.message);
+        return supabase
+          .from("decks")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+      })();
 
       const { data, error } = (await Promise.race([fetchPromise, timeout])) as Awaited<
         typeof fetchPromise

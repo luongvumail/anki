@@ -7,6 +7,7 @@ import { DeckSlice } from "./deckSlice";
 import { computeDueCount, computeNewCount } from "../../lib/deckUtils";
 import { getDatabaseErrorMessage } from "../../lib/errorHandler";
 import { APP_CONFIG } from "../../constants/config";
+import { enqueueOfflineUpdates, flushOfflineQueue } from "../../lib/offlineQueue";
 
 export const PAGE_SIZE = APP_CONFIG.PAGE_SIZE;
 
@@ -82,6 +83,9 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
         hasMoreCards: { ...s.hasMoreCards, [deckId]: false },
         isLoading: false,
       }));
+
+      // Flush any queued offline updates upon fetching cards
+      flushOfflineQueue();
 
       return fetchedCards;
     } catch (e: unknown) {
@@ -232,8 +236,10 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
 
       const { error } = await supabase.from("cards").update(payload).eq("id", cardId);
       if (error) throw error;
+      flushOfflineQueue();
     } catch (err) {
-      console.error("[updateCard] Supabase update failed:", err);
+      console.error("[updateCard] Supabase update failed, queuing offline update:", err);
+      await enqueueOfflineUpdates([{ cardId, deckId, updates, timestamp: Date.now() }]);
     }
   },
 
@@ -265,7 +271,7 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     set({ cards: newCardsState, decks: updatedDecks });
 
     try {
-      await Promise.all(
+      const results = await Promise.all(
         items.map(async ({ cardId, updates }) => {
           const payload: Record<string, any> = {
             updated_at: new Date().toISOString(),
@@ -292,8 +298,17 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
           return supabase.from("cards").update(payload).eq("id", cardId);
         }),
       );
+
+      const hasErrors = results.some((r) => r.error);
+      if (hasErrors) {
+        throw new Error("One or more batch card updates failed");
+      }
+      flushOfflineQueue();
     } catch (err) {
-      console.error("[batchUpdateCards] Supabase batch update failed:", err);
+      console.error("[batchUpdateCards] Supabase batch update failed, queuing offline updates:", err);
+      await enqueueOfflineUpdates(
+        items.map((item) => ({ ...item, timestamp: Date.now() })),
+      );
     }
   },
 

@@ -29,9 +29,14 @@ export function useStudySession(deckId: string) {
   const [repairIndex, setRepairIndex] = useState(0);
 
   const ratedCardIdsInSession = useRef<Set<string>>(new Set());
+  const initializedDeckIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
+
+    if (initializedDeckIdRef.current === deckId && deckCards.length > 0) {
+      return;
+    }
 
     const timer = setTimeout(() => {
       if (!active) return;
@@ -66,6 +71,7 @@ export function useStudySession(deckId: string) {
         return;
       }
 
+      initializedDeckIdRef.current = deckId;
       setTargetCards(sessionCards);
       setQuestions(generated);
       setPreviewIndex(0);
@@ -216,7 +222,8 @@ export function useStudySession(deckId: string) {
       if (currentQuestion) {
         const card = currentQuestion.card;
         const currentSRS = card.srs || createDefaultSRSState();
-        const { newSRS } = calculateQuizSRS(isCorrect, true, responseTimeMs, currentSRS);
+        const isRetry = !isCorrect;
+        const { newSRS } = calculateQuizSRS(isCorrect, isRetry, responseTimeMs, currentSRS);
         const nowIso = new Date().toISOString();
         useStore.setState((s) => ({
           cards: {

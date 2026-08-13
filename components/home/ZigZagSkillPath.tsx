@@ -219,7 +219,8 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: Spacing.sm,
+    paddingTop: 0,
+    paddingBottom: Spacing.sm,
     alignItems: "center",
   },
   unitBanner: {

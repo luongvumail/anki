@@ -88,10 +88,9 @@ export function useStats() {
   }, [cards, totalCardsCount, newCardsCount]);
 
   const retentionRatePct = useMemo(() => {
-    if (totalCardsCount === 0) return 100;
-    const learned = Math.max(0, totalCardsCount - dueCount);
-    return Math.min(100, Math.max(0, Math.round((learned / totalCardsCount) * 100)));
-  }, [totalCardsCount, dueCount]);
+    if (totalCardsCount === 0) return 0;
+    return Math.min(100, Math.max(0, Math.round((learnedCount / totalCardsCount) * 100)));
+  }, [totalCardsCount, learnedCount]);
 
   const weeklyActivity = useMemo(() => {
     const days = getLast7Days();

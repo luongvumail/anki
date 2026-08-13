@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, Image, Animated } from "react-native";
+import { StyleSheet, View, Animated } from "react-native";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { supabase } from "../lib/supabase";
@@ -8,6 +8,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { APP_CONFIG } from "../constants/config";
 import { OfflineBanner } from "../components/ui/OfflineBanner";
 import { useTheme } from "../hooks/useTheme";
+import { AppMascot } from "../components/ui/AppMascot";
 
 export default function RootLayout() {
   const setUserId = useStore((s) => s.setUserId);
@@ -146,20 +147,7 @@ export default function RootLayout() {
                 },
               ]}
             >
-              <View
-                style={[
-                  styles.glowRing,
-                  { backgroundColor: theme.blueDim, borderColor: theme.blue },
-                ]}
-              >
-                <View style={styles.appIconBox}>
-                  <Image
-                    source={require("../assets/adaptive-icon.png")}
-                    style={styles.appIconImage}
-                    resizeMode="cover"
-                  />
-                </View>
-              </View>
+              <AppMascot size={112} useAppLogo />
             </Animated.View>
           </Animated.View>
         )}
@@ -185,26 +173,5 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  glowRing: {
-    width: 106,
-    height: 106,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  appIconBox: {
-    width: 86,
-    height: 86,
-    borderRadius: 22,
-    overflow: "hidden",
-  },
-  appIconImage: {
-    width: 86,
-    height: 86,
   },
 });

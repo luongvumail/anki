@@ -1,5 +1,6 @@
 import { Card } from "../store/slices/types";
 import { APP_CONFIG } from "../constants/config";
+import { FSRSState } from "./srs";
 
 export type QuestionType = "meaning_choice" | "pinyin_choice" | "listening" | "cloze";
 
@@ -167,7 +168,7 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
 }
 
 /**
- * Select question type adaptively based on FSRS repetitions & weak tag:
+ * Select question type adaptively based on FSRS state & weak tag:
  */
 export function determineQuestionType(
   card: Card,
@@ -177,20 +178,22 @@ export function determineQuestionType(
   if (weakTag === "meaning") return "meaning_choice";
   if (weakTag === "character") return "listening";
 
+  const state = card.srs?.state ?? FSRSState.New;
   const reps = card.srs?.repetitions ?? 0;
-  const hasExamples = card.examples && card.examples.length > 0 && card.examples[0].chinese;
+  const hasExamples = Boolean(card.examples && card.examples.length > 0 && card.examples[0].chinese);
 
-  if (reps === 0) {
+  if (state === FSRSState.New) {
     return "meaning_choice";
-  } else if (reps <= 2) {
+  } else if (state === FSRSState.Learning || state === FSRSState.Relearning) {
     return "pinyin_choice";
-  } else if (reps <= 4) {
+  } else if (state === FSRSState.Review) {
+    if (hasExamples && reps >= 3) {
+      return "cloze";
+    }
     return "listening";
-  } else if (hasExamples) {
-    return "cloze";
-  } else {
-    return "meaning_choice";
   }
+
+  return "meaning_choice";
 }
 
 /**
