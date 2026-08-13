@@ -64,24 +64,10 @@ export function AppButton({
 
   const getVariantStyles = () => {
     if (loading) {
-      switch (variant) {
-        case "primary":
-        case "blue":
-          return { bg: theme.blue, text: "#FFFFFF" };
-        case "success":
-          return { bg: theme.green, text: "#FFFFFF" };
-        case "error":
-          return { bg: theme.red, text: "#FFFFFF" };
-        case "yellow":
-          return { bg: theme.yellow, text: "#FFFFFF" };
-        case "purple":
-          return { bg: theme.purple, text: "#FFFFFF" };
-        case "secondary":
-          return { bg: theme.bgSoft, text: theme.blue };
-        case "ghost":
-        default:
-          return { bg: "transparent", text: theme.blue };
-      }
+      return {
+        bg: theme.bgSoft,
+        text: theme.blue,
+      };
     }
 
     if (disabled) {

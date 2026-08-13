@@ -127,7 +127,7 @@ export function AIAddCardModal({ visible, onClose, initialDeckId }: AIAddCardMod
               style={{ marginTop: Spacing.md }}
               icon={
                 loading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={theme.blue} />
                 ) : (
                   <Ionicons name="sparkles" size={Layout.iconMd} color="#FFFFFF" />
                 )
