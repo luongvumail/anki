@@ -1,17 +1,16 @@
-import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View, Image, Animated } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { useStore } from '../store/useStore';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import { APP_CONFIG } from '../constants/config';
-import { OfflineBanner } from '../components/ui/OfflineBanner';
-import { useTheme } from '../hooks/useTheme';
+import { useEffect, useState, useRef } from "react";
+import { StyleSheet, View, Image, Animated } from "react-native";
+import { Stack, router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { supabase } from "../lib/supabase";
+import { useStore } from "../store/useStore";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { APP_CONFIG } from "../constants/config";
+import { OfflineBanner } from "../components/ui/OfflineBanner";
+import { useTheme } from "../hooks/useTheme";
 
 export default function RootLayout() {
-  const setUserId = useStore(s => s.setUserId);
+  const setUserId = useStore((s) => s.setUserId);
   const [showSplash, setShowSplash] = useState(true);
   const { theme, isDark } = useTheme();
 
@@ -40,12 +39,16 @@ export default function RootLayout() {
       }),
     ]).start();
 
-    // 2. Listen to authentication state changes
-    const unsub = onAuthStateChanged(auth, async (user) => {
+    // 2. Listen to authentication state changes with Supabase
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user ?? null;
       const isLoggingIn = prevUserIdRef.current === null && user !== null;
-      const isLoggingOut = prevUserIdRef.current !== null && prevUserIdRef.current !== undefined && user === null;
+      const isLoggingOut =
+        prevUserIdRef.current !== null && prevUserIdRef.current !== undefined && user === null;
 
-      prevUserIdRef.current = user ? user.uid : null;
+      prevUserIdRef.current = user ? user.id : null;
 
       if (isLoggingIn || isLoggingOut) {
         setShowSplash(true);
@@ -55,7 +58,7 @@ export default function RootLayout() {
       }
 
       if (user) {
-        setUserId(user.uid);
+        setUserId(user.id);
         try {
           await Promise.all([
             useStore.getState().fetchDecks(),
@@ -64,10 +67,10 @@ export default function RootLayout() {
         } catch (e) {
           console.warn("[RootLayout] Initial data fetch failed:", e);
         }
-        router.replace('/(tabs)');
+        router.replace("/(tabs)");
       } else {
         setUserId(null);
-        router.replace('/auth');
+        router.replace("/auth");
       }
 
       if (isLoggingOut) {
@@ -96,7 +99,9 @@ export default function RootLayout() {
       }
     });
 
-    return unsub;
+    return () => {
+      subscription.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -117,18 +122,20 @@ export default function RootLayout() {
           <Stack.Screen
             name="study/[deckId]"
             options={{
-              presentation: 'fullScreenModal',
-              animation: 'none',
+              presentation: "fullScreenModal",
+              animation: "none",
               contentStyle: { backgroundColor: theme.bg },
             }}
           />
-          <Stack.Screen name="deck/[id]" options={{ animation: 'none' }} />
-          <Stack.Screen name="card/[id]" options={{ animation: 'none' }} />
+          <Stack.Screen name="deck/[id]" options={{ animation: "none" }} />
+          <Stack.Screen name="card/[id]" options={{ animation: "none" }} />
         </Stack>
 
-
         {showSplash && (
-          <Animated.View style={[styles.splashOverlay, { opacity: splashOpacity, backgroundColor: theme.bg }]} pointerEvents="none">
+          <Animated.View
+            style={[styles.splashOverlay, { opacity: splashOpacity, backgroundColor: theme.bg }]}
+            pointerEvents="none"
+          >
             <Animated.View
               style={[
                 styles.logoContainer,
@@ -138,10 +145,15 @@ export default function RootLayout() {
                 },
               ]}
             >
-              <View style={[styles.glowRing, { backgroundColor: theme.blueDim, borderColor: theme.blue }]}>
+              <View
+                style={[
+                  styles.glowRing,
+                  { backgroundColor: theme.blueDim, borderColor: theme.blue },
+                ]}
+              >
                 <View style={styles.appIconBox}>
                   <Image
-                    source={require('../assets/adaptive-icon.png')}
+                    source={require("../assets/adaptive-icon.png")}
                     style={styles.appIconImage}
                     resizeMode="cover"
                   />
@@ -160,25 +172,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   splashOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 9999,
   },
   logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   glowRing: {
     width: 106,
     height: 106,
     borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
     shadowOpacity: 0.35,
     shadowRadius: 20,
@@ -188,7 +200,7 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 22,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   appIconImage: {
     width: 86,

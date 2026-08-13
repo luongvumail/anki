@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { updatePassword, sendPasswordResetEmail, signOut } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { supabase } from "../lib/supabase";
 import { useStore } from "../store/useStore";
 import {
   getReminderSettings,
@@ -10,7 +9,7 @@ import {
 
 export function useAccountSettings() {
   const setUserId = useStore((s) => s.setUserId);
-  const currentUser = auth.currentUser;
+  const [currentUser, setCurrentUser] = useState<{ email?: string; id?: string } | null>(null);
 
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>({
     enabled: false,
@@ -23,6 +22,12 @@ export function useAccountSettings() {
 
   useEffect(() => {
     getReminderSettings().then(setReminderSettings);
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setCurrentUser({ email: data.user.email, id: data.user.id });
+      }
+    });
   }, []);
 
   const handleToggleReminder = useCallback(async (enabled: boolean) => {
@@ -50,23 +55,24 @@ export function useAccountSettings() {
   }, []);
 
   const handleChangePassword = useCallback(
-    async (currentPass: string, newPass: string) => {
-      if (!currentUser) throw new Error("Chưa đăng nhập");
+    async (_currentPass: string, newPass: string) => {
       setLoadingPass(true);
       try {
-        await updatePassword(currentUser, newPass);
+        const { error } = await supabase.auth.updateUser({ password: newPass });
+        if (error) throw error;
       } finally {
         setLoadingPass(false);
       }
     },
-    [currentUser],
+    [],
   );
 
   const handleSendResetEmail = useCallback(async () => {
     if (!currentUser?.email) throw new Error("Không tìm thấy địa chỉ email");
     setLoadingReset(true);
     try {
-      await sendPasswordResetEmail(auth, currentUser.email);
+      const { error } = await supabase.auth.resetPasswordForEmail(currentUser.email);
+      if (error) throw error;
     } finally {
       setLoadingReset(false);
     }
@@ -74,7 +80,7 @@ export function useAccountSettings() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       setUserId(null);
     } catch (err) {
       console.warn("[useAccountSettings] Sign out failed:", err);

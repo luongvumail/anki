@@ -1,8 +1,6 @@
 import { StateCreator } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getDoc, setDoc } from "firebase/firestore";
-import { auth } from "../../lib/firebase";
-import { userProgressRef } from "./firestoreHelpers";
+import { supabase } from "../../lib/supabase";
 import { UserProgressState, Badge } from "./types";
 import { APP_CONFIG } from "../../constants/config";
 
@@ -238,22 +236,20 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
   },
 ];
 
-
-async function syncProgressToFirestore(xp: number, unlockedBadgeIds: string[]) {
-  const uid = auth.currentUser?.uid;
-  if (!uid) return;
+async function syncProgressToSupabase(xp: number, unlockedBadgeIds: string[]) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
   try {
-    await setDoc(
-      userProgressRef(uid),
-      {
-        xp,
-        unlockedBadgeIds,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
+    await supabase.from("user_progress").upsert({
+      user_id: user.id,
+      xp,
+      unlocked_badge_ids: unlockedBadgeIds,
+      updated_at: new Date().toISOString(),
+    });
   } catch (e) {
-    console.warn("[userProgressSlice] Sync to Firestore failed:", e);
+    console.warn("[userProgressSlice] Sync to Supabase failed:", e);
   }
 }
 
@@ -265,24 +261,31 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
     try {
       let xp = 0;
       let unlockedBadgeIds: string[] = [];
-      let loadedFromFirestore = false;
+      let loadedFromSupabase = false;
 
-      const uid = auth.currentUser?.uid;
-      if (uid) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
         try {
-          const snap = await getDoc(userProgressRef(uid));
-          if (snap.exists()) {
-            const data = snap.data();
+          const { data, error } = await supabase
+            .from("user_progress")
+            .select("xp, unlocked_badge_ids")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!error && data) {
             xp = data.xp ?? 0;
-            unlockedBadgeIds = data.unlockedBadgeIds || [];
-            loadedFromFirestore = true;
+            unlockedBadgeIds = data.unlocked_badge_ids || [];
+            loadedFromSupabase = true;
           }
-        } catch (fsErr) {
-          console.warn("[userProgressSlice] Firestore read failed, falling back to local storage:", fsErr);
+        } catch (sbErr) {
+          console.warn("[userProgressSlice] Supabase read failed, falling back to local storage:", sbErr);
         }
       }
 
-      if (!loadedFromFirestore) {
+      if (!loadedFromSupabase) {
         const xpStr = await AsyncStorage.getItem(ASYNC_KEY_XP);
         const badgesJson = await AsyncStorage.getItem(ASYNC_KEY_BADGES);
         xp = xpStr ? parseInt(xpStr, 10) : 0;
@@ -302,7 +305,7 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
     const badges = get().unlockedBadgeIds;
     set({ xp: newXP });
     await AsyncStorage.setItem(ASYNC_KEY_XP, newXP.toString());
-    syncProgressToFirestore(newXP, badges);
+    syncProgressToSupabase(newXP, badges);
   },
 
   unlockBadge: async (badgeId: string) => {
@@ -312,7 +315,7 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
       const xp = get().xp;
       set({ unlockedBadgeIds: updated });
       await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(updated));
-      syncProgressToFirestore(xp, updated);
+      syncProgressToSupabase(xp, updated);
     }
   },
 
@@ -337,7 +340,7 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
       const xp = get().xp;
       set({ unlockedBadgeIds: newUnlocked });
       await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(newUnlocked));
-      syncProgressToFirestore(xp, newUnlocked);
+      syncProgressToSupabase(xp, newUnlocked);
     }
   },
 });

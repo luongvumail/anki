@@ -1,11 +1,9 @@
 import { StateCreator } from "zustand";
-import { getDocs, doc, setDoc, deleteDoc, query, orderBy, QuerySnapshot, DocumentData } from "firebase/firestore";
-import { auth } from "../../lib/firebase";
+import { supabase } from "../../lib/supabase";
 import { Deck } from "./types";
-import { getUserId, decksRef, cardsRef } from "./firestoreHelpers";
 import { UISlice } from "./uiSlice";
 import { CardSlice } from "./cardSlice";
-import { getFirestoreErrorMessage } from "../../lib/errorHandler";
+import { getDatabaseErrorMessage } from "../../lib/errorHandler";
 import { APP_CONFIG } from "../../constants/config";
 
 export interface DeckSlice {
@@ -19,86 +17,119 @@ export interface DeckSlice {
 
 export const createDeckSlice: StateCreator<DeckSlice & UISlice & CardSlice, [], [], DeckSlice> = (
   set,
-  get,
 ) => ({
   decks: [],
   fetchDecks: async () => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
     set({ isLoading: true });
     try {
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(
-          () =>
-            reject(
-              new Error(
-                "Firestore timeout — kiểm tra Firestore Database và Security Rules trên Firebase Console",
-              ),
-            ),
+          () => reject(new Error("Supabase connection timeout — kiểm tra kết nối mạng")),
           APP_CONFIG.FIRESTORE_TIMEOUT_MS,
         ),
       );
-      const q = query(decksRef(uid), orderBy("createdAt", "desc"));
-      const snap = (await Promise.race([getDocs(q), timeout])) as QuerySnapshot<DocumentData>;
-      const decks = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Deck);
+
+      // Query deck_with_stats view (calculates card_count, due_count, new_count in SQL)
+      const fetchPromise = supabase
+        .from("deck_with_stats")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      const { data, error } = (await Promise.race([fetchPromise, timeout])) as Awaited<
+        typeof fetchPromise
+      >;
+
+      if (error) throw error;
+
+      const decks: Deck[] = (data || []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        color: row.color,
+        icon: row.icon,
+        cardCount: row.card_count ?? 0,
+        dueCount: row.due_count ?? 0,
+        newCount: row.new_count ?? 0,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
 
       set({ decks, isLoading: false });
-      // Pre-fetch all cards for each deck so cardCount/dueCount/newCount are accurate on every screen.
-      Promise.all(decks.map((d) => get().fetchCards(d.id))).catch((err) =>
-        console.warn("[fetchDecks] Card pre-fetch error:", err),
-      );
     } catch (e: unknown) {
-      const msg = getFirestoreErrorMessage(e);
+      const msg = getDatabaseErrorMessage(e);
       console.error("[fetchDecks] ERROR:", msg);
       set({ error: msg, isLoading: false });
     }
   },
 
   createDeck: async (deckData) => {
-    const uid = getUserId();
-    const ref = doc(decksRef(uid));
-    const deck: Deck = {
-      id: ref.id,
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
+    const tempId = `temp_${Date.now()}`;
+    const nowStr = new Date().toISOString();
+    const newDeck: Deck = {
+      id: tempId,
       ...deckData,
       cardCount: 0,
       newCount: 0,
       dueCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: nowStr,
+      updatedAt: nowStr,
     };
-    // Optimistically update local store immediately
-    set((s) => ({ decks: [...s.decks, deck] }));
 
-    // Async background persistence
-    (async () => {
-      try {
-        await setDoc(ref, deck);
-      } catch (err) {
-        console.error("[createDeck] Firestore async sync failed:", err);
-      }
-    })();
+    // Optimistically update store
+    set((s) => ({ decks: [newDeck, ...s.decks] }));
 
-    return ref.id;
+    try {
+      const { data, error } = await supabase
+        .from("decks")
+        .insert({
+          user_id: user.id,
+          name: deckData.name,
+          description: deckData.description,
+          color: deckData.color,
+          icon: deckData.icon,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update store with real DB id
+      set((s) => ({
+        decks: s.decks.map((d) => (d.id === tempId ? { ...d, id: data.id } : d)),
+      }));
+
+      return data.id;
+    } catch (err) {
+      console.error("[createDeck] Supabase insert failed:", err);
+      // Rollback optimistic update
+      set((s) => ({ decks: s.decks.filter((d) => d.id !== tempId) }));
+      throw err;
+    }
   },
 
   deleteDeck: async (deckId) => {
-    const uid = getUserId();
-    // Optimistically remove from store immediately
+    // Optimistically remove deck and its cached cards from store
     set((s) => ({
       decks: s.decks.filter((d) => d.id !== deckId),
       cards: Object.fromEntries(Object.entries(s.cards).filter(([k]) => k !== deckId)),
     }));
 
-    // Async background cascade deletion in Firestore
-    (async () => {
-      try {
-        const snap = await getDocs(cardsRef(uid, deckId));
-        const deletions = snap.docs.map((d) => deleteDoc(d.ref));
-        await Promise.all(deletions);
-        await deleteDoc(doc(decksRef(uid), deckId));
-      } catch (e) {
-        console.warn("[deleteDeck] Could not cascade delete cards or deck:", e);
-      }
-    })();
+    try {
+      const { error } = await supabase.from("decks").delete().eq("id", deckId);
+      if (error) throw error;
+    } catch (e) {
+      console.warn("[deleteDeck] Could not delete deck from Supabase:", e);
+    }
   },
 });

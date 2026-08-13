@@ -10,13 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  sendPasswordResetEmail,
-} from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { supabase } from "../lib/supabase";
 import { getAuthErrorMessage } from "../lib/errorHandler";
 import {
   Spacing,
@@ -50,7 +44,11 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       if (mode === "login") {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw error;
         triggerHaptic("success");
       } else {
         if (!name.trim()) {
@@ -59,8 +57,16 @@ export default function AuthScreen() {
           setLoading(false);
           return;
         }
-        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
-        await updateProfile(cred.user, { displayName: name.trim() });
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              full_name: name.trim(),
+            },
+          },
+        });
+        if (error) throw error;
         triggerHaptic("success");
       }
     } catch (e: unknown) {
@@ -82,7 +88,8 @@ export default function AuthScreen() {
     }
     setResettingPassword(true);
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (error) throw error;
       triggerHaptic("success");
       Alert.alert(
         "Đã gửi email khôi phục",
