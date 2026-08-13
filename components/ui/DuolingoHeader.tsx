@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { auth } from "../../lib/firebase";
 import { Radii, Spacing, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { useStore } from "../../store/useStore";
@@ -28,9 +27,7 @@ export function AppHeader({
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const openAccountModal = useStore((s) => s.openAccountModal);
-  const authUser = auth.currentUser;
-  const resolvedName =
-    userName || authUser?.displayName || (authUser?.email ? authUser.email.split("@")[0] : "Bạn");
+  const resolvedName = userName || "Bạn";
 
   const handleAvatarPress = onProfilePress || openAccountModal;
 

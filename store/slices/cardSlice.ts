@@ -1,42 +1,44 @@
 import { StateCreator } from "zustand";
-import {
-  getDocs,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  writeBatch,
-  query,
-  orderBy,
-  QueryDocumentSnapshot,
-} from "firebase/firestore";
-import { auth, db } from "../../lib/firebase";
+import { supabase } from "../../lib/supabase";
 import { createDefaultSRSState, SRSGrade, calculateSRS } from "../../lib/srs";
 import { Card } from "./types";
-import { getUserId, cardsRef, cardRef, decksRef, sanitizeForFirestore } from "./firestoreHelpers";
 import { UISlice } from "./uiSlice";
 import { DeckSlice } from "./deckSlice";
 import { computeDueCount, computeNewCount } from "../../lib/deckUtils";
-
 import { recordReviewToday } from "../../lib/reviewTracker";
-import { getFirestoreErrorMessage } from "../../lib/errorHandler";
+import { getDatabaseErrorMessage } from "../../lib/errorHandler";
 import { APP_CONFIG } from "../../constants/config";
 
 export const PAGE_SIZE = APP_CONFIG.PAGE_SIZE;
-const FIRESTORE_BATCH_SIZE = 500;
 
-function fireAndForget(actionName: string, asyncFn: () => Promise<void>): void {
-  asyncFn().catch((err) => {
-    console.error(`[cardSlice:${actionName}] Firestore async sync failed:`, err);
-  });
+// Helper to map DB row (snake_case) to Card model (camelCase)
+export function mapRowToCard(row: any): Card {
+  return {
+    id: row.id,
+    deckId: row.deck_id,
+    character: row.character,
+    traditional: row.traditional || undefined,
+    pinyin: row.pinyin,
+    hanviet: row.hanviet || undefined,
+    translation: row.translation,
+    examples: Array.isArray(row.examples) ? row.examples : [],
+    radical: row.radical || undefined,
+    strokeCount: row.stroke_count ?? undefined,
+    hskLevel: row.hsk_level ?? undefined,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    srs: row.srs || createDefaultSRSState(),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastReviewedAt: row.last_reviewed_at || undefined,
+  };
 }
 
 export interface CardSlice {
   cards: Record<string, Card[]>; // deckId → cards
   hasMoreCards: Record<string, boolean>; // deckId → boolean
   isFetchingMoreCards: Record<string, boolean>; // deckId → boolean
-  lastDocSnapshots: Record<string, QueryDocumentSnapshot | null>; // deckId → last snapshot
   fetchCards: (deckId: string) => Promise<Card[]>;
+  fetchDueCards: (deckId: string) => Promise<Card[]>;
   fetchMoreCards: (deckId: string) => Promise<void>;
   fetchAllCardsForStats: (deckId: string) => Promise<void>;
   addCard: (card: Omit<Card, "id" | "createdAt" | "updatedAt">) => Promise<void>;
@@ -55,72 +57,77 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
   cards: {},
   hasMoreCards: {},
   isFetchingMoreCards: {},
-  lastDocSnapshots: {},
+
   fetchCards: async (deckId) => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return [];
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
     set({ isLoading: true });
     try {
-      // Fetch ALL cards with no limit — ensures accurate cardCount, dueCount, newCount always.
-      const q = query(cardsRef(uid, deckId), orderBy("createdAt", "desc"));
-      const snap = await getDocs(q);
+      const { data, error } = await supabase
+        .from("cards")
+        .select("*")
+        .eq("deck_id", deckId)
+        .order("created_at", { ascending: false });
 
-      const fetchedCards = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Card);
-      const totalCount = fetchedCards.length;
-      const totalDue = computeDueCount(fetchedCards);
-      const totalNew = computeNewCount(fetchedCards);
+      if (error) throw error;
+
+      const fetchedCards = (data || []).map(mapRowToCard);
 
       set((s) => ({
         cards: { ...s.cards, [deckId]: fetchedCards },
-        // Mark no more pages since we fetched everything
         hasMoreCards: { ...s.hasMoreCards, [deckId]: false },
-        lastDocSnapshots: { ...s.lastDocSnapshots, [deckId]: null },
-        decks: s.decks.map((d) =>
-          d.id === deckId
-            ? { ...d, cardCount: totalCount, dueCount: totalDue, newCount: totalNew }
-            : d,
-        ),
         isLoading: false,
       }));
 
-      // Persist corrected counts back to Firestore so they're accurate next session too.
-      fireAndForget("fetchCards:syncCounts", async () => {
-        const deckDocRef = doc(decksRef(uid), deckId);
-        await updateDoc(deckDocRef, {
-          cardCount: totalCount,
-          dueCount: totalDue,
-          newCount: totalNew,
-        });
-      });
-
       return fetchedCards;
     } catch (e: unknown) {
-      const msg = getFirestoreErrorMessage(e);
+      const msg = getDatabaseErrorMessage(e);
       set({ error: msg, isLoading: false });
       return [];
     }
   },
 
-  // No-op: pagination removed. fetchCards now loads everything in one query.
-  fetchAllCardsForStats: async (_deckId) => {},
+  fetchDueCards: async (deckId) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
 
-  // No-op: pagination removed. All cards are loaded by fetchCards.
+    try {
+      const nowStr = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("cards")
+        .select("*")
+        .eq("deck_id", deckId)
+        .lte("srs_next_review", nowStr)
+        .order("srs_next_review", { ascending: true })
+        .limit(100);
+
+      if (error) throw error;
+      return (data || []).map(mapRowToCard);
+    } catch (e: unknown) {
+      console.warn("[fetchDueCards] Failed to fetch due cards:", e);
+      return [];
+    }
+  },
+
+  fetchAllCardsForStats: async (_deckId) => {},
   fetchMoreCards: async (_deckId) => {},
 
   addCard: async (cardData) => {
-    const uid = getUserId();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
     const existingCards = get().cards[cardData.deckId] || [];
     const cleanChar = cardData.character.trim().toLowerCase();
 
-    // Prevent duplicate cards: if card already exists in this deck, update it instead of creating duplicate
     const duplicate = existingCards.find((c) => c.character.trim().toLowerCase() === cleanChar);
-
     if (duplicate) {
-      if (__DEV__) {
-        console.log(
-          `[cardSlice] Duplicate found for "${cardData.character}" in deck ${cardData.deckId}. Updating card ${duplicate.id} instead of creating duplicate.`,
-        );
-      }
       await get().updateCard(duplicate.id, cardData.deckId, {
         character: cardData.character,
         traditional: cardData.traditional,
@@ -136,92 +143,107 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       return;
     }
 
-    const ref = doc(cardsRef(uid, cardData.deckId));
-    const card: Card = {
-      id: ref.id,
-      ...cardData,
-      srs: cardData.srs || createDefaultSRSState(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    const defaultSRS = cardData.srs || createDefaultSRSState();
+    const nextReview = defaultSRS.dueDate || new Date().toISOString();
 
-    const updatedCards = [card, ...existingCards];
-    const realDueCount = computeDueCount(updatedCards);
-    const realNewCount = computeNewCount(updatedCards);
+    try {
+      const { data, error } = await supabase
+        .from("cards")
+        .insert({
+          deck_id: cardData.deckId,
+          user_id: user.id,
+          character: cardData.character,
+          traditional: cardData.traditional,
+          pinyin: cardData.pinyin,
+          hanviet: cardData.hanviet,
+          translation: cardData.translation,
+          examples: cardData.examples || [],
+          radical: cardData.radical,
+          stroke_count: cardData.strokeCount,
+          hsk_level: cardData.hskLevel,
+          tags: cardData.tags || [],
+          srs: defaultSRS,
+          srs_next_review: nextReview,
+        })
+        .select()
+        .single();
 
-    // Optimistically update local store immediately.
-    // cardCount: increment by 1 from the deck's stored count (which reflects total, including unloaded pages).
-    // dueCount/newCount: computed from loaded cards — best approximation when paginated.
-    set((s) => ({
-      cards: { ...s.cards, [cardData.deckId]: updatedCards },
-      decks: s.decks.map((deck) =>
-        deck.id === cardData.deckId
-          ? {
-              ...deck,
-              cardCount: (deck.cardCount || 0) + 1,
-              dueCount: realDueCount,
-              newCount: realNewCount,
-            }
-          : deck,
-      ),
-    }));
+      if (error) throw error;
 
-    // Async background persistence to Firestore
-    fireAndForget("addCard", async () => {
-      await setDoc(ref, sanitizeForFirestore(card));
-      // Read the current deck count from Firestore and increment to avoid race conditions
-      const deckDocRef = doc(decksRef(uid), cardData.deckId);
-      const currentDeck = get().decks.find((d) => d.id === cardData.deckId);
-      await updateDoc(deckDocRef, {
-        cardCount: currentDeck ? currentDeck.cardCount : updatedCards.length,
-        dueCount: realDueCount,
-        newCount: realNewCount,
-      });
-    });
+      const newCard = mapRowToCard(data);
+      const updatedCards = [newCard, ...existingCards];
+      const realDueCount = computeDueCount(updatedCards);
+      const realNewCount = computeNewCount(updatedCards);
+
+      set((s) => ({
+        cards: { ...s.cards, [cardData.deckId]: updatedCards },
+        decks: s.decks.map((deck) =>
+          deck.id === cardData.deckId
+            ? {
+                ...deck,
+                cardCount: (deck.cardCount || 0) + 1,
+                dueCount: realDueCount,
+                newCount: realNewCount,
+              }
+            : deck,
+        ),
+      }));
+    } catch (err) {
+      console.error("[addCard] Supabase insert failed:", err);
+      throw err;
+    }
   },
 
   updateCard: async (cardId, deckId, updates) => {
-    const uid = getUserId();
     const existing = get().cards[deckId] || [];
     const updatedCards = existing.map((c) => (c.id === cardId ? { ...c, ...updates } : c));
     const realDueCount = computeDueCount(updatedCards);
     const realNewCount = computeNewCount(updatedCards);
 
-    // Optimistically update local store immediately
     set((s) => ({
-      cards: {
-        ...s.cards,
-        [deckId]: updatedCards,
-      },
+      cards: { ...s.cards, [deckId]: updatedCards },
       decks: s.decks.map((d) =>
         d.id === deckId ? { ...d, dueCount: realDueCount, newCount: realNewCount } : d,
       ),
     }));
 
-    // Async background persistence to Firestore
-    fireAndForget("updateCard", async () => {
-      const cleanUpdates = sanitizeForFirestore({
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      });
-      await updateDoc(cardRef(uid, deckId, cardId), cleanUpdates);
-    });
+    try {
+      const payload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (updates.character !== undefined) payload.character = updates.character;
+      if (updates.traditional !== undefined) payload.traditional = updates.traditional;
+      if (updates.pinyin !== undefined) payload.pinyin = updates.pinyin;
+      if (updates.hanviet !== undefined) payload.hanviet = updates.hanviet;
+      if (updates.translation !== undefined) payload.translation = updates.translation;
+      if (updates.examples !== undefined) payload.examples = updates.examples;
+      if (updates.radical !== undefined) payload.radical = updates.radical;
+      if (updates.strokeCount !== undefined) payload.stroke_count = updates.strokeCount;
+      if (updates.hskLevel !== undefined) payload.hsk_level = updates.hskLevel;
+      if (updates.tags !== undefined) payload.tags = updates.tags;
+      if (updates.srs !== undefined) {
+        payload.srs = updates.srs;
+        if (updates.srs.dueDate) {
+          payload.srs_next_review = updates.srs.dueDate;
+        }
+      }
+      if (updates.lastReviewedAt !== undefined) payload.last_reviewed_at = updates.lastReviewedAt;
+
+      const { error } = await supabase.from("cards").update(payload).eq("id", cardId);
+      if (error) throw error;
+    } catch (err) {
+      console.error("[updateCard] Supabase update failed:", err);
+    }
   },
 
   deleteCard: async (cardId, deckId) => {
-    const uid = getUserId();
     const existingCards = get().cards[deckId] || [];
     const updatedCards = existingCards.filter((c) => c.id !== cardId);
     const realDueCount = computeDueCount(updatedCards);
     const realNewCount = computeNewCount(updatedCards);
 
-    // Optimistically update local store immediately.
-    // cardCount: decrement by 1 from stored total (accurate even when paginated).
     set((s) => ({
-      cards: {
-        ...s.cards,
-        [deckId]: updatedCards,
-      },
+      cards: { ...s.cards, [deckId]: updatedCards },
       decks: s.decks.map((d) =>
         d.id === deckId
           ? {
@@ -234,57 +256,28 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       ),
     }));
 
-    // Async background persistence to Firestore
-    fireAndForget("deleteCard", async () => {
-      await deleteDoc(cardRef(uid, deckId, cardId));
-      const deckDocRef = doc(decksRef(uid), deckId);
-      const currentDeck = get().decks.find((d) => d.id === deckId);
-      await updateDoc(deckDocRef, {
-        cardCount: currentDeck ? currentDeck.cardCount : updatedCards.length,
-        dueCount: realDueCount,
-        newCount: realNewCount,
-      });
-    });
+    try {
+      const { error } = await supabase.from("cards").delete().eq("id", cardId);
+      if (error) throw error;
+    } catch (err) {
+      console.error("[deleteCard] Supabase delete failed:", err);
+    }
   },
 
   clearDeckCards: async (deckId) => {
-    const uid = getUserId();
-    const existingCards = get().cards[deckId] || [];
-    if (existingCards.length === 0) return;
-
-    // Immediately update Zustand store in 1 single atomic state update
     set((s) => ({
-      cards: {
-        ...s.cards,
-        [deckId]: [],
-      },
+      cards: { ...s.cards, [deckId]: [] },
       decks: s.decks.map((deck) =>
-        deck.id === deckId
-          ? {
-              ...deck,
-              cardCount: 0,
-              dueCount: 0,
-              newCount: 0,
-            }
-          : deck,
+        deck.id === deckId ? { ...deck, cardCount: 0, dueCount: 0, newCount: 0 } : deck,
       ),
     }));
 
-    // Perform batched bulk deletion in Firestore (max 500 items per batch)
-    fireAndForget("clearDeckCards", async () => {
-      for (let i = 0; i < existingCards.length; i += FIRESTORE_BATCH_SIZE) {
-        const batch = writeBatch(db);
-        const chunk = existingCards.slice(i, i + FIRESTORE_BATCH_SIZE);
-        chunk.forEach((c) => batch.delete(cardRef(uid, deckId, c.id)));
-        await batch.commit();
-      }
-      const deckDocRef = doc(decksRef(uid), deckId);
-      await updateDoc(deckDocRef, {
-        cardCount: 0,
-        dueCount: 0,
-        newCount: 0,
-      });
-    });
+    try {
+      const { error } = await supabase.from("cards").delete().eq("deck_id", deckId);
+      if (error) throw error;
+    } catch (err) {
+      console.error("[clearDeckCards] Supabase delete failed:", err);
+    }
   },
 
   gradeCard: async (card, grade) => {
@@ -295,18 +288,17 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
   },
 
   resetDeckProgress: async (deckId) => {
-    const uid = getUserId();
     const existingCards = get().cards[deckId] || [];
     const now = new Date().toISOString();
+    const defaultSRS = createDefaultSRSState();
     const cardCount = existingCards.length;
 
-    // Optimistically update local store immediately
     set((s) => ({
       cards: {
         ...s.cards,
         [deckId]: (s.cards[deckId] || []).map((c) => ({
           ...c,
-          srs: createDefaultSRSState(),
+          srs: defaultSRS,
           updatedAt: now,
         })),
       },
@@ -315,38 +307,31 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       ),
     }));
 
-    // Async background persistence to Firestore using local cards (no re-fetching getDocs)
-    fireAndForget("resetDeckProgress", async () => {
-      const defaultSRS = createDefaultSRSState();
-      for (let i = 0; i < existingCards.length; i += FIRESTORE_BATCH_SIZE) {
-        const batch = writeBatch(db);
-        const chunk = existingCards.slice(i, i + FIRESTORE_BATCH_SIZE);
-        chunk.forEach((c) =>
-          batch.update(cardRef(uid, deckId, c.id), { srs: defaultSRS, updatedAt: now }),
-        );
-        await batch.commit();
-      }
+    try {
+      const { error } = await supabase
+        .from("cards")
+        .update({
+          srs: defaultSRS,
+          srs_next_review: defaultSRS.dueDate || now,
+          updated_at: now,
+        })
+        .eq("deck_id", deckId);
 
-      const deckDocRef = doc(decksRef(uid), deckId);
-      await updateDoc(deckDocRef, {
-        dueCount: cardCount,
-        newCount: cardCount,
-        updatedAt: now,
-      });
-    });
+      if (error) throw error;
+    } catch (err) {
+      console.error("[resetDeckProgress] Supabase update failed:", err);
+    }
   },
 
   findExistingCard: (character, deckId) => {
     const q = character.trim().toLowerCase();
     if (!q) return undefined;
     const cardsState = get().cards;
-    // When deckId is provided, ONLY search within that deck (prevent false-positives across decks)
     if (deckId && cardsState[deckId]) {
       return cardsState[deckId].find(
         (c) => c.character.trim().toLowerCase() === q || c.pinyin.trim().toLowerCase() === q,
       );
     }
-    // No deckId specified: search across all decks
     for (const dId of Object.keys(cardsState)) {
       const match = cardsState[dId].find(
         (c) => c.character.trim().toLowerCase() === q || c.pinyin.trim().toLowerCase() === q,

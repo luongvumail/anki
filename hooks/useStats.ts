@@ -1,9 +1,8 @@
 import { useState, useRef, useMemo, useCallback } from "react";
 import { Animated } from "react-native";
-import { useStore, Card } from "../store/useStore";
+import { useStore } from "../store/useStore";
 import { getReviewHistory, getStreakCount, getLocalDateString } from "../lib/reviewTracker";
-import { computeLearnedCount, getDeckMasteryPct } from "../lib/deckUtils";
-import { isDue } from "../lib/srs";
+import { computeLearnedCount } from "../lib/deckUtils";
 import { getLevelInfo } from "../store/slices/userProgressSlice";
 
 export interface DayActivity {
@@ -32,39 +31,25 @@ function getLast7Days(): DayActivity[] {
 }
 
 export function useStats() {
+  const decks = useStore((s) => s.decks);
   const cards = useStore((s) => s.cards);
   const fetchDecks = useStore((s) => s.fetchDecks);
-  const fetchCards = useStore((s) => s.fetchCards);
   const userId = useStore((s) => s.userId);
   const xp = useStore((s) => s.xp || 0);
 
-  const [loadingCards, setLoadingCards] = useState(() => {
-    return Object.keys(cards).length === 0;
-  });
+  const [loadingCards, setLoadingCards] = useState(false);
   const [reviewHistory, setReviewHistory] = useState<Record<string, number>>({});
   const [streakCount, setStreakCount] = useState(0);
 
-  const fadeAnim = useRef(new Animated.Value(Object.keys(cards).length > 0 ? 1 : 0)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const loadAllData = useCallback(async () => {
     if (!userId) return;
 
-    const currentStore = useStore.getState();
-    let currentDecks = currentStore.decks;
-    const hasCardsInStore = Object.keys(currentStore.cards).length > 0;
-
-    if (!hasCardsInStore) {
+    if (useStore.getState().decks.length === 0) {
       setLoadingCards(true);
-      fadeAnim.setValue(0);
-    }
-
-    if (currentDecks.length === 0) {
       await fetchDecks();
-      currentDecks = useStore.getState().decks;
-    }
-
-    if (currentDecks.length > 0) {
-      await Promise.all(currentDecks.map((d) => fetchCards(d.id)));
+      setLoadingCards(false);
     }
 
     const history = await getReviewHistory();
@@ -72,40 +57,41 @@ export function useStats() {
     setReviewHistory(history);
     setStreakCount(streak);
 
-    setLoadingCards(false);
-
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [userId, fetchDecks, fetchCards, fadeAnim]);
+  }, [userId, fetchDecks, fadeAnim]);
 
-  const allCardsList = useMemo(() => {
-    let list: Card[] = [];
-    Object.values(cards).forEach((deckCards) => {
-      list = list.concat(deckCards);
-    });
-    return list;
-  }, [cards]);
-
-  const totalCardsCount = allCardsList.length;
+  // Aggregate total stats directly from SQL view data in decks store
+  const totalCardsCount = useMemo(() => {
+    return decks.reduce((sum, d) => sum + (d.cardCount || 0), 0);
+  }, [decks]);
 
   const dueCount = useMemo(() => {
-    return allCardsList.filter((c) => isDue(c.srs)).length;
-  }, [allCardsList]);
-
-  const learnedCount = useMemo(() => {
-    return computeLearnedCount(allCardsList);
-  }, [allCardsList]);
+    return decks.reduce((sum, d) => sum + (d.dueCount || 0), 0);
+  }, [decks]);
 
   const newCardsCount = useMemo(() => {
-    return allCardsList.filter((c) => !c.srs || c.srs.repetitions === 0).length;
-  }, [allCardsList]);
+    return decks.reduce((sum, d) => sum + (d.newCount || 0), 0);
+  }, [decks]);
+
+  const learnedCount = useMemo(() => {
+    // If cards are loaded in store, use exact computeLearnedCount
+    const allLoadedCards = Object.values(cards).flat();
+    if (allLoadedCards.length > 0) {
+      return computeLearnedCount(allLoadedCards);
+    }
+    // Otherwise estimate from total minus new
+    return Math.max(0, totalCardsCount - newCardsCount);
+  }, [cards, totalCardsCount, newCardsCount]);
 
   const retentionRatePct = useMemo(() => {
-    return getDeckMasteryPct(totalCardsCount, dueCount, allCardsList);
-  }, [totalCardsCount, dueCount, allCardsList]);
+    if (totalCardsCount === 0) return 100;
+    const learned = Math.max(0, totalCardsCount - dueCount);
+    return Math.min(100, Math.max(0, Math.round((learned / totalCardsCount) * 100)));
+  }, [totalCardsCount, dueCount]);
 
   const weeklyActivity = useMemo(() => {
     const days = getLast7Days();

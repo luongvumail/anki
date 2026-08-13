@@ -1,7 +1,7 @@
-import { StateCreator } from 'zustand';
-import { isDue, SRS_GRADES, SRSGrade } from '../../lib/srs';
-import { Card, StudySession } from './types';
-import { CardSlice } from './cardSlice';
+import { StateCreator } from "zustand";
+import { isDue, SRS_GRADES, SRSGrade } from "../../lib/srs";
+import { Card, StudySession } from "./types";
+import { CardSlice } from "./cardSlice";
 
 export interface SessionSlice {
   session: StudySession | null;
@@ -10,15 +10,25 @@ export interface SessionSlice {
   advanceSession: (card: Card, grade: SRSGrade) => void;
 }
 
-export const createSessionSlice: StateCreator<SessionSlice & CardSlice, [], [], SessionSlice> = (set, get) => ({
+export const createSessionSlice: StateCreator<SessionSlice & CardSlice, [], [], SessionSlice> = (
+  set,
+  get,
+) => ({
   session: null,
 
   startSession: async (deckId) => {
-    const cards = await get().fetchCards(deckId);
-    const dueCards = cards.filter(c => isDue(c.srs));
-    // Put new cards (0 repetitions) first, then due cards
-    const newCards = dueCards.filter(c => c.srs.repetitions === 0);
-    const reviewCards = dueCards.filter(c => c.srs.repetitions > 0);
+    // 1. First attempt to fetch due cards using optimized server-side query
+    let dueCards = await get().fetchDueCards(deckId);
+
+    // 2. Fallback to loaded deck cards if fetchDueCards returned empty or wasn't cached
+    if (dueCards.length === 0) {
+      const cards = (get().cards[deckId] || []).length > 0 ? get().cards[deckId] : await get().fetchCards(deckId);
+      dueCards = cards.filter((c) => isDue(c.srs));
+    }
+
+    // Separate new cards (0 reps) and review cards
+    const newCards = dueCards.filter((c) => c.srs.repetitions === 0);
+    const reviewCards = dueCards.filter((c) => c.srs.repetitions > 0);
     const queue = [...newCards, ...reviewCards];
 
     set({

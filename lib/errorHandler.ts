@@ -1,67 +1,64 @@
-// Centralized User-Facing Error Handler for Anki Anki
+// Centralized User-Facing Error Handler for Anki App
 // Converts raw technical error codes into friendly, localized Vietnamese messages with clear guidance.
 
-interface FirebaseErrorLike {
+interface ErrorLike {
   code?: string;
   message?: string;
+  status?: number;
 }
 
-function extractErrorDetails(error: unknown): { code: string; message: string } {
-  if (!error) return { code: "", message: "" };
-  if (typeof error === "string") return { code: error, message: error };
+function extractErrorDetails(error: unknown): { code: string; message: string; status: number } {
+  if (!error) return { code: "", message: "", status: 0 };
+  if (typeof error === "string") return { code: error, message: error, status: 0 };
   if (typeof error === "object" && error !== null) {
-    const err = error as FirebaseErrorLike;
+    const err = error as ErrorLike;
     return {
       code: typeof err.code === "string" ? err.code : "",
       message: typeof err.message === "string" ? err.message : String(error),
+      status: typeof err.status === "number" ? err.status : 0,
     };
   }
-  return { code: "", message: String(error) };
+  return { code: "", message: String(error), status: 0 };
 }
 
 /**
- * Maps Firebase Authentication error codes to friendly Vietnamese messages.
+ * Maps Authentication error codes to friendly Vietnamese messages (Supabase & legacy).
  */
 export function getAuthErrorMessage(error: unknown): string {
   if (!error) return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
 
   const { code, message } = extractErrorDetails(error);
+  const msgLower = message.toLowerCase();
 
-  switch (code) {
-    case "auth/invalid-credential":
-    case "auth/wrong-password":
-      return "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.";
-
-    case "auth/user-not-found":
-      return "Không tìm thấy tài khoản với email này. Vui lòng kiểm tra chính tả hoặc tạo tài khoản mới.";
-
-    case "auth/email-already-in-use":
-      return "Địa chỉ email này đã được đăng ký tài khoản khác. Vui lòng đăng nhập hoặc dùng email khác.";
-
-    case "auth/weak-password":
-      return "Mật khẩu quá ngắn. Vui lòng nhập mật khẩu từ 6 ký tự trở lên.";
-
-    case "auth/invalid-email":
-      return "Địa chỉ email không hợp lệ. Vui lòng nhập đúng dạng example@domain.com.";
-
-    case "auth/too-many-requests":
-      return "Tài khoản tạm thời bị khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau vài phút.";
-
-    case "auth/network-request-failed":
-      return "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối Wi-Fi hoặc 4G của bạn.";
-
-    case "auth/requires-recent-login":
-      return "Vì lý do bảo mật, phiên làm việc đã hết hạn. Vui lòng đăng xuất và đăng nhập lại để thực hiện thao tác này.";
-
-    case "auth/user-disabled":
-      return "Tài khoản này đã bị khóa. Vui lòng liên hệ bộ phận hỗ trợ.";
-
-    default:
-      if (message.includes("network") || message.includes("fetch")) {
-        return "Lỗi kết nối mạng. Vui lòng kiểm tra kết nối Internet.";
-      }
-      return "Không thể thực hiện thao tác. Vui lòng thử lại sau.";
+  if (code === "auth/invalid-credential" || msgLower.includes("invalid login credentials")) {
+    return "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.";
   }
+
+  if (code === "auth/user-not-found" || msgLower.includes("user not found")) {
+    return "Không tìm thấy tài khoản với email này. Vui lòng kiểm tra chính tả hoặc tạo tài khoản mới.";
+  }
+
+  if (code === "auth/email-already-in-use" || msgLower.includes("already registered") || msgLower.includes("already exists")) {
+    return "Địa chỉ email này đã được đăng ký tài khoản khác. Vui lòng đăng nhập hoặc dùng email khác.";
+  }
+
+  if (code === "auth/weak-password" || msgLower.includes("password should be at least")) {
+    return "Mật khẩu quá ngắn. Vui lòng nhập mật khẩu từ 6 ký tự trở lên.";
+  }
+
+  if (code === "auth/invalid-email" || msgLower.includes("unable to validate email")) {
+    return "Địa chỉ email không hợp lệ. Vui lòng nhập đúng dạng example@domain.com.";
+  }
+
+  if (code === "auth/too-many-requests" || msgLower.includes("rate limit")) {
+    return "Tài khoản tạm thời bị giới hạn thao tác do nhập sai quá nhiều lần. Vui lòng thử lại sau vài phút.";
+  }
+
+  if (msgLower.includes("network") || msgLower.includes("fetch")) {
+    return "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối Wi-Fi hoặc 4G của bạn.";
+  }
+
+  return message || "Không thể thực hiện thao tác. Vui lòng thử lại sau.";
 }
 
 /**
@@ -96,21 +93,23 @@ export function getGeminiErrorMessage(error: unknown): string {
 }
 
 /**
- * Maps Firestore & database errors to friendly Vietnamese messages.
+ * Maps Database errors (Supabase / Postgres) to friendly Vietnamese messages.
  */
-export function getFirestoreErrorMessage(error: unknown): string {
+export function getDatabaseErrorMessage(error: unknown): string {
   if (!error) return "Đã xảy ra lỗi dữ liệu. Vui lòng thử lại.";
 
   const { code, message } = extractErrorDetails(error);
 
-  if (code === "permission-denied") {
+  if (code === "PGRST301" || code === "42501" || message.includes("permission denied") || message.includes("JWT")) {
     return "Bạn không có quyền thực hiện thao tác này. Vui lòng đăng nhập lại.";
   }
 
-  if (code === "unavailable" || message.includes("offline")) {
-    return "Thiết bị đang ngoại tuyến. Dữ liệu sẽ tự động đồng bộ khi có mạng trở lại.";
+  if (message.includes("network") || message.includes("Failed to fetch") || message.includes("offline")) {
+    return "Thiết bị đang ngoại tuyến. Vui lòng kiểm tra kết nối mạng.";
   }
 
-  return "Không thể lưu dữ liệu. Vui lòng thử lại sau.";
+  return message || "Không thể lưu dữ liệu. Vui lòng thử lại sau.";
 }
 
+// Backward compatibility alias for legacy calls
+export const getFirestoreErrorMessage = getDatabaseErrorMessage;
