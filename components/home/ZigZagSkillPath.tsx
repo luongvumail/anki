@@ -29,97 +29,103 @@ interface PathNodeItemProps {
   onSelect: (deck: Deck) => void;
 }
 
-const PathNodeItem = React.memo(
-  function PathNodeItem({ deck, offset, dueCount, isPriority, isCompleted, pulseAnim, onSelect }: PathNodeItemProps) {
-    const { theme } = useTheme();
-    const [pressed, setPressed] = useState(false);
+const PathNodeItem = React.memo(function PathNodeItem({
+  deck,
+  offset,
+  dueCount,
+  isPriority,
+  isCompleted,
+  pulseAnim,
+  onSelect,
+}: PathNodeItemProps) {
+  const { theme } = useTheme();
+  const [pressed, setPressed] = useState(false);
 
-    const handlePressIn = () => {
-      triggerHaptic("medium");
-      setPressed(true);
-    };
+  const handlePressIn = () => {
+    triggerHaptic("medium");
+    setPressed(true);
+  };
 
-    const handlePressOut = () => {
-      setPressed(false);
-    };
+  const handlePressOut = () => {
+    setPressed(false);
+  };
 
-    const getNodeColors = () => {
-      if (isPriority) {
-        return {
-          bg: theme.blue,
-          border: theme.blue,
-          bottom: theme.blueDark,
-          iconColor: theme.blue,
-        };
-      }
-      if (isCompleted) {
-        return {
-          bg: theme.green,
-          border: theme.green,
-          bottom: theme.greenDark,
-          iconColor: theme.yellow,
-        };
-      }
+  const getNodeColors = () => {
+    if (isPriority) {
       return {
-        bg: theme.cardBg,
-        border: theme.cardBorder,
-        bottom: theme.cardBottom,
-        iconColor: theme.textMuted,
+        bg: theme.blue,
+        border: theme.blue,
+        bottom: theme.blueDark,
+        iconColor: theme.blue,
       };
+    }
+    if (isCompleted) {
+      return {
+        bg: theme.green,
+        border: theme.green,
+        bottom: theme.greenDark,
+        iconColor: theme.yellow,
+      };
+    }
+    return {
+      bg: theme.cardBg,
+      border: theme.cardBorder,
+      bottom: theme.cardBottom,
+      iconColor: theme.textMuted,
     };
+  };
 
-    const nodeColors = getNodeColors();
+  const nodeColors = getNodeColors();
 
-    return (
-      <View style={[styles.nodeRow, { transform: [{ translateX: offset }] }]}>
-        <View style={styles.nodeWrapper}>
-          {/* Sleek Node Button */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            onPress={() => onSelect(deck)}
-            style={[
-              styles.nodeButtonCraft,
-              {
-                backgroundColor: isPriority || isCompleted ? nodeColors.bg : theme.bgSoft,
-                transform: [{ scale: pressed ? 0.94 : 1 }],
-                opacity: pressed ? 0.9 : 1,
-              },
-            ]}
-          >
-            {isCompleted ? (
-              <Ionicons name="checkmark-sharp" size={Layout.iconLg} color="#FFFFFF" />
-            ) : isPriority ? (
-              <DeckIcon name={deck.icon} size={Layout.iconLg} color="#FFFFFF" />
-            ) : (
-              <DeckIcon name={deck.icon} size={Layout.iconLg} color={theme.textMuted} />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Minimal Deck Info Card */}
+  return (
+    <View style={[styles.nodeRow, { transform: [{ translateX: offset }] }]}>
+      <View style={styles.nodeWrapper}>
+        {/* Sleek Node Button */}
         <TouchableOpacity
-          activeOpacity={0.9}
+          activeOpacity={1}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
           onPress={() => onSelect(deck)}
           style={[
-            styles.nodeTextCard,
+            styles.nodeButtonCraft,
             {
-              backgroundColor: theme.cardBg,
+              backgroundColor: isPriority || isCompleted ? nodeColors.bg : theme.bgSoft,
+              transform: [{ scale: pressed ? 0.94 : 1 }],
+              opacity: pressed ? 0.9 : 1,
             },
           ]}
         >
-          <Text style={[styles.nodeDeckName, { color: theme.textPrimary }]} numberOfLines={1}>
-            {deck.name}
-          </Text>
-          <Text style={[styles.nodeDeckSub, { color: theme.textMuted }]}>
-            {deck.cardCount || 0} từ · {dueCount > 0 ? `Cần ôn ${dueCount}` : "Đã thuộc"}
-          </Text>
+          {isCompleted ? (
+            <Ionicons name="checkmark-sharp" size={Layout.iconLg} color="#FFFFFF" />
+          ) : isPriority ? (
+            <DeckIcon name={deck.icon} size={Layout.iconLg} color="#FFFFFF" />
+          ) : (
+            <DeckIcon name={deck.icon} size={Layout.iconLg} color={theme.textMuted} />
+          )}
         </TouchableOpacity>
       </View>
-    );
-  },
-);
+
+      {/* Minimal Deck Info Card */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => onSelect(deck)}
+        style={[
+          styles.nodeTextCard,
+          {
+            backgroundColor: theme.cardBg,
+          },
+        ]}
+      >
+        <Text style={[styles.nodeDeckName, { color: theme.textPrimary }]} numberOfLines={1}>
+          {deck.name}
+        </Text>
+        <Text style={[styles.nodeDeckSub, { color: theme.textMuted }]}>
+          {deck.cardCount || 0} từ · {dueCount > 0 ? `Cần ôn ${dueCount}` : "Đã thuộc"}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+});
 
 export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkillPathProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -180,7 +186,7 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 
         <Text style={styles.unitBannerTitle}>HÀNH TRÌNH TỪ VỰNG TIẾNG TRUNG</Text>
         <Text style={styles.unitBannerSub}>
-          Chọn bộ thẻ bên dưới để bắt đầu lật Flashcard & thực hành phản xạ SRS!
+          Chọn bộ thẻ bên dưới để bắt đầu lật Flashcard & thực hành phản xạ FSRS!
         </Text>
       </View>
 
@@ -213,7 +219,8 @@ export function ZigZagSkillPath({ decks, dueCardsMap, onSelectDeck }: ZigZagSkil
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: Spacing.sm,
+    paddingTop: 0,
+    paddingBottom: Spacing.sm,
     alignItems: "center",
   },
   unitBanner: {

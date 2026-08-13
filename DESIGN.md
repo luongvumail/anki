@@ -1,5 +1,5 @@
 ---
-name: Anki Chinese Learning Design System
+name: Anki Learning Design System
 description: Ultra-clean, unified design system with full-width surface sections, ambient elevation contrast, 2 button tiers (Primary & Secondary), and zero visual clutter for Light, Dark, and System Theme.
 colors:
   # Light Palette
@@ -9,7 +9,7 @@ colors:
   card-border-light: "transparent"
   text-primary-light: "#0F172A"
   text-muted-light: "#64748B"
-  
+
   # Dark Palette
   bg-dark: "#0F172A"
   bg-soft-dark: "#1E293B"
@@ -75,10 +75,11 @@ components:
     padding: 14px
 ---
 
-# Anki Chinese Learning — Minimal & Unified Design Spec
+# Anki Learning — Minimal & Unified Design Spec
 
 ## Overview
-Anki Chinese adopts a minimal, highly unified design aesthetic. It eliminates explicit colored borders, 3D bottom effects, and visual clutter. Cards rely on subtle surface background contrast (`cardBg` vs `bg`), while detail section blocks fill 100% full width (`alignSelf: "stretch"`) to ensure uniform layout alignment regardless of content length.
+
+Anki adopts a minimal, highly unified design aesthetic. It eliminates explicit colored borders, 3D bottom effects, and visual clutter. Cards rely on subtle surface background contrast (`cardBg` vs `bg`), while detail section blocks fill 100% full width (`alignSelf: "stretch"`) to ensure uniform layout alignment regardless of content length.
 
 ---
 

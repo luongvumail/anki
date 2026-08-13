@@ -44,7 +44,7 @@ export interface ColorPalette {
   purpleDark: string;
   purpleDim: string;
 
-  // SRS Status Colors
+  // FSRS Status Colors
   srsAgain: string;
   srsHard: string;
   srsGood: string;

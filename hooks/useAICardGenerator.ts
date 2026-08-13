@@ -2,19 +2,16 @@ import { useState, useCallback } from "react";
 import { useStore } from "../store/useStore";
 import { generateCardDataBatch, generateCardData, CardData } from "../lib/gemini";
 import { triggerHaptic } from "../constants/theme";
-import { createDefaultSRSState } from "../lib/srs";
+import { createDefaultFSRSState } from "../lib/srs";
 import { getGeminiErrorMessage } from "../lib/errorHandler";
 
-export function useAICardGenerator(
-  initialDeckId?: string,
-  onClose?: () => void
-) {
+export function useAICardGenerator(initialDeckId?: string, onClose?: () => void) {
   const decks = useStore((s) => s.decks);
   const addCard = useStore((s) => s.addCard);
 
   const [prompt, setPrompt] = useState("");
   const [selectedDeckId, setSelectedDeckId] = useState<string>(
-    initialDeckId || (decks.length > 0 ? decks[0].id : "")
+    initialDeckId || (decks.length > 0 ? decks[0].id : ""),
   );
   const [isDeckPickerOpen, setIsDeckPickerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -95,9 +92,9 @@ export function useAICardGenerator(
             strokeCount: cardData.strokeCount,
             hskLevel: cardData.hskLevel,
             tags: cardData.tags || ["AI-Generated"],
-            srs: createDefaultSRSState(),
-          })
-        )
+            srs: createDefaultFSRSState(),
+          }),
+        ),
       );
 
       triggerHaptic("success");

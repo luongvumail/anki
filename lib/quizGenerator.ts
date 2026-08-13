@@ -1,5 +1,6 @@
 import { Card } from "../store/slices/types";
 import { APP_CONFIG } from "../constants/config";
+import { FSRSState } from "./srs";
 
 export type QuestionType = "meaning_choice" | "pinyin_choice" | "listening" | "cloze";
 
@@ -90,7 +91,7 @@ function generateToneVariations(pinyin: string): string[] {
 function getCharacterDistractors(card: Card, allCards: Card[]): string[] {
   const target = card.character || "";
   const uniquePool = Array.from(
-    new Set(allCards.map((c) => c.character).filter((ch) => ch && ch !== target))
+    new Set(allCards.map((c) => c.character).filter((ch) => ch && ch !== target)),
   );
 
   for (const fallback of FALLBACK_CHARACTERS) {
@@ -110,7 +111,7 @@ function getCharacterDistractors(card: Card, allCards: Card[]): string[] {
 function getTranslationDistractors(card: Card, allCards: Card[]): string[] {
   const target = card.translation || "";
   const uniquePool = Array.from(
-    new Set(allCards.map((c) => c.translation).filter((tr) => tr && tr !== target))
+    new Set(allCards.map((c) => c.translation).filter((tr) => tr && tr !== target)),
   );
 
   for (const fallback of FALLBACK_TRANSLATIONS) {
@@ -144,8 +145,8 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
       new Set(
         allCards
           .map((c) => c.pinyin)
-          .filter((py) => py && py !== target && !distractors.includes(py))
-      )
+          .filter((py) => py && py !== target && !distractors.includes(py)),
+      ),
     );
 
     for (const py of shuffleArray(otherPinyins)) {
@@ -167,27 +168,32 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
 }
 
 /**
- * Select question type adaptively based on SRS repetitions & weak tag:
+ * Select question type adaptively based on FSRS state & weak tag:
  */
-export function determineQuestionType(card: Card, weakTag?: "pinyin" | "character" | "meaning"): QuestionType {
+export function determineQuestionType(
+  card: Card,
+  weakTag?: "pinyin" | "character" | "meaning",
+): QuestionType {
   if (weakTag === "pinyin") return "pinyin_choice";
   if (weakTag === "meaning") return "meaning_choice";
   if (weakTag === "character") return "listening";
 
+  const state = card.srs?.state ?? FSRSState.New;
   const reps = card.srs?.repetitions ?? 0;
-  const hasExamples = card.examples && card.examples.length > 0 && card.examples[0].chinese;
+  const hasExamples = Boolean(card.examples && card.examples.length > 0 && card.examples[0].chinese);
 
-  if (reps === 0) {
+  if (state === FSRSState.New) {
     return "meaning_choice";
-  } else if (reps <= 2) {
+  } else if (state === FSRSState.Learning || state === FSRSState.Relearning) {
     return "pinyin_choice";
-  } else if (reps <= 4) {
+  } else if (state === FSRSState.Review) {
+    if (hasExamples && reps >= 3) {
+      return "cloze";
+    }
     return "listening";
-  } else if (hasExamples) {
-    return "cloze";
-  } else {
-    return "meaning_choice";
   }
+
+  return "meaning_choice";
 }
 
 /**
@@ -197,10 +203,9 @@ export function generateQuizQuestion(
   card: Card,
   allCards: Card[],
   forcedType?: QuestionType,
-  weakTag?: "pinyin" | "character" | "meaning"
+  weakTag?: "pinyin" | "character" | "meaning",
 ): QuizQuestion {
   const type = forcedType || determineQuestionType(card, weakTag);
-
 
   if (type === "meaning_choice") {
     const distractors = getTranslationDistractors(card, allCards);

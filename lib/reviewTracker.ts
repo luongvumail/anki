@@ -1,10 +1,32 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "./supabase";
 
-const REVIEW_HISTORY_KEY = "@anki_review_history";
+const BASE_REVIEW_HISTORY_KEY = "@anki_review_history";
 
 // In-memory cache to avoid redundant AsyncStorage reads
 let _reviewHistoryCache: Record<string, number> | null = null;
+let _currentCachedUserId: string | null = null;
 let _writeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function getStorageKey(providedUid?: string | null): Promise<string> {
+  let uid = providedUid;
+  if (uid === undefined) {
+    if (_currentCachedUserId) {
+      uid = _currentCachedUserId;
+    } else {
+      const { data } = await supabase.auth.getUser();
+      uid = data?.user?.id || null;
+      _currentCachedUserId = uid;
+    }
+  }
+  return uid ? `${BASE_REVIEW_HISTORY_KEY}_${uid}` : BASE_REVIEW_HISTORY_KEY;
+}
+
+export function clearReviewTrackerCache(): void {
+  _reviewHistoryCache = null;
+  _currentCachedUserId = null;
+  if (_writeDebounceTimer) clearTimeout(_writeDebounceTimer);
+}
 
 /**
  * Returns YYYY-MM-DD string formatted in local system time.
@@ -17,12 +39,23 @@ export function getLocalDateString(d: Date = new Date()): string {
 }
 
 /**
- * Returns a map of YYYY-MM-DD -> count of reviews completed on that day.
+ * Returns a map of YYYY-MM-DD -> count of reviews completed on that day for the current user.
  */
 export async function getReviewHistory(): Promise<Record<string, number>> {
-  if (_reviewHistoryCache !== null) return _reviewHistoryCache;
+  let uid = _currentCachedUserId;
+  if (!uid) {
+    const { data } = await supabase.auth.getUser();
+    uid = data?.user?.id || null;
+    _currentCachedUserId = uid;
+  }
+
+  if (_reviewHistoryCache !== null) {
+    return _reviewHistoryCache;
+  }
+
   try {
-    const json = await AsyncStorage.getItem(REVIEW_HISTORY_KEY);
+    const key = await getStorageKey(uid);
+    const json = await AsyncStorage.getItem(key);
     _reviewHistoryCache = json ? JSON.parse(json) : {};
     return _reviewHistoryCache!;
   } catch (e) {
@@ -33,7 +66,6 @@ export async function getReviewHistory(): Promise<Record<string, number>> {
 
 /**
  * Records a card review for today (YYYY-MM-DD) in local persistent storage.
- * Uses in-memory cache + debounced write to minimize AsyncStorage I/O.
  */
 export async function recordReviewToday(): Promise<void> {
   try {
@@ -42,11 +74,13 @@ export async function recordReviewToday(): Promise<void> {
     history[todayStr] = (history[todayStr] || 0) + 1;
     _reviewHistoryCache = history;
 
+    const key = await getStorageKey();
+
     // Debounce: write to AsyncStorage at most once every 2 seconds
     if (_writeDebounceTimer) clearTimeout(_writeDebounceTimer);
     _writeDebounceTimer = setTimeout(async () => {
       try {
-        await AsyncStorage.setItem(REVIEW_HISTORY_KEY, JSON.stringify(_reviewHistoryCache));
+        await AsyncStorage.setItem(key, JSON.stringify(_reviewHistoryCache));
       } catch (e) {
         console.warn("[reviewTracker] Error saving review history:", e);
       }

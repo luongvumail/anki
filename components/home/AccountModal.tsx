@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,98 +11,78 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Spacing, Typography, Layout, BorderWidths, triggerHaptic } from "../../constants/theme";
+import { Spacing, Typography, Layout, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { FormField } from "../ui/FormField";
+import { useStore } from "../../store/useStore";
+import { supabase } from "../../lib/supabase";
+import { cancelDailyStudyReminder } from "../../lib/notificationService";
 import { WheelTimePicker } from "./WheelTimePicker";
 import { SectionTitle } from "../ui/SectionTitle";
 import { AppCard } from "../ui/AppCard";
 import { AppButton } from "../ui/AppButton";
 import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 
-interface AccountModalProps {
-  visible: boolean;
-  onClose: () => void;
-  displayName: string;
-  email: string | null;
-  reminderEnabled: boolean;
-  reminderHour: number;
-  reminderMinute: number;
-  onToggleReminder: (value: boolean) => void;
-  onHourChange: (hour: number) => void;
-  onMinuteChange: (minute: number) => void;
-  onChangePassword: (curr: string, next: string) => Promise<void>;
-  onSendResetEmail: () => Promise<void>;
-  onSignOut: () => void;
-}
-
-export function AccountModal({
-  visible,
-  onClose,
-  displayName,
-  email,
-  reminderEnabled,
-  reminderHour,
-  reminderMinute,
-  onToggleReminder,
-  onHourChange,
-  onMinuteChange,
-  onChangePassword,
-  onSendResetEmail,
-  onSignOut,
-}: AccountModalProps) {
+export function AccountModal() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [loadingPass, setLoadingPass] = useState(false);
-  const [loadingReset, setLoadingReset] = useState(false);
+  const isAccountModalOpen = useStore((s) => s.isAccountModalOpen);
+  const closeAccountModal = useStore((s) => s.closeAccountModal);
+  const resetUserState = useStore((s) => s.resetUserState);
 
-  const handlePasswordSubmit = async () => {
-    if (!newPassword) return;
-    if (newPassword.length < 6) {
-      Alert.alert("Thông báo", "Mật khẩu mới phải chứa ít nhất 6 ký tự.");
-      return;
-    }
-    setLoadingPass(true);
-    try {
-      await onChangePassword(currentPassword, newPassword);
-      Alert.alert("Thành công", "Đã cập nhật mật khẩu mới!");
-      setCurrentPassword("");
-      setNewPassword("");
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert("Lỗi đổi mật khẩu", msg || "Không thể cập nhật mật khẩu.");
-    } finally {
-      setLoadingPass(false);
-    }
-  };
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
-  const handleResetSubmit = async () => {
-    setLoadingReset(true);
-    try {
-      await onSendResetEmail();
-      Alert.alert(
-        "Đã gửi email khôi phục",
-        "Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn.",
-      );
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert("Không thể gửi email", msg || "Vui lòng thử lại sau.");
-    } finally {
-      setLoadingReset(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderHour, setReminderHour] = useState(20);
+  const [reminderMinute, setReminderMinute] = useState(0);
+
+  useEffect(() => {
+    if (!isAccountModalOpen) return;
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setUserEmail(data.user.email || null);
+        setUserName(
+          data.user.user_metadata?.full_name ||
+            (data.user.email ? data.user.email.split("@")[0] : "Bạn"),
+        );
+      }
+    });
+  }, [isAccountModalOpen]);
+
+  const displayName = userName || (userEmail ? userEmail.split("@")[0] : "Bạn");
+  const email = userEmail;
+
+  const handleToggleReminder = async (val: boolean) => {
+    setReminderEnabled(val);
+    if (!val) {
+      await cancelDailyStudyReminder();
     }
   };
 
-  if (!visible) return null;
+  const handleSignOut = () => {
+    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất tài khoản?", [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Đăng xuất",
+        style: "destructive",
+        onPress: async () => {
+          closeAccountModal();
+          await supabase.auth.signOut();
+          resetUserState();
+        },
+      },
+    ]);
+  };
+
+  if (!isAccountModalOpen) return null;
 
   return (
     <Modal
-      visible={visible}
+      visible={isAccountModalOpen}
       animationType="slide"
       presentationStyle="fullScreen"
-      onRequestClose={onClose}
+      onRequestClose={closeAccountModal}
     >
       <View style={[styles.modalContainer, { backgroundColor: theme.bg }]}>
         {/* Top App Header */}
@@ -119,7 +99,7 @@ export function AccountModal({
             style={styles.closeBtn}
             onPress={() => {
               triggerHaptic("selection");
-              onClose();
+              closeAccountModal();
             }}
           >
             <Ionicons name="close" size={Layout.iconLg} color={theme.textMuted} />
@@ -177,10 +157,13 @@ export function AccountModal({
                 value={reminderEnabled}
                 onValueChange={(val) => {
                   triggerHaptic("selection");
-                  onToggleReminder(val);
+                  handleToggleReminder(val);
                 }}
-                trackColor={{ false: theme.bgSoft, true: theme.green }}
-                thumbColor="#FFFFFF"
+                trackColor={{
+                  false: theme.isDark ? "#334155" : "#CBD5E1",
+                  true: theme.green,
+                }}
+                thumbColor={reminderEnabled ? "#FFFFFF" : theme.isDark ? "#94A3B8" : "#64748B"}
               />
             </View>
 
@@ -189,52 +172,11 @@ export function AccountModal({
                 <WheelTimePicker
                   hour={reminderHour}
                   minute={reminderMinute}
-                  onHourChange={onHourChange}
-                  onMinuteChange={onMinuteChange}
+                  onHourChange={setReminderHour}
+                  onMinuteChange={setReminderMinute}
                 />
               </View>
             )}
-          </AppCard>
-
-          {/* Account Security Section */}
-          <SectionTitle style={{ marginTop: Spacing.md, marginBottom: 2 }}>
-            BẢO MẬT & MẬT KHẨU
-          </SectionTitle>
-          <AppCard style={styles.settingCard}>
-            <FormField
-              label="Mật khẩu hiện tại"
-              placeholder="••••••••"
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-              secureTextEntry
-            />
-
-            <FormField
-              label="Mật khẩu mới (ít nhất 6 ký tự)"
-              placeholder="••••••••"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-            />
-
-            <AppButton
-              title={loadingPass ? "ĐANG ĐỔI..." : "ĐỔI MẬT KHẨU"}
-              variant="primary"
-              size="md"
-              disabled={loadingPass || !newPassword}
-              onPress={handlePasswordSubmit}
-              style={{ marginTop: Spacing.sm }}
-            />
-
-            <TouchableOpacity
-              style={styles.resetEmailBtn}
-              onPress={handleResetSubmit}
-              disabled={loadingReset}
-            >
-              <Text style={[styles.resetEmailText, { color: theme.blue }]}>
-                {loadingReset ? "Đang gửi..." : "Gửi email đặt lại mật khẩu"}
-              </Text>
-            </TouchableOpacity>
           </AppCard>
 
           {/* Sign Out Action */}
@@ -244,10 +186,9 @@ export function AccountModal({
             size="lg"
             onPress={() => {
               triggerHaptic("heavy");
-              onSignOut();
-              onClose();
+              handleSignOut();
             }}
-            style={{ marginTop: Spacing.lg, marginBottom: Spacing.lg }}
+            style={{ marginTop: Spacing.xl, marginBottom: Spacing.xl }}
           />
         </ScrollView>
       </View>
@@ -334,30 +275,10 @@ const styles = StyleSheet.create({
   },
   reminderTitle: {
     fontSize: Typography.subhead.fontSize,
-    fontWeight: Typography.weight.extraBold,
-  },
-  reminderSub: {
-    fontSize: Typography.caption1.fontSize,
-    marginTop: 2,
     fontWeight: Typography.weight.semibold,
   },
   pickerBox: {
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.lg,
-    borderTopWidth: BorderWidths.thin,
-  },
-  pickerLabel: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: Typography.weight.bold,
-    marginBottom: Spacing.sm,
-  },
-  resetEmailBtn: {
-    alignItems: "center",
-    marginTop: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  resetEmailText: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: Typography.weight.bold,
+    marginTop: Spacing.xs,
+    paddingTop: Spacing.xs,
   },
 });

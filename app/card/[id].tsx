@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Speech from "expo-speech";
 import { useStore } from "../../store/useStore";
-import { isDue } from "../../lib/srs";
+import { isDue, FSRSState } from "../../lib/srs";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
 import {
   Spacing,
@@ -29,7 +29,7 @@ import { SectionTitle } from "../../components/ui/SectionTitle";
 import { AppCard } from "../../components/ui/AppCard";
 import { AppButton } from "../../components/ui/AppButton";
 import { AudioButton } from "../../components/ui/AudioButton";
-import { SkeletonCard } from "../../components/ui/SkeletonCard";
+import { LoadingIndicator } from "../../components/ui/LoadingIndicator";
 import { generateRadical } from "../../lib/gemini";
 
 export default function CardDetailScreen() {
@@ -125,10 +125,7 @@ export default function CardDetailScreen() {
             <Ionicons name="chevron-back" size={Layout.iconLg} color={theme.textPrimary} />
           </TouchableOpacity>
         </View>
-        <View style={{ paddingHorizontal: Spacing.pageMargin, marginTop: Spacing.md }}>
-          <SkeletonCard lines={4} />
-          <SkeletonCard lines={2} />
-        </View>
+        <LoadingIndicator message="Đang nạp thông tin thẻ..." />
       </View>
     );
   }
@@ -228,17 +225,17 @@ export default function CardDetailScreen() {
           )}
         </AppCard>
 
-        {/* SRS Parameters & Level Detail Card */}
-        <SectionTitle>THÔNG SỐ LẶP LẠI TỰ ĐỘNG (SRS)</SectionTitle>
+        {/* FSRS Parameters & Level Detail Card */}
+        <SectionTitle>THÔNG SỐ LẶP LẠI TỰ ĐỘNG (FSRS)</SectionTitle>
         <AppCard style={styles.detailCard}>
           <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Trạng thái SRS</Text>
+            <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Trạng thái FSRS</Text>
             <View
               style={[
                 styles.statusBadge,
                 {
                   backgroundColor:
-                    !card.srs || card.srs.repetitions === 0
+                    !card.srs || card.srs.state === FSRSState.New
                       ? theme.blue
                       : isDue(card.srs)
                         ? theme.yellow
@@ -247,7 +244,7 @@ export default function CardDetailScreen() {
               ]}
             >
               <Text style={styles.statusBadgeText}>
-                {!card.srs || card.srs.repetitions === 0
+                {!card.srs || card.srs.state === FSRSState.New
                   ? "MỚI CHƯA HỌC"
                   : isDue(card.srs)
                     ? "CẦN ÔN TẬP"
@@ -377,9 +374,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  detailCard: { padding: Spacing.md, marginBottom: Spacing.lg },
+  detailCard: { padding: Spacing.md, marginBottom: Spacing.md },
 
-  radicalCard: { padding: Spacing.md, marginBottom: Spacing.lg },
+  radicalCard: { padding: Spacing.md, marginBottom: Spacing.md },
   radicalRow: { flexDirection: "row", alignItems: "flex-start", gap: Spacing.cellPadding },
   radicalHeader: {
     flexDirection: "row",
@@ -429,7 +426,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  exampleCard: { padding: Spacing.md, marginBottom: Spacing.cellPadding },
+  exampleCard: { padding: Spacing.md, marginBottom: Spacing.md },
   exampleCn: { fontSize: Typography.bodyMD.fontSize, fontWeight: Typography.weight.extraBold },
   examplePy: {
     fontSize: Typography.caption.fontSize,

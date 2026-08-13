@@ -11,7 +11,7 @@ import { AppHeader } from "../../components/ui/AppHeader";
 import { ProgressBar } from "../../components/ui/ProgressBar";
 import { BadgesGallery } from "../../components/stats/BadgesGallery";
 import { StudyGuideSection } from "../../components/stats/StudyGuideSection";
-import { SkeletonCard } from "../../components/ui/SkeletonCard";
+import { LoadingIndicator } from "../../components/ui/LoadingIndicator";
 import { useStats } from "../../hooks/useStats";
 
 export default function StatsScreen() {
@@ -50,10 +50,7 @@ export default function StatsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {loadingCards ? (
-          <View style={{ marginTop: Spacing.md }}>
-            <SkeletonCard lines={2} />
-            <SkeletonCard lines={2} />
-          </View>
+          <LoadingIndicator message="Đang nạp thống kê học tập..." />
         ) : (
           <Animated.View style={{ opacity: fadeAnim }}>
             {/* Level & Rank Hero Banner */}
@@ -216,7 +213,7 @@ export default function StatsScreen() {
             {/* Achievements Badges Gallery Section */}
             <BadgesGallery streakCount={streakCount} learnedCards={learnedCount} />
 
-            {/* Comprehensive User Guide & SRS Mechanics Section */}
+            {/* Comprehensive User Guide & FSRS Mechanics Section */}
             <StudyGuideSection />
           </Animated.View>
         )}

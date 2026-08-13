@@ -16,7 +16,7 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
   isLoading: false,
   error: null,
   isAccountModalOpen: false,
-  themeMode: "system",
+  themeMode: "light",
   setError: (msg) => set({ error: msg }),
   openAccountModal: () => set({ isAccountModalOpen: true }),
   closeAccountModal: () => set({ isAccountModalOpen: false }),

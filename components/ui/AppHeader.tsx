@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Radii, Spacing, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { useStore } from "../../store/useStore";
+import { supabase } from "../../lib/supabase";
 
 export interface AppHeaderProps {
   userName?: string;
@@ -27,8 +28,19 @@ export function AppHeader({
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const openAccountModal = useStore((s) => s.openAccountModal);
-  const resolvedName = userName || "Bạn";
+  const [fetchedName, setFetchedName] = useState<string | null>(null);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        const full = data.user.user_metadata?.full_name;
+        const email = data.user.email ? data.user.email.split("@")[0] : null;
+        setFetchedName(full || email || "Bạn");
+      }
+    });
+  }, []);
+
+  const resolvedName = userName || fetchedName || "Bạn";
   const handleAvatarPress = onProfilePress || openAccountModal;
 
   return (

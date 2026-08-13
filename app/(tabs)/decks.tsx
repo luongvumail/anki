@@ -33,7 +33,7 @@ import { AppHeader } from "../../components/ui/AppHeader";
 import { FloatingAddButton } from "../../components/ui/FloatingAddButton";
 import { AIAddCardModal } from "../../components/add/AIAddCardModal";
 import { DeckCardItem } from "../../components/deck/DeckCardItem";
-import { SkeletonCard } from "../../components/ui/SkeletonCard";
+import { LoadingIndicator } from "../../components/ui/LoadingIndicator";
 import { getStreakCount } from "../../lib/reviewTracker";
 import {
   computeDueCount,
@@ -176,10 +176,7 @@ export default function DecksScreen() {
         renderItem={({ item }) => <DeckCardItem itemStats={item} onDelete={handleDelete} />}
         ListEmptyComponent={
           isLoading ? (
-            <View>
-              <SkeletonCard lines={2} />
-              <SkeletonCard lines={2} />
-            </View>
+            <LoadingIndicator message="Đang tải bộ thẻ..." />
           ) : (
             <AppCard style={styles.emptyCard}>
               <Ionicons name="book-outline" size={Layout.avatarXl} color={theme.textMuted} />

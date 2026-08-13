@@ -2,6 +2,7 @@ import { StateCreator } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../lib/supabase";
 import { UserProgressState, Badge } from "./types";
+import { AuthSlice } from "./authSlice";
 import { APP_CONFIG } from "../../constants/config";
 
 const ASYNC_KEY_XP = "@anki_user_xp";
@@ -236,14 +237,11 @@ export const ALL_BADGES: Omit<Badge, "current" | "unlocked">[] = [
   },
 ];
 
-async function syncProgressToSupabase(xp: number, unlockedBadgeIds: string[]) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+async function syncProgressToSupabase(userId: string, xp: number, unlockedBadgeIds: string[]) {
+  if (!userId) return;
   try {
     await supabase.from("user_progress").upsert({
-      user_id: user.id,
+      user_id: userId,
       xp,
       unlocked_badge_ids: unlockedBadgeIds,
       updated_at: new Date().toISOString(),
@@ -253,7 +251,7 @@ async function syncProgressToSupabase(xp: number, unlockedBadgeIds: string[]) {
   }
 }
 
-export const createUserProgressSlice: StateCreator<UserProgressState> = (set, get) => ({
+export const createUserProgressSlice: StateCreator<UserProgressState & AuthSlice, [], [], UserProgressState> = (set, get) => ({
   xp: 0,
   unlockedBadgeIds: [],
 
@@ -261,40 +259,44 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
     try {
       let xp = 0;
       let unlockedBadgeIds: string[] = [];
-      let loadedFromSupabase = false;
 
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user) {
-        try {
-          const { data, error } = await supabase
-            .from("user_progress")
-            .select("xp, unlocked_badge_ids")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (!error && data) {
-            xp = data.xp ?? 0;
-            unlockedBadgeIds = data.unlocked_badge_ids || [];
-            loadedFromSupabase = true;
-          }
-        } catch (sbErr) {
-          console.warn("[userProgressSlice] Supabase read failed, falling back to local storage:", sbErr);
-        }
+      if (!user) {
+        set({ xp: 0, unlockedBadgeIds: [] });
+        return;
       }
 
-      if (!loadedFromSupabase) {
-        const xpStr = await AsyncStorage.getItem(ASYNC_KEY_XP);
-        const badgesJson = await AsyncStorage.getItem(ASYNC_KEY_BADGES);
-        xp = xpStr ? parseInt(xpStr, 10) : 0;
-        unlockedBadgeIds = badgesJson ? JSON.parse(badgesJson) : [];
+      try {
+        const { data, error } = await supabase
+          .from("user_progress")
+          .select("xp, unlocked_badge_ids")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          xp = data.xp ?? 0;
+          unlockedBadgeIds = data.unlocked_badge_ids || [];
+        } else if (!data) {
+          // Brand new user: initialize user_progress row in Supabase
+          xp = 0;
+          unlockedBadgeIds = [];
+          await supabase.from("user_progress").upsert({
+            user_id: user.id,
+            xp: 0,
+            unlocked_badge_ids: [],
+            updated_at: new Date().toISOString(),
+          });
+        }
+      } catch (sbErr) {
+        console.warn("[userProgressSlice] Supabase user_progress fetch failed:", sbErr);
       }
 
       set({ xp, unlockedBadgeIds });
-      await AsyncStorage.setItem(ASYNC_KEY_XP, xp.toString());
-      await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(unlockedBadgeIds));
+      await AsyncStorage.setItem(`${ASYNC_KEY_XP}_${user.id}`, xp.toString());
+      await AsyncStorage.setItem(`${ASYNC_KEY_BADGES}_${user.id}`, JSON.stringify(unlockedBadgeIds));
     } catch (err) {
       console.warn("[userProgressSlice] fetchUserProgress failed:", err);
     }
@@ -304,8 +306,11 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
     const newXP = get().xp + amount;
     const badges = get().unlockedBadgeIds;
     set({ xp: newXP });
-    await AsyncStorage.setItem(ASYNC_KEY_XP, newXP.toString());
-    syncProgressToSupabase(newXP, badges);
+    const userId = get().userId;
+    if (userId) {
+      await AsyncStorage.setItem(`${ASYNC_KEY_XP}_${userId}`, newXP.toString());
+      syncProgressToSupabase(userId, newXP, badges);
+    }
   },
 
   unlockBadge: async (badgeId: string) => {
@@ -314,8 +319,11 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
       const updated = [...current, badgeId];
       const xp = get().xp;
       set({ unlockedBadgeIds: updated });
-      await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(updated));
-      syncProgressToSupabase(xp, updated);
+      const userId = get().userId;
+      if (userId) {
+        await AsyncStorage.setItem(`${ASYNC_KEY_BADGES}_${userId}`, JSON.stringify(updated));
+        syncProgressToSupabase(userId, xp, updated);
+      }
     }
   },
 
@@ -339,8 +347,11 @@ export const createUserProgressSlice: StateCreator<UserProgressState> = (set, ge
     if (changed) {
       const xp = get().xp;
       set({ unlockedBadgeIds: newUnlocked });
-      await AsyncStorage.setItem(ASYNC_KEY_BADGES, JSON.stringify(newUnlocked));
-      syncProgressToSupabase(xp, newUnlocked);
+      const userId = get().userId;
+      if (userId) {
+        await AsyncStorage.setItem(`${ASYNC_KEY_BADGES}_${userId}`, JSON.stringify(newUnlocked));
+        syncProgressToSupabase(userId, xp, newUnlocked);
+      }
     }
   },
 });

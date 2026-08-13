@@ -1,5 +1,23 @@
 import { APP_CONFIG } from "../constants/config";
 
+/**
+ * ================================================================
+ * ANKI CHINESE - SRS & FSRS MEMORY ENGINE
+ * ================================================================
+ *
+ * Concepts:
+ * 1. SRS (Spaced Repetition System): The overall learning system and card data model.
+ *    - Model: `SRSState` (`card.srs`)
+ *    - Database column: `srs` (JSONB) and `srs_next_review` (TIMESTAMPTZ)
+ *
+ * 2. FSRS (Free Spaced Repetition Scheduler): The modern algorithm replacing legacy SM-2.
+ *    - Uses Memory Stability `stability` (S) in days and Card Difficulty `difficulty` (D)
+ *    - Enum: `FSRSState` (0: New, 1: Learning, 2: Review, 3: Relearning)
+ */
+
+// ----------------------------------------------------------------
+// 1. SRS Grades / User Ratings
+// ----------------------------------------------------------------
 export const SRS_GRADES = {
   AGAIN: 1, // Quên / Trả lời sai — reset stability, tăng difficulty
   HARD: 2,  // Khó / Phản xạ chậm (>5s) — stability tăng nhẹ
@@ -9,6 +27,9 @@ export const SRS_GRADES = {
 
 export type SRSGrade = (typeof SRS_GRADES)[keyof typeof SRS_GRADES];
 
+// ----------------------------------------------------------------
+// 2. FSRS Card Learning State Enum
+// ----------------------------------------------------------------
 export enum FSRSState {
   New = 0,
   Learning = 1,
@@ -16,12 +37,15 @@ export enum FSRSState {
   Relearning = 3,
 }
 
+// ----------------------------------------------------------------
+// 3. Card SRS Data Model Interface
+// ----------------------------------------------------------------
 export interface SRSState {
-  repetitions: number;
-  interval: number; // days
-  easeFactor: number; // legacy SM-2 factor retained for backward compatibility
-  dueDate: string; // ISO date string
-  lastReviewedDate?: string; // ISO date string
+  repetitions: number; // Total successful review count
+  interval: number; // Next review interval in days
+  easeFactor: number; // Legacy SM-2 factor retained for backward compatibility
+  dueDate: string; // ISO date string when card is next due
+  lastReviewedDate?: string; // ISO date string of last review
 
   // FSRS Specific Parameters
   stability: number; // S: Memory stability in days (time for retention to reach 90%)
@@ -29,6 +53,9 @@ export interface SRSState {
   state: FSRSState; // Current FSRS card state (0..3)
 }
 
+// ----------------------------------------------------------------
+// 4. Default FSRS Weights (w15 parameter vector)
+// ----------------------------------------------------------------
 export const FSRS_DEFAULT_PARAMS = {
   w: [
     0.4025, 1.1838, 3.173, 15.691,
@@ -36,10 +63,17 @@ export const FSRS_DEFAULT_PARAMS = {
     1.5457, 0.1192, 1.0192, 1.9395,
     0.11, 0.296, 2.2698, 0.2315, 2.9898,
   ],
-  requestRetention: 0.90, // Target 90% retention rate
+  requestRetention: 0.90, // Target 90% memory retention rate
   maximumInterval: 36500, // Max 100 years
 } as const;
 
+// ----------------------------------------------------------------
+// 5. Helper Functions
+// ----------------------------------------------------------------
+
+/**
+ * Creates default SRSState for new cards.
+ */
 export function createDefaultSRSState(): SRSState {
   return {
     repetitions: 0,
@@ -66,9 +100,18 @@ export function normalizeSRSState(current?: Partial<SRSState>): SRSState {
     easeFactor: current.easeFactor ?? defaults.easeFactor,
     dueDate: current.dueDate || defaults.dueDate,
     lastReviewedDate: current.lastReviewedDate,
-    stability: current.stability && current.stability > 0 ? current.stability : (current.interval || defaults.stability),
-    difficulty: current.difficulty && current.difficulty >= 1 ? current.difficulty : defaults.difficulty,
-    state: current.state !== undefined ? current.state : (current.repetitions && current.repetitions > 0 ? FSRSState.Review : FSRSState.New),
+    stability:
+      current.stability && current.stability > 0
+        ? current.stability
+        : current.interval || defaults.stability,
+    difficulty:
+      current.difficulty && current.difficulty >= 1 ? current.difficulty : defaults.difficulty,
+    state:
+      current.state !== undefined
+        ? current.state
+        : current.repetitions && current.repetitions > 0
+          ? FSRSState.Review
+          : FSRSState.New,
   };
 }
 
@@ -86,7 +129,7 @@ function clamp(val: number, min: number, max: number): number {
 }
 
 /**
- * FSRS Core Algorithm: Calculates the next SRS state based on user rating (1..4).
+ * FSRS Core Algorithm: Calculates the next SRS state based on user grade (1..4).
  */
 export function calculateSRS(grade: SRSGrade, currentInput?: Partial<SRSState>): SRSState {
   const current = normalizeSRSState(currentInput);
@@ -102,9 +145,10 @@ export function calculateSRS(grade: SRSGrade, currentInput?: Partial<SRSState>):
     elapsedDays = current.interval;
   }
 
-  const retrievability = current.state === FSRSState.New
-    ? 1.0
-    : calculateRetrievability(elapsedDays, current.stability);
+  const retrievability =
+    current.state === FSRSState.New
+      ? 1.0
+      : calculateRetrievability(elapsedDays, current.stability);
 
   let newStability: number;
   let newDifficulty: number;
@@ -127,7 +171,11 @@ export function calculateSRS(grade: SRSGrade, currentInput?: Partial<SRSState>):
     // 2. Stability Update
     if (grade === SRS_GRADES.AGAIN) {
       // Forgotten: Stability decay formula for FSRS
-      const sForget = w[11] * Math.pow(newDifficulty, -w[12]) * (Math.pow(current.stability + 1, w[13]) - 1) * Math.exp(w[14] * (1 - retrievability));
+      const sForget =
+        w[11] *
+        Math.pow(newDifficulty, -w[12]) *
+        (Math.pow(current.stability + 1, w[13]) - 1) *
+        Math.exp(w[14] * (1 - retrievability));
       newStability = clamp(sForget, 0.1, current.stability);
       newState = FSRSState.Relearning;
     } else {
@@ -136,9 +184,14 @@ export function calculateSRS(grade: SRSGrade, currentInput?: Partial<SRSState>):
       if (grade === SRS_GRADES.HARD) hardEasyBonus = w[15];
       if (grade === SRS_GRADES.EASY) hardEasyBonus = w[16];
 
-      const sRecall = current.stability * (
-        1 + Math.exp(w[8]) * (11 - newDifficulty) * Math.pow(current.stability, -w[9]) * (Math.exp(w[10] * (1 - retrievability)) - 1) * hardEasyBonus
-      );
+      const sRecall =
+        current.stability *
+        (1 +
+          Math.exp(w[8]) *
+            (11 - newDifficulty) *
+            Math.pow(current.stability, -w[9]) *
+            (Math.exp(w[10] * (1 - retrievability)) - 1) *
+            hardEasyBonus);
       newStability = Math.max(0.1, sRecall);
       newState = FSRSState.Review;
     }
@@ -153,7 +206,7 @@ export function calculateSRS(grade: SRSGrade, currentInput?: Partial<SRSState>):
     newInterval = clamp(Math.round(targetInterval), 1, FSRS_DEFAULT_PARAMS.maximumInterval);
   }
 
-  const repetitions = grade === SRS_GRADES.AGAIN ? 0 : current.repetitions + 1;
+  const repetitions = current.repetitions + 1;
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + newInterval);
   dueDate.setHours(0, 0, 0, 0);
@@ -183,7 +236,7 @@ export function isDue(srsInput?: Partial<SRSState>): boolean {
 }
 
 /**
- * Returns a human-readable next-interval label for SRS buttons/badges.
+ * Returns a human-readable next-interval label for SRS buttons/badges (e.g. "1 ngày", "Ôn lại ngay").
  */
 export function getIntervalLabel(grade: SRSGrade, current?: Partial<SRSState>): string {
   const next = calculateSRS(grade, current);
@@ -214,15 +267,15 @@ export function calculateQuizSRS(
   isCorrect: boolean,
   isRetry: boolean,
   responseTimeMs: number,
-  currentInput?: Partial<SRSState>
+  currentInput?: Partial<SRSState>,
 ): QuizMemoryEvaluation {
   const current = normalizeSRSState(currentInput);
   let grade: SRSGrade;
   let speedCategory: "fast" | "normal" | "slow" | "wrong";
   let feedbackLabel: string;
 
-  const FAST_THRESHOLD_MS = 2500;
-  const SLOW_THRESHOLD_MS = 5000;
+  const FAST_THRESHOLD_MS = Math.round(APP_CONFIG.SLOW_RESPONSE_THRESHOLD_MS * 0.7);
+  const SLOW_THRESHOLD_MS = APP_CONFIG.SLOW_RESPONSE_THRESHOLD_MS;
 
   if (!isCorrect) {
     grade = SRS_GRADES.AGAIN;
@@ -250,3 +303,13 @@ export function calculateQuizSRS(
   return { newSRS, grade, speedCategory, feedbackLabel };
 }
 
+// ================================================================
+// Backward Compatibility Aliases
+// Ensures any existing imports for FSRSGrade / calculateFSRS work 100% seamlessly.
+// ================================================================
+export const FSRS_GRADES = SRS_GRADES;
+export type FSRSGrade = SRSGrade;
+export const createDefaultFSRSState = createDefaultSRSState;
+export const normalizeFSRSState = normalizeSRSState;
+export const calculateFSRS = calculateSRS;
+export const calculateQuizFSRS = calculateQuizSRS;

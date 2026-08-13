@@ -1,8 +1,9 @@
 import React, { useRef, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
-import { Colors, Typography, Spacing, Radii } from "../../constants/theme";
+import { Typography, Spacing, Radii } from "../../constants/theme";
+import { useTheme } from "../../hooks/useTheme";
 
-const ITEM_HEIGHT = 48;
+const ITEM_HEIGHT = 36;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 
@@ -19,6 +20,7 @@ export const WheelTimePicker = React.memo(function WheelTimePicker({
   onHourChange,
   onMinuteChange,
 }: WheelTimePickerProps) {
+  const { theme } = useTheme();
   const hourScrollRef = useRef<ScrollView>(null);
   const minuteScrollRef = useRef<ScrollView>(null);
 
@@ -52,14 +54,15 @@ export const WheelTimePicker = React.memo(function WheelTimePicker({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subLabel}>CHỌN GIỜ NHẮC HỌC</Text>
-
       <View style={styles.wheelPickerContainer}>
         {/* Hour Wheel */}
         <View style={styles.wheelColumn}>
-          <Text style={styles.wheelLabel}>GIỜ</Text>
-          <View style={styles.wheelWrapper}>
-            <View style={styles.wheelSelector} pointerEvents="none" />
+          <Text style={[styles.wheelLabel, { color: theme.textMuted }]}>GIỜ</Text>
+          <View style={[styles.wheelWrapper, { backgroundColor: theme.bgSoft }]}>
+            <View
+              style={[styles.wheelSelector, { backgroundColor: theme.blueDim }]}
+              pointerEvents="none"
+            />
             <ScrollView
               ref={hourScrollRef}
               style={styles.wheelScroll}
@@ -80,7 +83,13 @@ export const WheelTimePicker = React.memo(function WheelTimePicker({
                     hourScrollRef.current?.scrollTo({ y: h * ITEM_HEIGHT, animated: true });
                   }}
                 >
-                  <Text style={[styles.wheelItemText, hour === h && styles.wheelItemTextActive]}>
+                  <Text
+                    style={[
+                      styles.wheelItemText,
+                      { color: hour === h ? theme.blue : theme.textMuted },
+                      hour === h && styles.wheelItemTextActive,
+                    ]}
+                  >
                     {h < 10 ? `0${h}` : `${h}`}
                   </Text>
                 </TouchableOpacity>
@@ -89,13 +98,16 @@ export const WheelTimePicker = React.memo(function WheelTimePicker({
           </View>
         </View>
 
-        <Text style={styles.wheelColon}>:</Text>
+        <Text style={[styles.wheelColon, { color: theme.textMuted }]}>:</Text>
 
         {/* Minute Wheel */}
         <View style={styles.wheelColumn}>
-          <Text style={styles.wheelLabel}>PHÚT</Text>
-          <View style={styles.wheelWrapper}>
-            <View style={styles.wheelSelector} pointerEvents="none" />
+          <Text style={[styles.wheelLabel, { color: theme.textMuted }]}>PHÚT</Text>
+          <View style={[styles.wheelWrapper, { backgroundColor: theme.bgSoft }]}>
+            <View
+              style={[styles.wheelSelector, { backgroundColor: theme.blueDim }]}
+              pointerEvents="none"
+            />
             <ScrollView
               ref={minuteScrollRef}
               style={styles.wheelScroll}
@@ -116,7 +128,13 @@ export const WheelTimePicker = React.memo(function WheelTimePicker({
                     minuteScrollRef.current?.scrollTo({ y: m * ITEM_HEIGHT, animated: true });
                   }}
                 >
-                  <Text style={[styles.wheelItemText, minute === m && styles.wheelItemTextActive]}>
+                  <Text
+                    style={[
+                      styles.wheelItemText,
+                      { color: minute === m ? theme.blue : theme.textMuted },
+                      minute === m && styles.wheelItemTextActive,
+                    ]}
+                  >
                     {m < 10 ? `0${m}` : `${m}`}
                   </Text>
                 </TouchableOpacity>
@@ -127,7 +145,9 @@ export const WheelTimePicker = React.memo(function WheelTimePicker({
       </View>
 
       <View style={styles.statusRow}>
-        <Text style={styles.statusText}>Nhắc học hàng ngày lúc {formattedTime}</Text>
+        <Text style={[styles.statusText, { color: theme.blue }]}>
+          Nhắc học hàng ngày lúc {formattedTime}
+        </Text>
       </View>
     </View>
   );
@@ -135,23 +155,13 @@ export const WheelTimePicker = React.memo(function WheelTimePicker({
 
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.border.separator,
-    paddingHorizontal: Spacing.cellHorizontal,
-    paddingVertical: Spacing.cellVertical,
-  },
-  subLabel: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: Colors.text.secondary,
-    fontWeight: Typography.weight.bold,
-    letterSpacing: 1,
-    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.xs,
   },
   wheelPickerContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 8,
     marginVertical: Spacing.xs,
   },
   wheelColumn: {
@@ -159,28 +169,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   wheelLabel: {
-    fontSize: Typography.text.caption2.fontSize,
-    color: Colors.text.tertiary,
+    fontSize: Typography.caption2.fontSize,
     fontWeight: Typography.weight.bold,
     letterSpacing: 1,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   wheelWrapper: {
     height: ITEM_HEIGHT * 3,
     width: "100%",
     overflow: "hidden",
-    borderRadius: Radii.card,
-    backgroundColor: Colors.bg.tertiary,
+    borderRadius: Radii.md,
     position: "relative",
   },
   wheelSelector: {
     position: "absolute",
     top: ITEM_HEIGHT,
-    left: 6,
-    right: 6,
+    left: 4,
+    right: 4,
     height: ITEM_HEIGHT,
-    borderRadius: Radii.card,
-    backgroundColor: Colors.accent.indigoDim,
+    borderRadius: Radii.sm,
   },
   wheelScroll: {
     flex: 1,
@@ -192,32 +199,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   wheelItemText: {
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: Typography.weight.medium,
-    color: Colors.text.secondary,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   wheelItemTextActive: {
-    color: Colors.accent.indigoLight,
-    fontWeight: Typography.weight.bold,
-    fontSize: 26,
+    fontWeight: Typography.weight.extraBold,
+    fontSize: 18,
   },
   wheelColon: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: Typography.weight.bold,
-    color: Colors.text.secondary,
-    paddingTop: 16,
+    paddingTop: 14,
     marginHorizontal: 2,
   },
   statusRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: Spacing.sm,
+    justifyContent: "center",
+    marginTop: Spacing.xs,
   },
   statusText: {
-    fontSize: Typography.text.caption1.fontSize,
-    color: Colors.accent.indigoLight,
-    fontWeight: Typography.weight.medium,
+    fontSize: Typography.caption1.fontSize,
+    fontWeight: Typography.weight.semibold,
   },
 });
