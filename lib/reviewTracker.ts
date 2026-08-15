@@ -76,7 +76,7 @@ export async function recordReviewToday(): Promise<void> {
 
     const key = await getStorageKey();
 
-    // Debounce: write to AsyncStorage at most once every 2 seconds
+    // Debounce: write to AsyncStorage at most once every 500ms
     if (_writeDebounceTimer) clearTimeout(_writeDebounceTimer);
     _writeDebounceTimer = setTimeout(async () => {
       try {
@@ -84,7 +84,7 @@ export async function recordReviewToday(): Promise<void> {
       } catch (e) {
         console.warn("[reviewTracker] Error saving review history:", e);
       }
-    }, 2000);
+    }, 500);
   } catch (e) {
     console.warn("[reviewTracker] Error recording review:", e);
   }

@@ -28,7 +28,6 @@ export default function DeckDetailScreen() {
     weakCards,
     masteryPct,
     isLoading,
-    isFetchingMore,
     showAIAddModal,
     setShowAIAddModal,
     searchQuery,
@@ -36,7 +35,6 @@ export default function DeckDetailScreen() {
     handleDeleteDeck,
     handleResetProgress,
     speak,
-    handleEndReached,
   } = useDeckDetail(id);
 
   const renderCardItem = useCallback(
@@ -135,8 +133,6 @@ export default function DeckDetailScreen() {
         data={filteredCards}
         keyExtractor={(item) => item.id}
         renderItem={renderCardItem}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: Math.max(insets.bottom + 80, 100) },
@@ -303,11 +299,6 @@ export default function DeckDetailScreen() {
               </TouchableOpacity>
             </AppCard>
           )
-        }
-        ListFooterComponent={
-          isFetchingMore ? (
-            <LoadingIndicator size="small" message="" style={{ paddingVertical: Spacing.xs }} />
-          ) : null
         }
       />
 

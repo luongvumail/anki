@@ -51,7 +51,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
   const chosenOption = selectedIndex !== null ? question.options[selectedIndex] : null;
   const isCorrect = chosenOption === question.correctAnswer;
   const fsrsEval = isChecked
-    ? calculateQuizFSRS(isCorrect, false, responseTimeMs, question.card.srs)
+    ? calculateQuizFSRS(isCorrect, Boolean(isFastRepairMode), responseTimeMs, question.card.srs)
     : null;
 
   return (

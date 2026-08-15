@@ -258,11 +258,9 @@ export function usePronunciationTrainer(visible: boolean, cards: Card[]) {
   const transcribeAudioWithAI = useCallback(
     async (uri: string) => {
       const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
-      const proxyUrl = process.env.EXPO_PUBLIC_AI_PROXY_URL || "";
-      const appToken = process.env.EXPO_PUBLIC_APP_TOKEN || "";
       const currentCard = shuffledCards[currentIndex];
 
-      if ((!proxyUrl && !apiKey) || !currentCard) {
+      if (!apiKey || !currentCard) {
         evaluateSpeech("");
         return;
       }
@@ -291,53 +289,32 @@ TRẢ VỀ DUY NHẤT FORMAT JSON SAU (Không thêm text thừa):
   "pronunciationTip": "<mẹo phát âm ngắn gọn bằng Tiếng Việt>"
 }`;
 
-        let responseText = "";
-
-        if (proxyUrl) {
-          const headers: Record<string, string> = { "Content-Type": "application/json" };
-          if (appToken) headers["X-App-Token"] = appToken;
-
-          const response = await fetch(proxyUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              model: "gemini-1.5-flash",
-              prompt,
-              inlineData: { mimeType: "audio/m4a", data: base64Audio },
-              responseMimeType: "application/json",
-              temperature: 0.1,
-            }),
-          });
-          const data = await response.json();
-          responseText = data.text ?? "";
-        } else {
-          const requestBody = {
-            contents: [
-              {
-                parts: [
-                  { inlineData: { mimeType: "audio/m4a", data: base64Audio } },
-                  { text: prompt },
-                ],
-              },
-            ],
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1,
-            },
-          };
-
-          const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        const requestBody = {
+          contents: [
             {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(requestBody),
-            }
-          );
+              parts: [
+                { inlineData: { mimeType: "audio/m4a", data: base64Audio } },
+                { text: prompt },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.1,
+          },
+        };
 
-          const data = await response.json();
-          responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-        }
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody),
+          }
+        );
+
+        const data = await response.json();
+        const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
         if (responseText) {
           const parsed: GeminiSpeechResponse = JSON.parse(responseText);

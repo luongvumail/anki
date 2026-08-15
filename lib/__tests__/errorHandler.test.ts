@@ -12,11 +12,14 @@ export function runErrorHandlerTests() {
   assertStrictEqual(msgAuth1, "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.");
 
   const msgAuth2 = getAuthErrorMessage({ code: "auth/network-request-failed" });
-  assertStrictEqual(msgAuth2, "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối Wi-Fi hoặc 4G của bạn.");
+  assertStrictEqual(msgAuth2, "Không thể kết nối máy chủ đăng nhập. Vui lòng kiểm tra Wi-Fi hoặc 4G của bạn.");
 
   // Test Gemini errors
   const msgGemini1 = getGeminiErrorMessage(new Error("RESOURCE_EXHAUSTED: 429 quota exceeded"));
-  assertStrictEqual(msgGemini1, "Hệ thống AI đang quá tải lượt tra cứu. Vui lòng đợi 30 giây rồi bấm thử lại.");
+  assertStrictEqual(
+    msgGemini1,
+    "Hệ thống AI đang tạm thời đạt giới hạn lượt gọi (429 Rate Limit). Vui lòng đợi khoảng 30–60 giây rồi thử lại.",
+  );
 
   // Test Firestore errors
   const msgFs1 = getFirestoreErrorMessage({ code: "permission-denied" });

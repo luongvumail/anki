@@ -10,12 +10,14 @@ export type SessionStage = "loading" | "empty" | "preview" | "validation" | "rep
 
 export function useStudySession(deckId: string) {
   const cardsMap = useStore((s) => s.cards);
+  const fetchCards = useStore((s) => s.fetchCards);
   const batchUpdateCards = useStore((s) => s.batchUpdateCards);
   const pendingUpdatesRef = useRef<{ cardId: string; deckId: string; updates: Partial<Card> }[]>(
     [],
   );
 
-  const deckCards: Card[] = useMemo(() => cardsMap[deckId] || [], [cardsMap, deckId]);
+  const isCardsLoaded = Boolean(deckId && cardsMap[deckId] !== undefined);
+  const deckCards: Card[] = useMemo(() => (deckId ? cardsMap[deckId] || [] : []), [cardsMap, deckId]);
 
   const [session, setSession] = useState<StudySession | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -31,12 +33,16 @@ export function useStudySession(deckId: string) {
   const ratedCardIdsInSession = useRef<Set<string>>(new Set());
   const initializedDeckIdRef = useRef<string | null>(null);
 
+  // Automatically fetch cards for deck if not already cached in store
+  useEffect(() => {
+    if (!deckId) return;
+    if (cardsMap[deckId] === undefined) {
+      fetchCards(deckId);
+    }
+  }, [deckId, cardsMap, fetchCards]);
+
   useEffect(() => {
     let active = true;
-
-    if (initializedDeckIdRef.current === deckId && deckCards.length > 0) {
-      return;
-    }
 
     const timer = setTimeout(() => {
       if (!active) return;
@@ -44,6 +50,16 @@ export function useStudySession(deckId: string) {
       if (!deckId) {
         setIsLoading(false);
         setStage("empty");
+        return;
+      }
+
+      // Wait until cards have been fetched from backend / store
+      if (!isCardsLoaded) {
+        setIsLoading(true);
+        return;
+      }
+
+      if (initializedDeckIdRef.current === deckId && session !== null) {
         return;
       }
 
@@ -96,7 +112,7 @@ export function useStudySession(deckId: string) {
         pendingUpdatesRef.current = [];
       }
     };
-  }, [batchUpdateCards, deckId, deckCards]);
+  }, [batchUpdateCards, deckId, deckCards, isCardsLoaded, session]);
 
   const handleNextPreview = useCallback(() => {
     setPreviewIndex((prev) => {
@@ -125,26 +141,34 @@ export function useStudySession(deckId: string) {
       const isRetry = ratedCardIdsInSession.current.has(card.id);
       const currentSRS = card.srs || createDefaultSRSState();
 
-      if (!isRetry || !isCorrect) {
-        ratedCardIdsInSession.current.add(card.id);
-        const { newSRS } = calculateQuizSRS(isCorrect, isRetry, responseTimeMs, currentSRS);
-        const nowIso = new Date().toISOString();
-        // Optimistically update card in Zustand store instantly
-        useStore.setState((s) => ({
-          cards: {
-            ...s.cards,
-            [deckId]: (s.cards[deckId] || []).map((c) =>
-              c.id === card.id ? { ...c, srs: newSRS, lastReviewedAt: nowIso } : c,
-            ),
-          },
-        }));
-        pendingUpdatesRef.current.push({
-          cardId: card.id,
-          deckId,
-          updates: { srs: newSRS, lastReviewedAt: nowIso },
-        });
-        await recordReviewToday();
+      // Calculate FSRS state (handles both first-time answers and retry answers)
+      ratedCardIdsInSession.current.add(card.id);
+      const { newSRS } = calculateQuizSRS(isCorrect, isRetry, responseTimeMs, currentSRS);
+      const nowIso = new Date().toISOString();
+
+      // Optimistically update card in Zustand store instantly
+      useStore.setState((s) => ({
+        cards: {
+          ...s.cards,
+          [deckId]: (s.cards[deckId] || []).map((c) =>
+            c.id === card.id ? { ...c, srs: newSRS, lastReviewedAt: nowIso } : c,
+          ),
+        },
+      }));
+
+      // Update or append to pendingUpdatesRef (avoid duplicate entries for same card)
+      const existingIdx = pendingUpdatesRef.current.findIndex((p) => p.cardId === card.id);
+      const updateItem = {
+        cardId: card.id,
+        deckId,
+        updates: { srs: newSRS, lastReviewedAt: nowIso },
+      };
+      if (existingIdx >= 0) {
+        pendingUpdatesRef.current[existingIdx] = updateItem;
+      } else {
+        pendingUpdatesRef.current.push(updateItem);
       }
+      await recordReviewToday();
 
       const isSlowOrMissed = !isCorrect || responseTimeMs > APP_CONFIG.REPAIR_SLOW_THRESHOLD_MS;
       let nextMissed = missedOrSlowCardIds;
@@ -222,9 +246,11 @@ export function useStudySession(deckId: string) {
       if (currentQuestion) {
         const card = currentQuestion.card;
         const currentSRS = card.srs || createDefaultSRSState();
-        const isRetry = !isCorrect;
+        // Fast repair is inherently a retry round for a previously missed or slow card
+        const isRetry = true;
         const { newSRS } = calculateQuizSRS(isCorrect, isRetry, responseTimeMs, currentSRS);
         const nowIso = new Date().toISOString();
+
         useStore.setState((s) => ({
           cards: {
             ...s.cards,
@@ -233,11 +259,18 @@ export function useStudySession(deckId: string) {
             ),
           },
         }));
-        pendingUpdatesRef.current.push({
+
+        const existingIdx = pendingUpdatesRef.current.findIndex((p) => p.cardId === card.id);
+        const updateItem = {
           cardId: card.id,
           deckId,
           updates: { srs: newSRS, lastReviewedAt: nowIso },
-        });
+        };
+        if (existingIdx >= 0) {
+          pendingUpdatesRef.current[existingIdx] = updateItem;
+        } else {
+          pendingUpdatesRef.current.push(updateItem);
+        }
         await recordReviewToday();
       }
 

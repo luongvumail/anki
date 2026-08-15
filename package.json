@@ -47,6 +47,7 @@
     "ios": "expo run:ios",
     "ios:release": "expo run:ios --configuration Release --device",
     "web": "expo start --web",
+    "test": "npx --yes tsx lib/__tests__/runAllTests.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

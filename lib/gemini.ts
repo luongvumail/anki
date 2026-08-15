@@ -2,53 +2,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { APP_CONFIG } from "../constants/config";
 
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
-const proxyUrl = process.env.EXPO_PUBLIC_AI_PROXY_URL || "";
-const appToken = process.env.EXPO_PUBLIC_APP_TOKEN || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-const CANDIDATE_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash"];
+const CANDIDATE_MODELS = ["gemini-2.5-flash", "gemini-1.5-flash"];
 
 /**
- * Sends request to Cloudflare Worker proxy if EXPO_PUBLIC_AI_PROXY_URL is configured.
+ * Sleep helper for retry backoff
  */
-async function generateViaProxy(
-  modelName: string,
-  prompt: string,
-  responseMimeType?: string,
-  temperature = 0.1,
-): Promise<string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (appToken) {
-    headers["X-App-Token"] = appToken;
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30_000);
-
-  try {
-    const response = await fetch(proxyUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: modelName,
-        prompt,
-        responseMimeType,
-        temperature,
-      }),
-      signal: controller.signal,
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || `Proxy error: HTTP ${response.status}`);
-    }
-    return data.text ?? "";
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function generateWithModels(
   prompt: string,
@@ -57,37 +18,36 @@ async function generateWithModels(
 ): Promise<string> {
   let lastError: unknown = null;
 
-  if (proxyUrl) {
-    for (const modelName of CANDIDATE_MODELS) {
-      try {
-        if (__DEV__)
-          console.log(`[Gemini/Proxy] Sending request via proxy with model ${modelName}`);
-        return await generateViaProxy(modelName, prompt, responseMimeType, temperature);
-      } catch (proxyErr) {
-        console.warn(`[Gemini/Proxy] Proxy request with model ${modelName} failed:`, proxyErr);
-        lastError = proxyErr;
-      }
-    }
-  }
-
   for (const modelName of CANDIDATE_MODELS) {
-    try {
-      if (__DEV__) console.log(`[Gemini] Attempting generation with model: ${modelName}`);
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          ...(responseMimeType ? { responseMimeType } : {}),
-          temperature,
-        },
-      });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      if (__DEV__) console.log(`[Gemini] Success using model: ${modelName}`);
-      return text;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[Gemini] Model ${modelName} failed (${msg}), trying fallback...`);
-      lastError = err;
+    // Retry up to 2 times for transient errors or 429 rate limits
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        if (__DEV__) console.log(`[Gemini] Attempting generation with model: ${modelName} (attempt ${attempt + 1})`);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            ...(responseMimeType ? { responseMimeType } : {}),
+            temperature,
+          },
+        });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        if (__DEV__) console.log(`[Gemini] Success using model: ${modelName}`);
+        return text;
+      } catch (err: unknown) {
+        lastError = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        const isRateLimit = msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota");
+
+        console.warn(`[Gemini] Model ${modelName} attempt ${attempt + 1} failed: ${msg}`);
+
+        if (isRateLimit && attempt === 0) {
+          // Wait 1.5s before second attempt on same model
+          await delay(1500);
+          continue;
+        }
+        break; // Move to fallback model
+      }
     }
   }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, Animated } from "react-native";
+import { StyleSheet, View, Animated, AppState } from "react-native";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { supabase } from "../lib/supabase";
@@ -9,6 +9,7 @@ import { APP_CONFIG } from "../constants/config";
 import { OfflineBanner } from "../components/ui/OfflineBanner";
 import { useTheme } from "../hooks/useTheme";
 import { AppMascot } from "../components/ui/AppMascot";
+import { flushOfflineQueue } from "../lib/offlineQueue";
 
 export default function RootLayout() {
   const setUserId = useStore((s) => s.setUserId);
@@ -101,8 +102,16 @@ export default function RootLayout() {
       }
     });
 
+    // 3. Auto-sync offline queue whenever app becomes active / foregrounded
+    const appStateSub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        flushOfflineQueue();
+      }
+    });
+
     return () => {
       subscription.unsubscribe();
+      appStateSub.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

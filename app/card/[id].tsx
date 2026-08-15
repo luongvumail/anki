@@ -37,10 +37,17 @@ export default function CardDetailScreen() {
   const { id, deckId } = useLocalSearchParams<{ id: string; deckId: string }>();
   const { theme } = useTheme();
   const cards = useStore((s) => s.cards);
+  const fetchCards = useStore((s) => s.fetchCards);
   const deleteCard = useStore((s) => s.deleteCard);
   const updateCard = useStore((s) => s.updateCard);
   const [speaking, setSpeaking] = useState(false);
   const [generatingRadical, setGeneratingRadical] = useState(false);
+
+  useEffect(() => {
+    if (deckId && !cards[deckId]) {
+      fetchCards(deckId);
+    }
+  }, [deckId, cards, fetchCards]);
 
   const card = useMemo(() => {
     const deckCards = cards[deckId] || [];
