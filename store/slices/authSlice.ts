@@ -1,7 +1,6 @@
 import { StateCreator } from "zustand";
 import { DeckSlice } from "./deckSlice";
 import { CardSlice } from "./cardSlice";
-import { SessionSlice } from "./sessionSlice";
 import { UserProgressState } from "./types";
 import { clearReviewTrackerCache } from "../../lib/reviewTracker";
 import { clearHeaderUserCache } from "../../lib/userHeaderCache";
@@ -13,7 +12,7 @@ export interface AuthSlice {
 }
 
 export const createAuthSlice: StateCreator<
-  AuthSlice & DeckSlice & CardSlice & SessionSlice & UserProgressState,
+  AuthSlice & DeckSlice & CardSlice & UserProgressState,
   [],
   [],
   AuthSlice
@@ -27,7 +26,6 @@ export const createAuthSlice: StateCreator<
       userId: null,
       decks: [],
       cards: {},
-      session: null,
       xp: 0,
       unlockedBadgeIds: [],
     });

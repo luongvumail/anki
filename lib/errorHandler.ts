@@ -10,11 +10,19 @@ interface ErrorLike {
 function extractErrorDetails(error: unknown): { code: string; message: string; status: number } {
   if (!error) return { code: "", message: "", status: 0 };
   if (typeof error === "string") return { code: error, message: error, status: 0 };
+  if (error instanceof Error) {
+    const errObj = error as unknown as ErrorLike;
+    return {
+      code: typeof errObj.code === "string" ? errObj.code : "",
+      message: error.message || "",
+      status: typeof errObj.status === "number" ? errObj.status : 0,
+    };
+  }
   if (typeof error === "object" && error !== null) {
     const err = error as ErrorLike;
     return {
       code: typeof err.code === "string" ? err.code : "",
-      message: typeof err.message === "string" ? err.message : String(error),
+      message: typeof err.message === "string" ? err.message : "",
       status: typeof err.status === "number" ? err.status : 0,
     };
   }
@@ -29,20 +37,51 @@ export function getAuthErrorMessage(error: unknown): string {
 
   const { code, message } = extractErrorDetails(error);
   const msgLower = message.toLowerCase();
+  const codeLower = code.toLowerCase();
 
-  if (code === "auth/too-many-requests" || msgLower.includes("rate limit")) {
+  if (
+    codeLower.includes("invalid-credential") ||
+    codeLower.includes("invalid_credentials") ||
+    codeLower.includes("invalid_grant") ||
+    msgLower.includes("invalid login credentials") ||
+    msgLower.includes("invalid password")
+  ) {
+    return "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.";
+  }
+
+  if (
+    codeLower.includes("user_already_exists") ||
+    codeLower.includes("user-already-in-use") ||
+    msgLower.includes("already registered") ||
+    msgLower.includes("already in use")
+  ) {
+    return "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.";
+  }
+
+  if (
+    code === "auth/too-many-requests" ||
+    codeLower.includes("over_email_send_rate_limit") ||
+    msgLower.includes("rate limit")
+  ) {
     return "Thao tác đăng nhập bị giới hạn do thử quá nhiều lần. Vui lòng đợi vài phút.";
   }
 
-  if (msgLower.includes("network") || msgLower.includes("fetch") || msgLower.includes("offline")) {
-    return "Không thể kết nối máy chủ đăng nhập. Vui lòng kiểm tra Wi-Fi hoặc 4G.";
+  if (
+    codeLower.includes("network") ||
+    msgLower.includes("network") ||
+    msgLower.includes("fetch") ||
+    msgLower.includes("offline")
+  ) {
+    return "Không thể kết nối máy chủ đăng nhập. Vui lòng kiểm tra Wi-Fi hoặc 4G của bạn.";
   }
 
   if (msgLower.includes("canceled") || msgLower.includes("dismissed")) {
     return "Đã hủy thao tác đăng nhập Google.";
   }
 
-  return message || "Đăng nhập không thành công. Vui lòng thử lại sau.";
+  return message && !message.includes("[object Object]")
+    ? message
+    : "Đăng nhập không thành công. Vui lòng kiểm tra thông tin và thử lại.";
 }
 
 /**
@@ -58,9 +97,10 @@ export function getGeminiErrorMessage(error: unknown): string {
     message.includes("RESOURCE_EXHAUSTED") ||
     message.includes("429") ||
     msgLower.includes("quota") ||
-    msgLower.includes("rate limit")
+    msgLower.includes("rate limit") ||
+    msgLower.includes("too many requests")
   ) {
-    return "Hệ thống AI đang quá tải lượt tra cứu. Vui lòng đợi 30 giây rồi bấm thử lại.";
+    return "Hệ thống AI đang tạm thời đạt giới hạn lượt gọi (429 Rate Limit). Vui lòng đợi khoảng 30–60 giây rồi thử lại.";
   }
 
   if (msgLower.includes("not found") || msgLower.includes("404")) {
@@ -95,7 +135,14 @@ export function getDatabaseErrorMessage(error: unknown): string {
 
   const { code, message } = extractErrorDetails(error);
 
-  if (code === "PGRST301" || code === "42501" || message.includes("permission denied") || message.includes("JWT")) {
+  if (
+    code === "PGRST301" ||
+    code === "42501" ||
+    code === "permission-denied" ||
+    code.includes("permission") ||
+    message.includes("permission denied") ||
+    message.includes("JWT")
+  ) {
     return "Bạn không có quyền thực hiện thao tác này. Vui lòng đăng nhập lại.";
   }
 

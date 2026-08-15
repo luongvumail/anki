@@ -6,6 +6,7 @@ import { Spacing, Typography, Layout, triggerHaptic } from "../../constants/them
 import { useTheme } from "../../hooks/useTheme";
 import { StudySession } from "../../store/slices/types";
 import { useStore } from "../../store/useStore";
+import { getStreakCount } from "../../lib/reviewTracker";
 import { AppCard } from "../ui/AppCard";
 import { AppButton } from "../ui/AppButton";
 import { AppMascot } from "../ui/AppMascot";
@@ -28,13 +29,16 @@ export function SessionDoneScreen({ session, onDone }: SessionDoneScreenProps) {
     triggerHaptic("success");
     addXP(earnedXP);
 
-    // Calculate learned cards count to check and unlock badges real-time
+    // Calculate learned cards and streak count to check and unlock badges real-time
     const allCards = useStore.getState().cards;
     let totalLearned = 0;
     Object.values(allCards).forEach((deckList) => {
       totalLearned += deckList.filter((c) => c.srs && c.srs.repetitions > 0).length;
     });
-    checkAndUnlockBadges(1, totalLearned);
+
+    getStreakCount().then((streak) => {
+      checkAndUnlockBadges(streak, totalLearned);
+    });
 
     Animated.timing(fadeAnim, {
       toValue: 1,

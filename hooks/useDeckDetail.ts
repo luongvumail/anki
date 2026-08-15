@@ -12,9 +12,6 @@ export function useDeckDetail(id: string | undefined) {
   const decks = useStore((s) => s.decks);
   const cards = useStore((s) => s.cards);
   const fetchCards = useStore((s) => s.fetchCards);
-  const fetchMoreCards = useStore((s) => s.fetchMoreCards);
-  const isFetchingMore = useStore((s) => s.isFetchingMoreCards[id || ""]);
-  const hasMore = useStore((s) => s.hasMoreCards[id || ""]);
   const deleteDeck = useStore((s) => s.deleteDeck);
   const resetDeckProgress = useStore((s) => s.resetDeckProgress);
   const isLoading = useStore((s) => s.isLoading);
@@ -102,12 +99,6 @@ export function useDeckDetail(id: string | undefined) {
     });
   }, []);
 
-  const handleEndReached = useCallback(() => {
-    if (id && !searchQuery && hasMore && !isFetchingMore) {
-      fetchMoreCards(id);
-    }
-  }, [fetchMoreCards, hasMore, id, isFetchingMore, searchQuery]);
-
   return {
     deck,
     deckCards,
@@ -116,8 +107,6 @@ export function useDeckDetail(id: string | undefined) {
     weakCards,
     masteryPct,
     isLoading,
-    isFetchingMore,
-    hasMore,
     showAIAddModal,
     setShowAIAddModal,
     searchQuery,
@@ -125,6 +114,5 @@ export function useDeckDetail(id: string | undefined) {
     handleDeleteDeck,
     handleResetProgress,
     speak,
-    handleEndReached,
   };
 }

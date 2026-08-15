@@ -41,8 +41,6 @@ export interface CardSlice {
   isFetchingMoreCards: Record<string, boolean>; // deckId → boolean
   fetchCards: (deckId: string) => Promise<Card[]>;
   fetchDueCards: (deckId: string) => Promise<Card[]>;
-  fetchMoreCards: (deckId: string) => Promise<void>;
-  fetchAllCardsForStats: (deckId: string) => Promise<void>;
   addCard: (card: Omit<Card, "id" | "createdAt" | "updatedAt">) => Promise<void>;
   addCardsBatch: (cards: Omit<Card, "id" | "createdAt" | "updatedAt">[]) => Promise<void>;
   updateCard: (cardId: string, deckId: string, updates: Partial<Card>) => Promise<void>;
@@ -121,9 +119,6 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       return [];
     }
   },
-
-  fetchAllCardsForStats: async (_deckId) => {},
-  fetchMoreCards: async (_deckId) => {},
 
   addCard: async (cardData) => {
     const {

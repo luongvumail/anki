@@ -15,6 +15,15 @@ export interface MatchTile {
 
 const STORAGE_KEY_HIGH_SCORE = "@anki_speed_match_high_score";
 
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export function useSpeedMatch(visible: boolean, cards: Card[]) {
   const [timeLeft, setTimeLeft] = useState(60);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -36,7 +45,7 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
 
   const generateTiles = useCallback((availableCards: Card[]) => {
     if (availableCards.length < 2) return [];
-    const pool = [...availableCards].sort(() => 0.5 - Math.random()).slice(0, 6);
+    const pool = shuffleArray(availableCards).slice(0, 6);
 
     const generated: MatchTile[] = [];
     pool.forEach((card) => {
@@ -57,7 +66,7 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
       });
     });
 
-    return generated.sort(() => 0.5 - Math.random());
+    return shuffleArray(generated);
   }, []);
 
   const startGame = useCallback(() => {

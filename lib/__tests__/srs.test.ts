@@ -5,6 +5,8 @@ import {
   isDue,
   FSRSState,
   calculateQuizFSRS,
+  calculateRetrievability,
+  getIntervalLabel,
 } from "../srs";
 
 function assertStrictEqual<T>(actual: T, expected: T, message?: string) {
@@ -50,37 +52,44 @@ export function runFSRSTests() {
     "EASY stability should be higher than GOOD stability",
   );
 
-  // Test 5: Quiz Speed Evaluation
-  // Fast response (<= 2450ms) -> EASY
-  const fastEval = calculateQuizFSRS(true, false, 1200, initial);
+  // Test 5: calculateRetrievability decay formula
+  const r0 = calculateRetrievability(0, 5);
+  assertStrictEqual(r0, 1.0, "Retrievability at 0 elapsed days should be 1.0");
+  const rFuture = calculateRetrievability(10, 5);
+  assertOk(rFuture < 1.0 && rFuture > 0, "Retrievability should decay over time");
+
+  // Test 6: Quiz Speed Evaluation (with 5000ms threshold)
+  // Fast response (<= 3500ms) -> EASY
+  const fastEval = calculateQuizFSRS(true, false, 2000, initial);
   assertStrictEqual(fastEval.grade, FSRS_GRADES.EASY, "Fast response should yield EASY grade");
   assertStrictEqual(fastEval.speedCategory, "fast");
 
-  // Normal response (3000ms) -> GOOD
-  const normalEval = calculateQuizFSRS(true, false, 3000, initial);
+  // Normal response (4500ms <= 5000ms) -> GOOD
+  const normalEval = calculateQuizFSRS(true, false, 4500, initial);
   assertStrictEqual(normalEval.grade, FSRS_GRADES.GOOD, "Normal response should yield GOOD grade");
   assertStrictEqual(normalEval.speedCategory, "normal");
 
-  // Slow response (4000ms > 3500ms threshold) -> HARD
-  const slowEval = calculateQuizFSRS(true, false, 4000, initial);
+  // Slow response (6000ms > 5000ms) -> HARD
+  const slowEval = calculateQuizFSRS(true, false, 6000, initial);
   assertStrictEqual(slowEval.grade, FSRS_GRADES.HARD, "Slow response should yield HARD grade");
   assertStrictEqual(slowEval.speedCategory, "slow");
 
+  // Retry response -> HARD
+  const retryEval = calculateQuizFSRS(true, true, 2000, initial);
+  assertStrictEqual(retryEval.grade, FSRS_GRADES.HARD, "Retry response should yield HARD grade");
+
   // Incorrect response -> AGAIN
   const wrongEval = calculateQuizFSRS(false, false, 1500, initial);
-  assertStrictEqual(
-    wrongEval.grade,
-    FSRS_GRADES.AGAIN,
-    "Incorrect answer should yield AGAIN grade",
-  );
+  assertStrictEqual(wrongEval.grade, FSRS_GRADES.AGAIN, "Incorrect answer should yield AGAIN grade");
   assertStrictEqual(wrongEval.speedCategory, "wrong");
 
-  // Test 6: isDue comparison
+  // Test 7: isDue comparison
   const pastDate = new Date();
   pastDate.setDate(pastDate.getDate() - 1);
   assertStrictEqual(
     isDue({ repetitions: 1, interval: 1, easeFactor: 2.5, dueDate: pastDate.toISOString() }),
     true,
+    "Past due date should be due",
   );
 
   const futureDate = new Date();
@@ -88,5 +97,10 @@ export function runFSRSTests() {
   assertStrictEqual(
     isDue({ repetitions: 1, interval: 5, easeFactor: 2.5, dueDate: futureDate.toISOString() }),
     false,
+    "Future due date should not be due",
   );
+
+  // Test 8: getIntervalLabel
+  assertStrictEqual(getIntervalLabel(FSRS_GRADES.AGAIN, initial), "Ôn lại ngay");
+  assertOk(typeof getIntervalLabel(FSRS_GRADES.GOOD, initial) === "string");
 }
