@@ -27,7 +27,12 @@ export function useAICardGenerator(initialDeckId?: string, onClose?: () => void)
     triggerHaptic("medium");
 
     try {
-      const existingDeckCards = cards[selectedDeckId] || [];
+      let existingDeckCards = cards[selectedDeckId];
+      if (!existingDeckCards && selectedDeckId) {
+        existingDeckCards = await useStore.getState().fetchCards(selectedDeckId);
+      }
+      if (!existingDeckCards) existingDeckCards = [];
+
       const existingCharSet = new Set(
         existingDeckCards.map((c) => (c.character || "").trim().toLowerCase()),
       );

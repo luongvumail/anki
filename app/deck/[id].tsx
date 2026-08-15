@@ -25,6 +25,7 @@ export default function DeckDetailScreen() {
     deck,
     deckCards,
     filteredCards,
+    dueCount,
     weakCards,
     masteryPct,
     isLoading,
@@ -170,14 +171,14 @@ export default function DeckDetailScreen() {
               <View style={styles.statsRow}>
                 <View style={styles.statColItem}>
                   <Text style={[styles.statNumVal, { color: theme.textPrimary }]}>
-                    {deckCards.length}
+                    {deckCards.length > 0 ? deckCards.length : deck.cardCount || 0}
                   </Text>
                   <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Tổng số từ</Text>
                 </View>
                 <View style={[styles.statColDivider, { backgroundColor: theme.cardBorder }]} />
                 <View style={styles.statColItem}>
                   <Text style={[styles.statNumVal, { color: theme.yellow }]}>
-                    {deck.dueCount || 0}
+                    {dueCount}
                   </Text>
                   <Text style={[styles.statLabelText, { color: theme.textMuted }]}>Cần ôn tập</Text>
                 </View>
@@ -193,7 +194,7 @@ export default function DeckDetailScreen() {
             <View style={styles.heroActionRow}>
               <AppButton
                 title={
-                  deck.dueCount && deck.dueCount > 0 ? `ÔN TẬP (${deck.dueCount})` : "HỌC BÀI NGAY"
+                  dueCount > 0 ? `ÔN TẬP (${dueCount})` : "HỌC BÀI NGAY"
                 }
                 variant="primary"
                 size="lg"

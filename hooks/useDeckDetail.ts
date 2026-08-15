@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Alert } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import * as Speech from "expo-speech";
 import { useStore } from "../store/useStore";
 import { triggerHaptic } from "../constants/theme";
 import { APP_CONFIG } from "../constants/config";
 
-import { computeLearnedCount, getDeckMasteryPct } from "../lib/deckUtils";
+import { computeLearnedCount, computeDueCount, getDeckMasteryPct } from "../lib/deckUtils";
 
 export function useDeckDetail(id: string | undefined) {
   const decks = useStore((s) => s.decks);
@@ -37,6 +37,10 @@ export function useDeckDetail(id: string | undefined) {
     return computeLearnedCount(deckCards);
   }, [deckCards]);
 
+  const dueCount = useMemo(() => {
+    return deckCards.length > 0 ? computeDueCount(deckCards) : deck?.dueCount || 0;
+  }, [deckCards, deck]);
+
   const weakCards = useMemo(() => {
     return deckCards.filter((c) => c.srs && c.srs.easeFactor < 2.1 && c.srs.repetitions > 0);
   }, [deckCards]);
@@ -45,13 +49,17 @@ export function useDeckDetail(id: string | undefined) {
     return getDeckMasteryPct(deckCards.length, 0, deckCards);
   }, [deckCards]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (id) fetchCards(id);
+    }, [id, fetchCards]),
+  );
 
   useEffect(() => {
-    if (id) fetchCards(id);
     return () => {
       Speech.stop();
     };
-  }, [id, fetchCards]);
+  }, []);
 
   const handleDeleteDeck = useCallback(() => {
     if (!id) return;
@@ -104,6 +112,7 @@ export function useDeckDetail(id: string | undefined) {
     deckCards,
     filteredCards,
     learnedCardsCount,
+    dueCount,
     weakCards,
     masteryPct,
     isLoading,
