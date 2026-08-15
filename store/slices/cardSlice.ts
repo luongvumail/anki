@@ -176,23 +176,45 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       if (error) throw error;
 
       const newCard = mapRowToCard(data);
-      const updatedCards = [newCard, ...existingCards];
-      const realDueCount = computeDueCount(updatedCards);
-      const realNewCount = computeNewCount(updatedCards);
+      const isCardsLoaded = Boolean(get().cards[cardData.deckId]);
 
-      set((s) => ({
-        cards: { ...s.cards, [cardData.deckId]: updatedCards },
-        decks: s.decks.map((deck) =>
-          deck.id === cardData.deckId
-            ? {
-                ...deck,
-                cardCount: (deck.cardCount || 0) + 1,
-                dueCount: realDueCount,
-                newCount: realNewCount,
-              }
-            : deck,
-        ),
-      }));
+      if (isCardsLoaded && existingCards) {
+        const updatedCards = [newCard, ...existingCards];
+        const realDueCount = computeDueCount(updatedCards);
+        const realNewCount = computeNewCount(updatedCards);
+
+        set((s) => ({
+          cards: { ...s.cards, [cardData.deckId]: updatedCards },
+          decks: s.decks.map((deck) =>
+            deck.id === cardData.deckId
+              ? {
+                  ...deck,
+                  cardCount: (deck.cardCount || 0) + 1,
+                  dueCount: realDueCount,
+                  newCount: realNewCount,
+                }
+              : deck,
+          ),
+        }));
+      } else {
+        set((s) => ({
+          decks: s.decks.map((deck) =>
+            deck.id === cardData.deckId
+              ? {
+                  ...deck,
+                  cardCount: (deck.cardCount || 0) + 1,
+                  dueCount: (deck.dueCount || 0) + 1,
+                  newCount: (deck.newCount || 0) + 1,
+                }
+              : deck,
+          ),
+        }));
+      }
+
+      // Sync decks stats from database in background
+      get()
+        .fetchDecks()
+        .catch((err) => console.warn("[addCard] fetchDecks sync failed:", err));
     } catch (err) {
       console.error("[addCard] Supabase insert failed:", err);
       throw err;
@@ -239,24 +261,46 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
       if (insertedCards.length === 0) return;
 
       const deckId = insertedCards[0].deckId;
-      const existingCards = get().cards[deckId] || [];
-      const updatedCards = [...insertedCards, ...existingCards];
-      const realDueCount = computeDueCount(updatedCards);
-      const realNewCount = computeNewCount(updatedCards);
+      const existingCards = get().cards[deckId];
+      const isCardsLoaded = Boolean(existingCards);
 
-      set((s) => ({
-        cards: { ...s.cards, [deckId]: updatedCards },
-        decks: s.decks.map((deck) =>
-          deck.id === deckId
-            ? {
-                ...deck,
-                cardCount: (deck.cardCount || 0) + insertedCards.length,
-                dueCount: realDueCount,
-                newCount: realNewCount,
-              }
-            : deck,
-        ),
-      }));
+      if (isCardsLoaded && existingCards) {
+        const updatedCards = [...insertedCards, ...existingCards];
+        const realDueCount = computeDueCount(updatedCards);
+        const realNewCount = computeNewCount(updatedCards);
+
+        set((s) => ({
+          cards: { ...s.cards, [deckId]: updatedCards },
+          decks: s.decks.map((deck) =>
+            deck.id === deckId
+              ? {
+                  ...deck,
+                  cardCount: (deck.cardCount || 0) + insertedCards.length,
+                  dueCount: realDueCount,
+                  newCount: realNewCount,
+                }
+              : deck,
+          ),
+        }));
+      } else {
+        set((s) => ({
+          decks: s.decks.map((deck) =>
+            deck.id === deckId
+              ? {
+                  ...deck,
+                  cardCount: (deck.cardCount || 0) + insertedCards.length,
+                  dueCount: (deck.dueCount || 0) + insertedCards.length,
+                  newCount: (deck.newCount || 0) + insertedCards.length,
+                }
+              : deck,
+          ),
+        }));
+      }
+
+      // Sync decks stats from database in background
+      get()
+        .fetchDecks()
+        .catch((err) => console.warn("[addCardsBatch] fetchDecks sync failed:", err));
     } catch (err) {
       console.error("[addCardsBatch] Supabase batch insert failed:", err);
       throw err;
@@ -399,6 +443,9 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     try {
       const { error } = await supabase.from("cards").delete().eq("id", cardId);
       if (error) throw error;
+      get()
+        .fetchDecks()
+        .catch((err) => console.warn("[deleteCard] fetchDecks sync failed:", err));
     } catch (err) {
       console.error("[deleteCard] Supabase delete failed:", err);
     }
@@ -415,6 +462,9 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
     try {
       const { error } = await supabase.from("cards").delete().eq("deck_id", deckId);
       if (error) throw error;
+      get()
+        .fetchDecks()
+        .catch((err) => console.warn("[clearDeckCards] fetchDecks sync failed:", err));
     } catch (err) {
       console.error("[clearDeckCards] Supabase delete failed:", err);
     }
@@ -451,6 +501,9 @@ export const createCardSlice: StateCreator<CardSlice & UISlice & DeckSlice, [], 
         .eq("deck_id", deckId);
 
       if (error) throw error;
+      get()
+        .fetchDecks()
+        .catch((err) => console.warn("[resetDeckProgress] fetchDecks sync failed:", err));
     } catch (err) {
       console.error("[resetDeckProgress] Supabase update failed:", err);
     }

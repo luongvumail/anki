@@ -65,7 +65,8 @@ export default function DecksScreen() {
   useFocusEffect(
     useCallback(() => {
       getStreakCount().then(setStreakCount);
-    }, []),
+      fetchDecks();
+    }, [fetchDecks]),
   );
 
   const deckItemsStats = useMemo(() => {

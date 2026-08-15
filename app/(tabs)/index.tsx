@@ -43,7 +43,8 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       getStreakCount().then(setStreakCount);
-    }, []),
+      fetchDecks();
+    }, [fetchDecks]),
   );
 
   const onRefresh = async () => {

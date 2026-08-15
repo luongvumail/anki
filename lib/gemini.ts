@@ -4,7 +4,7 @@ import { APP_CONFIG } from "../constants/config";
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-const CANDIDATE_MODELS = ["gemini-2.5-flash", "gemini-1.5-flash"];
+const CANDIDATE_MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash"];
 
 /**
  * Sleep helper for retry backoff
@@ -22,7 +22,10 @@ async function generateWithModels(
     // Retry up to 2 times for transient errors or 429 rate limits
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        if (__DEV__) console.log(`[Gemini] Attempting generation with model: ${modelName} (attempt ${attempt + 1})`);
+        if (__DEV__)
+          console.log(
+            `[Gemini] Attempting generation with model: ${modelName} (attempt ${attempt + 1})`,
+          );
         const model = genAI.getGenerativeModel({
           model: modelName,
           generationConfig: {
@@ -37,7 +40,8 @@ async function generateWithModels(
       } catch (err: unknown) {
         lastError = err;
         const msg = err instanceof Error ? err.message : String(err);
-        const isRateLimit = msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota");
+        const isRateLimit =
+          msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota");
 
         console.warn(`[Gemini] Model ${modelName} attempt ${attempt + 1} failed: ${msg}`);
 

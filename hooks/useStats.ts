@@ -2,7 +2,7 @@ import { useState, useRef, useMemo, useCallback } from "react";
 import { Animated } from "react-native";
 import { useStore } from "../store/useStore";
 import { getReviewHistory, getStreakCount, getLocalDateString } from "../lib/reviewTracker";
-import { computeLearnedCount } from "../lib/deckUtils";
+import { computeLearnedCount, computeDueCount, computeNewCount } from "../lib/deckUtils";
 import { getLevelInfo } from "../store/slices/userProgressSlice";
 
 export interface DayActivity {
@@ -46,11 +46,7 @@ export function useStats() {
   const loadAllData = useCallback(async () => {
     if (!userId) return;
 
-    if (useStore.getState().decks.length === 0) {
-      setLoadingCards(true);
-      await fetchDecks();
-      setLoadingCards(false);
-    }
+    fetchDecks();
 
     const history = await getReviewHistory();
     const streak = await getStreakCount();
@@ -64,28 +60,38 @@ export function useStats() {
     }).start();
   }, [userId, fetchDecks, fadeAnim]);
 
-  // Aggregate total stats directly from SQL view data in decks store
+  // Aggregate total stats directly from decks and cached cards
   const totalCardsCount = useMemo(() => {
-    return decks.reduce((sum, d) => sum + (d.cardCount || 0), 0);
-  }, [decks]);
+    return decks.reduce((sum, d) => {
+      const deckCards = cards[d.id];
+      return sum + (deckCards ? deckCards.length : d.cardCount || 0);
+    }, 0);
+  }, [decks, cards]);
 
   const dueCount = useMemo(() => {
-    return decks.reduce((sum, d) => sum + (d.dueCount || 0), 0);
-  }, [decks]);
+    return decks.reduce((sum, d) => {
+      const deckCards = cards[d.id];
+      return sum + (deckCards ? computeDueCount(deckCards) : d.dueCount || 0);
+    }, 0);
+  }, [decks, cards]);
 
   const newCardsCount = useMemo(() => {
-    return decks.reduce((sum, d) => sum + (d.newCount || 0), 0);
-  }, [decks]);
+    return decks.reduce((sum, d) => {
+      const deckCards = cards[d.id];
+      return sum + (deckCards ? computeNewCount(deckCards) : d.newCount || 0);
+    }, 0);
+  }, [decks, cards]);
 
   const learnedCount = useMemo(() => {
-    // If cards are loaded in store, use exact computeLearnedCount
-    const allLoadedCards = Object.values(cards).flat();
-    if (allLoadedCards.length > 0) {
-      return computeLearnedCount(allLoadedCards);
-    }
-    // Otherwise estimate from total minus new
-    return Math.max(0, totalCardsCount - newCardsCount);
-  }, [cards, totalCardsCount, newCardsCount]);
+    return decks.reduce((sum, d) => {
+      const deckCards = cards[d.id];
+      if (deckCards && deckCards.length > 0) {
+        return sum + computeLearnedCount(deckCards);
+      }
+      const notDue = Math.max(0, (d.cardCount || 0) - (d.dueCount || 0));
+      return sum + notDue;
+    }, 0);
+  }, [decks, cards]);
 
   const retentionRatePct = useMemo(() => {
     if (totalCardsCount === 0) return 0;

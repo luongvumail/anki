@@ -72,4 +72,38 @@ export function runCardSliceLogicTests() {
 
   // Test 5: Empty query returns undefined
   assertStrictEqual(findExistingCard(mockCardsState, "   "), undefined, "Empty query must return undefined");
+
+  // Test 6: Simulating optimistic update for unloaded deck (does not pollute cache with partial array)
+  const initialDecks = [
+    { id: "deck_unloaded", name: "HSK 1", cardCount: 10, dueCount: 4, newCount: 4 },
+    { id: "deck_1", name: "HSK 2", cardCount: 1, dueCount: 1, newCount: 1 },
+  ];
+  const insertedBatchCount = 3;
+  const targetDeckId = "deck_unloaded";
+
+  const updatedDecks = initialDecks.map((d) =>
+    d.id === targetDeckId
+      ? {
+          ...d,
+          cardCount: (d.cardCount || 0) + insertedBatchCount,
+          dueCount: (d.dueCount || 0) + insertedBatchCount,
+          newCount: (d.newCount || 0) + insertedBatchCount,
+        }
+      : d,
+  );
+
+  const updatedUnloadedDeck = updatedDecks.find((d) => d.id === "deck_unloaded");
+  assertStrictEqual(updatedUnloadedDeck?.cardCount, 13, "Total card count should increment by inserted count (10 + 3 = 13)");
+  assertStrictEqual(updatedUnloadedDeck?.dueCount, 7, "Due count should increment by inserted count (4 + 3 = 7)");
+  assertStrictEqual(updatedUnloadedDeck?.newCount, 7, "New count should increment by inserted count (4 + 3 = 7)");
+
+  // Test 7: Total card count aggregation across loaded and unloaded decks
+  const cardsCache: Record<string, Card[]> = {
+    deck_1: mockCardsState.deck_1,
+  };
+  const aggregatedTotal = updatedDecks.reduce((sum, d) => {
+    const deckCards = cardsCache[d.id];
+    return sum + (deckCards ? deckCards.length : d.cardCount || 0);
+  }, 0);
+  assertStrictEqual(aggregatedTotal, 14, "Aggregated total should be 1 (deck_1 loaded) + 13 (deck_unloaded) = 14");
 }
