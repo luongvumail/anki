@@ -2,7 +2,14 @@ import { Card } from "../store/slices/types";
 import { APP_CONFIG } from "../constants/config";
 import { FSRSState } from "./srs";
 
-export type QuestionType = "meaning_choice" | "pinyin_choice" | "listening" | "cloze";
+export type QuestionType =
+  | "meaning_choice"
+  | "hanzi_from_meaning"
+  | "pinyin_choice"
+  | "hanzi_from_pinyin"
+  | "listening"
+  | "listening_meaning"
+  | "cloze";
 
 export interface QuizQuestion {
   card: Card;
@@ -26,9 +33,9 @@ const FALLBACK_PINYINS = APP_CONFIG.QUIZ_FALLBACKS.PINYINS;
 const FALLBACK_TRANSLATIONS = APP_CONFIG.QUIZ_FALLBACKS.TRANSLATIONS;
 
 /**
- * Utility to shuffle an array randomly
+ * Utility to shuffle an array randomly using Fisher-Yates
  */
-function shuffleArray<T>(array: T[]): T[] {
+export function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -168,7 +175,7 @@ function getPinyinDistractors(card: Card, allCards: Card[]): string[] {
 }
 
 /**
- * Select question type adaptively based on FSRS state & weak tag:
+ * Select question type adaptively based on FSRS state & weak tag with healthy variety:
  */
 export function determineQuestionType(
   card: Card,
@@ -207,6 +214,7 @@ export function generateQuizQuestion(
 ): QuizQuestion {
   const type = forcedType || determineQuestionType(card, weakTag);
 
+  // 1. Chữ Hán -> Chọn nghĩa Tiếng Việt
   if (type === "meaning_choice") {
     const distractors = getTranslationDistractors(card, allCards);
     const options = shuffleArray(Array.from(new Set([card.translation, ...distractors])));
@@ -222,6 +230,54 @@ export function generateQuizQuestion(
     };
   }
 
+  // 2. Nghĩa Tiếng Việt -> Chọn Chữ Hán
+  if (type === "hanzi_from_meaning") {
+    const distractors = getCharacterDistractors(card, allCards);
+    const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
+
+    return {
+      card,
+      type: "hanzi_from_meaning",
+      prompt: "Chọn Chữ Hán tương ứng với nghĩa Tiếng Việt:",
+      targetText: card.translation,
+      subText: card.pinyin ? `Pinyin: ${card.pinyin}` : undefined,
+      options,
+      correctAnswer: card.character,
+    };
+  }
+
+  // 3. Pinyin -> Chọn Chữ Hán
+  if (type === "hanzi_from_pinyin") {
+    const distractors = getCharacterDistractors(card, allCards);
+    const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
+
+    return {
+      card,
+      type: "hanzi_from_pinyin",
+      prompt: "Chọn Chữ Hán tương ứng với phiên âm Pinyin:",
+      targetText: card.pinyin,
+      subText: card.translation ? `Nghĩa: ${card.translation}` : undefined,
+      options,
+      correctAnswer: card.character,
+    };
+  }
+
+  // 4. Nghe âm thanh -> Chọn nghĩa Tiếng Việt
+  if (type === "listening_meaning") {
+    const distractors = getTranslationDistractors(card, allCards);
+    const options = shuffleArray(Array.from(new Set([card.translation, ...distractors])));
+
+    return {
+      card,
+      type: "listening_meaning",
+      prompt: "Nghe phát âm và chọn Nghĩa Tiếng Việt đúng:",
+      audioText: card.character,
+      options,
+      correctAnswer: card.translation,
+    };
+  }
+
+  // 5. Điền khuyết câu ví dụ (Cloze)
   if (type === "cloze" && card.examples && card.examples.length > 0) {
     const ex = card.examples[0];
     if (ex.chinese) {
@@ -256,6 +312,7 @@ export function generateQuizQuestion(
     }
   }
 
+  // 6. Nghe phát âm -> Chọn Chữ Hán
   if (type === "listening") {
     const distractors = getCharacterDistractors(card, allCards);
     const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
@@ -271,7 +328,7 @@ export function generateQuizQuestion(
     };
   }
 
-  // Default: Pinyin Choice
+  // 7. Default: Chọn Pinyin & thanh điệu
   const distractors = getPinyinDistractors(card, allCards);
   const options = shuffleArray(Array.from(new Set([card.pinyin, ...distractors])));
 

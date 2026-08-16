@@ -350,3 +350,64 @@ function cleanRadicalText(raw: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
+
+export interface AIQuizItem {
+  character: string;
+  prompt: string;
+  clozeSentence: string;
+  clozeTranslation: string;
+  options: string[];
+  correctAnswer: string;
+}
+
+/**
+ * Uses Gemini to generate dynamic context-based quiz questions from a batch of user cards.
+ */
+export async function generateAIQuizBatch(cards: CardData[]): Promise<AIQuizItem[]> {
+  if (!cards || cards.length === 0) return [];
+  await enforceRateLimit();
+
+  const cardList = cards
+    .slice(0, 8)
+    .map((c, i) => `${i + 1}. "${c.character}" (${c.pinyin}): ${c.translation}`)
+    .join("\n");
+
+  const prompt = `Bạn là chuyên gia sư phạm Tiếng Trung. Dưới đây là các từ vựng trong bộ thẻ của học viên:
+${cardList}
+
+Hãy tạo ra một bộ câu hỏi trắc nghiệm điền từ vào câu thực tế hoặc tình huống giao tiếp đời sống (mỗi từ tạo 1 câu, tối đa 6 câu).
+Trong câu chữ Hán, hãy thay thế từ vựng đó bằng "[ _____ ]".
+Options gồm 4 lựa chọn (chữ Hán), trong đó có 1 đáp án đúng và 3 phương án gây nhiễu hợp lý.
+
+Trả về JSON array (CHỈ JSON array, không markdown):
+[
+  {
+    "character": "từ vựng mục tiêu",
+    "prompt": "Điền từ thích hợp vào ngữ cảnh câu:",
+    "clozeSentence": "câu có chứa [ _____ ]",
+    "clozeTranslation": "bản dịch tiếng Việt của cả câu",
+    "options": ["đáp án 1", "đáp án 2", "đáp án 3", "đáp án 4"],
+    "correctAnswer": "từ vựng mục tiêu"
+  }
+]`;
+
+  try {
+    const text = await generateWithFallback(prompt);
+    const jsonText = extractCleanJson(text);
+    const parsed = JSON.parse(jsonText);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => ({
+        character: String(item.character || ""),
+        prompt: String(item.prompt || "Điền từ thích hợp vào ngữ cảnh câu:"),
+        clozeSentence: String(item.clozeSentence || ""),
+        clozeTranslation: String(item.clozeTranslation || ""),
+        options: Array.isArray(item.options) ? item.options.map(String) : [],
+        correctAnswer: String(item.correctAnswer || item.character || ""),
+      }));
+    }
+    return [];
+  } catch (err) {
+    console.warn("[Gemini] Failed to generate dynamic AI quiz batch:", err);
+    return [];
+  }
+}

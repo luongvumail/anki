@@ -37,7 +37,7 @@ export function useStats() {
   const userId = useStore((s) => s.userId);
   const xp = useStore((s) => s.xp || 0);
 
-  const [loadingCards, setLoadingCards] = useState(false);
+  const [loadingCards] = useState(false);
   const [reviewHistory, setReviewHistory] = useState<Record<string, number>>({});
   const [streakCount, setStreakCount] = useState(0);
 

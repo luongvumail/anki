@@ -10,10 +10,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { QuizQuestion } from "../../lib/quizGenerator";
-import { Spacing, Radii, Typography, Layout, BorderWidths } from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
 import { AppButton } from "../ui/AppButton";
-
 import { AudioButton } from "../ui/AudioButton";
 import { getPinyinToneColor } from "../../lib/pinyinColor";
 import { useQuizCard, WeakTagType } from "../../hooks/useQuizCard";
@@ -38,12 +37,14 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
     selectedIndex,
     isChecked,
     speaking,
+    speakingSentence,
     timeLeft,
     responseTimeMs,
     drawerAnim,
     shakeAnim,
     bounceAnim,
     playTTS,
+    playSentenceTTS,
     handleSelectOption,
     handleContinue,
   } = useQuizCard(question, onAnswer, isFastRepairMode);
@@ -54,17 +55,22 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
     ? calculateQuizFSRS(isCorrect, Boolean(isFastRepairMode), responseTimeMs, question.card.srs)
     : null;
 
+  const primaryExample =
+    question.card.examples && question.card.examples.length > 0 && question.card.examples[0].chinese
+      ? question.card.examples[0]
+      : null;
+
+  const isListeningType = question.type === "listening" || question.type === "listening_meaning";
+
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: isChecked ? 280 : 110 }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Fast Repair Mode Countdown Header */}
         {isFastRepairMode && (
-          <View
-            style={[
-              styles.timerHeader,
-              { backgroundColor: theme.cardBg, borderColor: theme.yellow },
-            ]}
-          >
+          <View style={[styles.timerHeader, { backgroundColor: theme.cardBg }]}>
             <Ionicons name="flash" size={Layout.iconMd} color={theme.yellow} />
             <Text style={[styles.timerTitle, { color: theme.yellow }]}>
               SỬA LỖI PHẢN XẠ NHANH (5s):
@@ -82,8 +88,6 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
             {
               width: cardWidth,
               backgroundColor: theme.cardBg,
-              borderColor: theme.cardBorder,
-              borderBottomColor: theme.cardBottom,
             },
             { transform: [{ translateX: shakeAnim }, { scale: bounceAnim }] },
           ]}
@@ -92,7 +96,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
             {question.prompt}
           </Text>
 
-          {/* Target Text (Character or Cloze) */}
+          {/* Dynamic Question Target Display */}
           {question.type === "cloze" ? (
             <View style={styles.clozeContainer}>
               <Text style={[styles.clozeSentenceText, { color: theme.textPrimary }]}>
@@ -104,7 +108,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                 </Text>
               ) : null}
             </View>
-          ) : question.type === "listening" ? (
+          ) : isListeningType ? (
             <View style={styles.listeningContainer}>
               <AudioButton
                 onPress={() => playTTS(question.audioText || question.card.character)}
@@ -114,6 +118,43 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
               <Text style={[styles.listeningHintText, { color: theme.textMuted }]}>
                 Bấm nút loa để nghe lại âm thanh
               </Text>
+              {question.subText ? (
+                <Text style={[styles.targetSubText, { color: theme.textMuted }]}>
+                  {question.subText}
+                </Text>
+              ) : null}
+            </View>
+          ) : question.type === "hanzi_from_meaning" ? (
+            <View style={styles.targetCharContainer}>
+              <Text style={[styles.targetMeaningText, { color: theme.textPrimary }]}>
+                "{question.card.translation}"
+              </Text>
+              {question.card.pinyin ? (
+                <Text
+                  style={[
+                    styles.targetSubText,
+                    { color: getPinyinToneColor(question.card.pinyin) },
+                  ]}
+                >
+                  Pinyin: {question.card.pinyin}
+                </Text>
+              ) : null}
+            </View>
+          ) : question.type === "hanzi_from_pinyin" ? (
+            <View style={styles.targetCharContainer}>
+              <Text
+                style={[
+                  styles.targetPinyinBigText,
+                  { color: getPinyinToneColor(question.card.pinyin) },
+                ]}
+              >
+                {question.card.pinyin}
+              </Text>
+              {question.card.translation ? (
+                <Text style={[styles.targetSubText, { color: theme.textMuted }]}>
+                  Nghĩa: {question.card.translation}
+                </Text>
+              ) : null}
             </View>
           ) : (
             <View style={styles.targetCharContainer}>
@@ -121,6 +162,10 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                 {question.card.character}
               </Text>
               {question.type === "pinyin_choice" ? (
+                <Text style={[styles.targetSubText, { color: theme.textMuted }]}>
+                  {question.card.translation}
+                </Text>
+              ) : question.card.pinyin ? (
                 <Text
                   style={[
                     styles.targetSubText,
@@ -139,15 +184,11 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
           {question.options.map((opt, idx) => {
             const isSelected = selectedIndex === idx;
             let cardBg = theme.cardBg;
-            let cardBorder = theme.cardBorder;
-            let cardBottom = theme.cardBottom;
             let letterBg = theme.bgSoft;
             let letterColor = theme.textMuted;
 
             if (isSelected) {
               cardBg = theme.blueDim;
-              cardBorder = theme.blue;
-              cardBottom = theme.blueDark;
               letterBg = theme.blue;
               letterColor = "#FFFFFF";
             }
@@ -155,14 +196,10 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
             if (isChecked) {
               if (opt === question.correctAnswer) {
                 cardBg = theme.greenDim;
-                cardBorder = theme.green;
-                cardBottom = theme.greenDark;
                 letterBg = theme.green;
                 letterColor = "#FFFFFF";
               } else if (isSelected && !isCorrect) {
                 cardBg = theme.redDim;
-                cardBorder = theme.red;
-                cardBottom = theme.redDark;
                 letterBg = theme.red;
                 letterColor = "#FFFFFF";
               }
@@ -178,8 +215,6 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                   styles.optionCard,
                   {
                     backgroundColor: cardBg,
-                    borderColor: cardBorder,
-                    borderBottomColor: cardBottom,
                   },
                 ]}
               >
@@ -189,7 +224,18 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
                   </Text>
                 </View>
 
-                <Text style={[styles.optionText, { color: theme.textPrimary }]} numberOfLines={2}>
+                <Text
+                  style={[
+                    styles.optionText,
+                    {
+                      color:
+                        isChecked && opt === question.correctAnswer
+                          ? theme.green
+                          : theme.textPrimary,
+                    },
+                  ]}
+                  numberOfLines={2}
+                >
                   {opt}
                 </Text>
 
@@ -205,62 +251,152 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
         </View>
       </ScrollView>
 
-      {/* Bottom Drawer Result Result (CORRECT / INCORRECT) */}
+      {/* Bottom Drawer Result: Comprehensive Deep Learning Flashcard */}
       {isChecked && (
         <Animated.View
           style={[
             styles.resultDrawer,
             {
-              backgroundColor: isCorrect ? theme.greenDim : theme.redDim,
-              borderColor: isCorrect ? theme.green : theme.red,
+              backgroundColor: theme.cardBg,
               transform: [{ translateY: drawerAnim }],
             },
           ]}
         >
-          <View style={styles.resultHeaderRow}>
-            <View style={styles.resultIconWrap}>
-              <Ionicons
-                name={isCorrect ? "checkmark-circle" : "close-circle"}
-                size={Layout.iconXl}
-                color={isCorrect ? theme.green : theme.red}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[styles.resultTitleText, { color: isCorrect ? theme.green : theme.red }]}
+          <ScrollView
+            style={styles.drawerScroll}
+            contentContainerStyle={styles.drawerScrollContent}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+          >
+            {/* Result Header Row */}
+            <View style={styles.resultHeaderRow}>
+              <View
+                style={[
+                  styles.resultIconWrap,
+                  { backgroundColor: isCorrect ? theme.greenDim : theme.redDim },
+                ]}
               >
-                {isCorrect ? "CHÍNH XÁC! XUẤT SẮC!" : "RẤT TIẾC, CHƯA ĐÚNG!"}
-              </Text>
-              {!isCorrect && (
-                <Text style={[styles.correctAnswerLabelText, { color: theme.textMuted }]}>
-                  Đáp án đúng:{" "}
-                  <Text style={{ fontWeight: "800", color: theme.textPrimary }}>
-                    {question.correctAnswer}
-                  </Text>
+                <Ionicons
+                  name={isCorrect ? "checkmark-circle" : "close-circle"}
+                  size={Layout.iconLg}
+                  color={isCorrect ? theme.green : theme.red}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[styles.resultTitleText, { color: isCorrect ? theme.green : theme.red }]}
+                >
+                  {isCorrect ? "CHÍNH XÁC! XUẤT SẮC!" : "RẤT TIẾC, CHƯA ĐÚNG!"}
                 </Text>
-              )}
-              {fsrsEval && (
-                <View style={[styles.speedBadgeRow, { backgroundColor: theme.bgSoft }]}>
-                  <Ionicons
-                    name="timer-outline"
-                    size={13}
-                    color={isCorrect ? theme.green : theme.red}
-                  />
-                  <Text style={[styles.speedBadgeText, { color: theme.textPrimary }]}>
-                    {(responseTimeMs / 1000).toFixed(1)}s • {fsrsEval.feedbackLabel}
+                {!isCorrect && (
+                  <Text style={[styles.correctAnswerLabelText, { color: theme.textMuted }]}>
+                    Đáp án đúng:{" "}
+                    <Text style={{ fontWeight: "800", color: theme.textPrimary }}>
+                      {question.correctAnswer}
+                    </Text>
+                  </Text>
+                )}
+                {fsrsEval && (
+                  <View style={[styles.speedBadgeRow, { backgroundColor: theme.bgSoft }]}>
+                    <Ionicons
+                      name="timer-outline"
+                      size={12}
+                      color={isCorrect ? theme.green : theme.red}
+                    />
+                    <Text style={[styles.speedBadgeText, { color: theme.textPrimary }]}>
+                      {(responseTimeMs / 1000).toFixed(1)}s • {fsrsEval.feedbackLabel}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Word Knowledge Card Box */}
+            <View style={[styles.wordKnowledgeBox, { backgroundColor: theme.bgSoft }]}>
+              <View style={styles.wordInfoRow}>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.wordCharRow}>
+                    <Text style={[styles.drawerHanziText, { color: theme.textPrimary }]}>
+                      {question.card.character}
+                    </Text>
+                    {question.card.pinyin ? (
+                      <Text
+                        style={[
+                          styles.drawerPinyinText,
+                          { color: getPinyinToneColor(question.card.pinyin) },
+                        ]}
+                      >
+                        {question.card.pinyin}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={[styles.drawerTranslationText, { color: theme.textPrimary }]}>
+                    {question.card.translation}
                   </Text>
                 </View>
-              )}
-            </View>
-          </View>
 
-          <AppButton
-            title="TIẾP THEO"
-            variant={isCorrect ? "primary" : "error"}
-            size="lg"
-            onPress={handleContinue}
-            style={{ marginTop: Spacing.md }}
-          />
+                {/* Audio Button for Card Pronunciation */}
+                <AudioButton
+                  onPress={() => playTTS(question.card.character)}
+                  isPlaying={speaking}
+                  size="md"
+                />
+              </View>
+
+              {/* Radical & Chiết tự Breakdown */}
+              {question.card.radical ? (
+                <View style={[styles.radicalBox, { backgroundColor: theme.cardBg }]}>
+                  <Ionicons name="sparkles-outline" size={14} color={theme.blue} />
+                  <Text style={[styles.radicalText, { color: theme.textMuted }]}>
+                    {question.card.radical}
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Example Sentence Section */}
+              {primaryExample ? (
+                <View style={[styles.exampleBox, { backgroundColor: theme.cardBg }]}>
+                  <View style={styles.exampleHeaderRow}>
+                    <View style={styles.exampleTag}>
+                      <Text style={[styles.exampleTagText, { color: theme.blue }]}>CÂU VÍ DỤ</Text>
+                    </View>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => playSentenceTTS(primaryExample.chinese)}
+                      style={[styles.miniAudioBtn, { backgroundColor: theme.blueDim }]}
+                    >
+                      <Ionicons
+                        name={speakingSentence ? "volume-high" : "volume-medium-outline"}
+                        size={14}
+                        color={theme.blue}
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={[styles.exampleChineseText, { color: theme.textPrimary }]}>
+                    {primaryExample.chinese}
+                  </Text>
+                  {primaryExample.pinyin ? (
+                    <Text style={[styles.examplePinyinText, { color: theme.textMuted }]}>
+                      {primaryExample.pinyin}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.exampleVietnameseText, { color: theme.textMuted }]}>
+                    "{primaryExample.vietnamese}"
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* Action Continue Button */}
+            <AppButton
+              title="TIẾP THEO"
+              variant={isCorrect ? "primary" : "error"}
+              size="lg"
+              onPress={handleContinue}
+              style={{ marginTop: Spacing.md, width: "100%" }}
+            />
+          </ScrollView>
         </Animated.View>
       )}
     </View>
@@ -274,7 +410,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.pageMargin,
     paddingTop: Spacing.md,
-    paddingBottom: 110,
     alignItems: "center",
   },
   timerHeader: {
@@ -284,7 +419,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.cellPadding,
     paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
-    borderWidth: BorderWidths.default,
     marginBottom: Spacing.cellPadding,
   },
   timerTitle: {
@@ -302,7 +436,6 @@ const styles = StyleSheet.create({
   },
   questionCard: {
     borderRadius: Radii.xl,
-    borderWidth: BorderWidths.thin,
     padding: Spacing.xl,
     alignItems: "center",
     marginBottom: Spacing.md,
@@ -323,13 +456,24 @@ const styles = StyleSheet.create({
     marginTop: Spacing.cellPadding,
   },
   targetCharText: {
-    fontSize: Typography.hanziCard?.fontSize || 48,
+    fontSize: Typography.hanziCard?.fontSize || 44,
     fontWeight: Typography.weight.extraBold,
+  },
+  targetMeaningText: {
+    fontSize: Typography.titleLG.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    textAlign: "center",
+  },
+  targetPinyinBigText: {
+    fontSize: Typography.title1?.fontSize || 32,
+    fontWeight: Typography.weight.extraBold,
+    textAlign: "center",
   },
   targetSubText: {
     fontSize: Typography.titleMD.fontSize,
     fontWeight: Typography.weight.bold,
     marginTop: Spacing.xs,
+    textAlign: "center",
   },
   listeningContainer: {
     alignItems: "center",
@@ -363,7 +507,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderRadius: Radii.lg,
-    borderWidth: BorderWidths.thin,
     padding: Spacing.md,
     gap: Spacing.md,
   },
@@ -384,22 +527,24 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.bold,
     flex: 1,
   },
-  checkBtnWrapper: {
-    position: "absolute",
-    bottom: Spacing.lg,
-    left: Spacing.pageMargin,
-    right: Spacing.pageMargin,
-  },
   resultDrawer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
+    maxHeight: "75%",
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
-    borderTopWidth: BorderWidths.default,
-    borderLeftWidth: BorderWidths.default,
-    borderRightWidth: BorderWidths.default,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  drawerScroll: {
+    flexGrow: 0,
+  },
+  drawerScrollContent: {
     padding: Spacing.md,
     paddingBottom: Spacing.xl,
   },
@@ -407,10 +552,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.cellPadding,
+    marginBottom: Spacing.sm,
   },
   resultIconWrap: {
     width: Layout.avatarMd,
     height: Layout.avatarMd,
+    borderRadius: Radii.full,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -428,12 +575,94 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     alignSelf: "flex-start",
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: Radii.sm,
     marginTop: Spacing.xs,
   },
   speedBadgeText: {
     fontSize: Typography.caption2.fontSize,
     fontWeight: Typography.weight.bold,
+  },
+  wordKnowledgeBox: {
+    borderRadius: Radii.lg,
+    padding: Spacing.md,
+    gap: Spacing.sm,
+    width: "100%",
+    alignSelf: "stretch",
+    marginTop: Spacing.xs,
+  },
+  wordInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  wordCharRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: Spacing.sm,
+  },
+  drawerHanziText: {
+    fontSize: Typography.titleXL?.fontSize || 24,
+    fontWeight: Typography.weight.extraBold,
+  },
+  drawerPinyinText: {
+    fontSize: Typography.titleMD.fontSize,
+    fontWeight: Typography.weight.bold,
+  },
+  drawerTranslationText: {
+    fontSize: Typography.bodyMD.fontSize,
+    fontWeight: Typography.weight.bold,
+    marginTop: 2,
+  },
+  radicalBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    padding: Spacing.sm,
+    borderRadius: Radii.md,
+  },
+  radicalText: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.semibold,
+    flex: 1,
+    lineHeight: 16,
+  },
+  exampleBox: {
+    borderRadius: Radii.md,
+    padding: Spacing.sm,
+    gap: 2,
+  },
+  exampleHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
+  exampleTag: {
+    alignSelf: "flex-start",
+  },
+  exampleTagText: {
+    fontSize: Typography.caption2.fontSize,
+    fontWeight: Typography.weight.extraBold,
+    letterSpacing: 0.5,
+  },
+  miniAudioBtn: {
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+    borderRadius: Radii.sm,
+  },
+  exampleChineseText: {
+    fontSize: Typography.bodyMD.fontSize,
+    fontWeight: Typography.weight.bold,
+    lineHeight: 20,
+  },
+  examplePinyinText: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: Typography.weight.semibold,
+  },
+  exampleVietnameseText: {
+    fontSize: Typography.caption.fontSize,
+    fontStyle: "italic",
+    marginTop: 2,
   },
 });
