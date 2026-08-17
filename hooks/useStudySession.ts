@@ -25,6 +25,7 @@ export function useStudySession(deckId: string) {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [stage, setStage] = useState<SessionStage>("loading");
   const [isLoading, setIsLoading] = useState(true);
+  const [revealedCardIds, setRevealedCardIds] = useState<Set<string>>(new Set());
 
   const [missedOrSlowCardIds, setMissedOrSlowCardIds] = useState<string[]>([]);
   const [repairQuestions, setRepairQuestions] = useState<QuizQuestion[]>([]);
@@ -95,6 +96,7 @@ export function useStudySession(deckId: string) {
       setTargetCards(sessionCards); // Giữ nguyên danh sách xem thẻ ban đầu
       setQuestions(shuffledQuestions); // Xáo trộn thứ tự bài tập quiz
       setPreviewIndex(0);
+      setRevealedCardIds(new Set());
       setSession({
         deckId,
         queue: shuffledQueueCards,
@@ -117,6 +119,15 @@ export function useStudySession(deckId: string) {
       }
     };
   }, [batchUpdateCards, deckId, deckCards, isCardsLoaded, session]);
+
+  const markCardRevealed = useCallback((cardId: string) => {
+    setRevealedCardIds((prev) => {
+      if (prev.has(cardId)) return prev;
+      const next = new Set(prev);
+      next.add(cardId);
+      return next;
+    });
+  }, []);
 
   const handleNextPreview = useCallback(() => {
     setPreviewIndex((prev) => {
@@ -307,6 +318,8 @@ export function useStudySession(deckId: string) {
     questions,
     repairQuestions,
     repairIndex,
+    revealedCardIds,
+    markCardRevealed,
     handleNextPreview,
     handlePrevPreview,
     handleQuizAnswer,

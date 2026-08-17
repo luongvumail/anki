@@ -4,30 +4,39 @@ import * as Speech from "expo-speech";
 import { triggerHaptic } from "../constants/theme";
 import { APP_CONFIG } from "../constants/config";
 
-export function useFlashcardAnimation(character: string = "") {
-  const [isRevealed, setIsRevealed] = useState(false);
+export function useFlashcardAnimation(
+  character: string = "",
+  initialRevealed: boolean = false,
+  onReveal?: () => void,
+) {
+  const [isRevealed, setIsRevealed] = useState(initialRevealed);
   const [speaking, setSpeaking] = useState(false);
-  const detailAnim = useRef(new Animated.Value(0)).current;
+  const detailAnim = useRef(new Animated.Value(initialRevealed ? 1 : 0)).current;
 
-  // Reset animation state when character changes
+  // Sync animation state when character or initialRevealed changes
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsRevealed(false);
-    detailAnim.setValue(0);
-  }, [character, detailAnim]);
+    setIsRevealed(initialRevealed);
+    detailAnim.setValue(initialRevealed ? 1 : 0);
+  }, [character, initialRevealed, detailAnim]);
 
   const handleToggleDetail = useCallback(() => {
+    if (isRevealed) return;
+
     triggerHaptic("selection");
-    const nextRevealed = !isRevealed;
-    setIsRevealed(nextRevealed);
+    setIsRevealed(true);
 
     Animated.spring(detailAnim, {
-      toValue: nextRevealed ? 1 : 0,
+      toValue: 1,
       friction: 8,
       tension: 40,
       useNativeDriver: true,
     }).start();
-  }, [isRevealed, detailAnim]);
+
+    if (onReveal) {
+      onReveal();
+    }
+  }, [isRevealed, detailAnim, onReveal]);
 
   const playTTS = useCallback(() => {
     if (!character) return;
