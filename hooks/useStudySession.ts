@@ -3,7 +3,7 @@ import { Card, StudySession } from "../store/slices/types";
 import { useStore } from "../store/useStore";
 import { APP_CONFIG } from "../constants/config";
 import { isDue, calculateQuizSRS, createDefaultSRSState } from "../lib/srs";
-import { generateQuizQuestion, QuizQuestion } from "../lib/quizGenerator";
+import { generateQuizQuestion, QuizQuestion, shuffleArray } from "../lib/quizGenerator";
 import { recordReviewToday } from "../lib/reviewTracker";
 
 export type SessionStage = "loading" | "empty" | "preview" | "validation" | "repair" | "done";
@@ -25,6 +25,7 @@ export function useStudySession(deckId: string) {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [stage, setStage] = useState<SessionStage>("loading");
   const [isLoading, setIsLoading] = useState(true);
+  const [revealedCardIds, setRevealedCardIds] = useState<Set<string>>(new Set());
 
   const [missedOrSlowCardIds, setMissedOrSlowCardIds] = useState<string[]>([]);
   const [repairQuestions, setRepairQuestions] = useState<QuizQuestion[]>([]);
@@ -87,13 +88,18 @@ export function useStudySession(deckId: string) {
         return;
       }
 
+      // Đảo lộn xộn thứ tự câu hỏi và queue ngay từ đầu (khác thứ tự tuần tự trong preview targetCards)
+      const shuffledQuestions = shuffleArray(generated);
+      const shuffledQueueCards = shuffledQuestions.map((q) => q.card);
+
       initializedDeckIdRef.current = deckId;
-      setTargetCards(sessionCards);
-      setQuestions(generated);
+      setTargetCards(sessionCards); // Giữ nguyên danh sách xem thẻ ban đầu
+      setQuestions(shuffledQuestions); // Xáo trộn thứ tự bài tập quiz
       setPreviewIndex(0);
+      setRevealedCardIds(new Set());
       setSession({
         deckId,
-        queue: sessionCards,
+        queue: shuffledQueueCards,
         currentIndex: 0,
         reviewedCount: 0,
         correctCount: 0,
@@ -114,10 +120,25 @@ export function useStudySession(deckId: string) {
     };
   }, [batchUpdateCards, deckId, deckCards, isCardsLoaded, session]);
 
+  const markCardRevealed = useCallback((cardId: string) => {
+    setRevealedCardIds((prev) => {
+      if (prev.has(cardId)) return prev;
+      const next = new Set(prev);
+      next.add(cardId);
+      return next;
+    });
+  }, []);
+
   const handleNextPreview = useCallback(() => {
     setPreviewIndex((prev) => {
       const next = prev + 1;
       if (next >= targetCards.length) {
+        // Tái xáo trộn câu hỏi một lần nữa khi chuyển từ Preview sang Validation để đảm bảo độ bất ngờ cao nhất
+        setQuestions((currentQs) => {
+          const reshuffled = shuffleArray(currentQs);
+          setSession((s) => (s ? { ...s, queue: reshuffled.map((q) => q.card), currentIndex: 0 } : null));
+          return reshuffled;
+        });
         setStage("validation");
         return prev;
       }
@@ -218,7 +239,7 @@ export function useStudySession(deckId: string) {
             .map((c: Card) => generateQuizQuestion(c, deckCards))
             .filter((q): q is QuizQuestion => q !== null);
           if (repairQs.length > 0) {
-            setRepairQuestions(repairQs);
+            setRepairQuestions(shuffleArray(repairQs));
             setRepairIndex(0);
             setStage("repair");
           } else {
@@ -297,6 +318,8 @@ export function useStudySession(deckId: string) {
     questions,
     repairQuestions,
     repairIndex,
+    revealedCardIds,
+    markCardRevealed,
     handleNextPreview,
     handlePrevPreview,
     handleQuizAnswer,

@@ -25,9 +25,17 @@ interface FlashcardViewProps {
   currentIndex?: number;
   totalCards?: number;
   showNextButton?: boolean;
+  isRevealedInitially?: boolean;
+  onReveal?: () => void;
 }
 
-export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
+export function FlashcardView({
+  card,
+  onNext,
+  onPrev,
+  isRevealedInitially = false,
+  onReveal,
+}: FlashcardViewProps) {
   const { width } = useWindowDimensions();
   const { theme } = useTheme();
   const cardWidth = width - Spacing.pageMargin * 2;
@@ -41,7 +49,7 @@ export function FlashcardView({ card, onNext, onPrev }: FlashcardViewProps) {
     detailAnimatedStyle,
     handleToggleDetail,
     playTTS,
-  } = useFlashcardAnimation(card?.character || "");
+  } = useFlashcardAnimation(card?.character || "", isRevealedInitially, onReveal);
 
   // Reset swipe animation position when card changes
   React.useEffect(() => {

@@ -15,6 +15,7 @@ export function useQuizCard(
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isChecked, setIsChecked] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [speakingSentence, setSpeakingSentence] = useState(false);
   const [timeLeft, setTimeLeft] = useState(5);
 
   const startTimeRef = useRef<number>(0);
@@ -33,6 +34,17 @@ export function useQuizCard(
       rate: APP_CONFIG.SPEECH_RATE,
       onDone: () => setSpeaking(false),
       onError: () => setSpeaking(false),
+    });
+  }, []);
+
+  const playSentenceTTS = useCallback((sentence: string) => {
+    if (!sentence) return;
+    setSpeakingSentence(true);
+    Speech.speak(sentence, {
+      language: "zh-CN",
+      rate: APP_CONFIG.SPEECH_RATE,
+      onDone: () => setSpeakingSentence(false),
+      onError: () => setSpeakingSentence(false),
     });
   }, []);
 
@@ -61,7 +73,7 @@ export function useQuizCard(
       }, 1000);
     }
 
-    if (question.type === "listening") {
+    if (question.type === "listening" || question.type === "listening_meaning") {
       playTTS(question.audioText || question.card.character);
     }
 
@@ -130,7 +142,6 @@ export function useQuizCard(
     // Legacy alias
   }, []);
 
-
   const handleContinue = useCallback(() => {
     triggerHaptic("selection");
     let isCorrect = false;
@@ -142,9 +153,13 @@ export function useQuizCard(
 
     let weakTag: WeakTagType | undefined;
     if (!isCorrect) {
-      if (question.type === "pinyin_choice") weakTag = "pinyin";
-      else if (question.type === "meaning_choice") weakTag = "meaning";
-      else weakTag = "character";
+      if (question.type === "pinyin_choice") {
+        weakTag = "pinyin";
+      } else if (question.type === "meaning_choice" || question.type === "listening_meaning") {
+        weakTag = "meaning";
+      } else {
+        weakTag = "character";
+      }
     }
 
     onAnswer(isCorrect, responseTimeMsRef.current, weakTag);
@@ -154,12 +169,14 @@ export function useQuizCard(
     selectedIndex,
     isChecked,
     speaking,
+    speakingSentence,
     timeLeft,
     responseTimeMs: responseTimeMsRef.current,
     drawerAnim,
     shakeAnim,
     bounceAnim,
     playTTS,
+    playSentenceTTS,
     handleSelectOption,
     handleCheck,
     handleContinue,

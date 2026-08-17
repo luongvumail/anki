@@ -3,15 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../store/slices/types";
-import {
-  Spacing,
-  Radii,
-  Typography,
-  Layout,
-  triggerHaptic,
-} from "../../constants/theme";
+import { Spacing, Radii, Typography, Layout, triggerHaptic } from "../../constants/theme";
 import { useTheme } from "../../hooks/useTheme";
-import { useSpeedMatch } from "../../hooks/useSpeedMatch";
+import { useSpeedMatch, SpeedMatchMode } from "../../hooks/useSpeedMatch";
 import { AppButton } from "../ui/AppButton";
 
 export interface SpeedMatchModalProps {
@@ -19,6 +13,13 @@ export interface SpeedMatchModalProps {
   onClose: () => void;
   cards: Card[];
 }
+
+const MODES: { key: SpeedMatchMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: "mixed", label: "Hỗn Hợp", icon: "shuffle" },
+  { key: "hanzi_meaning", label: "Hán - Nghĩa", icon: "book-outline" },
+  { key: "hanzi_pinyin", label: "Hán - Pinyin", icon: "text-outline" },
+  { key: "pinyin_meaning", label: "Pinyin - Nghĩa", icon: "language-outline" },
+];
 
 export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProps) {
   const insets = useSafeAreaInsets();
@@ -30,11 +31,21 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
     tiles,
     selectedTile,
     isGameOver,
+    mode,
+    currentRoundMode,
+    changeMode,
     startGame,
     handleTilePress,
   } = useSpeedMatch(visible, cards);
 
   if (!visible) return null;
+
+  const currentModeLabel =
+    currentRoundMode === "hanzi_pinyin"
+      ? "Ghép Chữ Hán & Pinyin"
+      : currentRoundMode === "pinyin_meaning"
+        ? "Ghép Pinyin & Nghĩa"
+        : "Ghép Chữ Hán & Nghĩa";
 
   return (
     <Modal
@@ -62,15 +73,51 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
-              GHÉP TỪ NHANH 60S
-            </Text>
-            <Text style={[styles.headerSub, { color: theme.textMuted }]}>
-              Thử thách phản xạ từ vựng siêu tốc
-            </Text>
+            <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>GHÉP TỪ NHANH 60S</Text>
+            <Text style={[styles.headerSub, { color: theme.blue }]}>{currentModeLabel}</Text>
           </View>
 
           <View style={{ width: Layout.avatarMd }} />
+        </View>
+
+        {/* Mode Selector Chips */}
+        <View style={styles.modeChipsRow}>
+          {MODES.map((m) => {
+            const isSelected = mode === m.key;
+            return (
+              <TouchableOpacity
+                key={m.key}
+                activeOpacity={0.7}
+                onPress={() => {
+                  triggerHaptic("selection");
+                  changeMode(m.key);
+                }}
+                style={[
+                  styles.modeChip,
+                  {
+                    backgroundColor: isSelected ? theme.blue : theme.bgSoft,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={m.icon}
+                  size={13}
+                  color={isSelected ? "#FFFFFF" : theme.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.modeChipText,
+                    {
+                      color: isSelected ? "#FFFFFF" : theme.textMuted,
+                      fontWeight: isSelected ? Typography.weight.extraBold : Typography.weight.bold,
+                    },
+                  ]}
+                >
+                  {m.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Stats Row */}
@@ -104,7 +151,6 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
             <Text style={[styles.highScoreText, { color: theme.textMuted }]}>
               Kỷ lục cao nhất: {highScore} XP
             </Text>
-            App
             <AppButton
               title="CHƠI LẠI"
               variant="primary"
@@ -133,19 +179,31 @@ export function SpeedMatchModal({ visible, onClose, cards }: SpeedMatchModalProp
                     {
                       backgroundColor: isSelected ? theme.blue : theme.cardBg,
                       transform: [{ scale: isSelected ? 1.03 : 1 }],
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.05,
+                      shadowRadius: 4,
+                      elevation: 2,
                     },
                   ]}
                 >
                   <Text
-                    style={[styles.tileText, { color: isSelected ? "#FFFFFF" : theme.textPrimary }]}
+                    style={[
+                      styles.tileText,
+                      { color: isSelected ? "#FFFFFF" : theme.textPrimary },
+                    ]}
+                    numberOfLines={2}
                   >
                     {tile.text}
                   </Text>
-                  {tile.pinyin ? (
+                  {tile.subText ? (
                     <Text
-                      style={[styles.tilePinyin, { color: isSelected ? "#E0F2FE" : theme.blue }]}
+                      style={[
+                        styles.tileSubText,
+                        { color: isSelected ? "#E0F2FE" : theme.textMuted },
+                      ]}
                     >
-                      {tile.pinyin}
+                      {tile.subText}
                     </Text>
                   ) : null}
                 </TouchableOpacity>
@@ -167,7 +225,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.pageMargin,
-    paddingBottom: Spacing.cellPadding,
+    paddingBottom: Spacing.xs,
   },
   closeBtn: {
     padding: Spacing.sm,
@@ -182,7 +240,27 @@ const styles = StyleSheet.create({
   headerSub: {
     fontSize: Typography.caption1.fontSize,
     marginTop: 2,
-    fontWeight: Typography.weight.semibold,
+    fontWeight: Typography.weight.extraBold,
+  },
+  modeChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.pageMargin,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  modeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 5,
+    borderRadius: Radii.full,
+  },
+  modeChipText: {
+    fontSize: Typography.caption2.fontSize,
   },
   statsRow: {
     flexDirection: "row",
@@ -191,7 +269,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     marginBottom: Spacing.md,
   },
-
   statBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -217,7 +294,6 @@ const styles = StyleSheet.create({
   tile: {
     width: "48%",
     height: 90,
-    borderWidth: 0,
     borderRadius: Radii.lg,
     alignItems: "center",
     justifyContent: "center",
@@ -233,7 +309,7 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.extraBold,
     textAlign: "center",
   },
-  tilePinyin: {
+  tileSubText: {
     fontSize: Typography.caption1.fontSize,
     marginTop: 2,
     fontWeight: Typography.weight.semibold,

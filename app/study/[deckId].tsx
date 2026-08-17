@@ -34,6 +34,8 @@ export default function StudyScreen() {
     questions,
     repairQuestions,
     repairIndex,
+    revealedCardIds,
+    markCardRevealed,
     handleNextPreview,
     handlePrevPreview,
     handleQuizAnswer,
@@ -233,6 +235,16 @@ export default function StudyScreen() {
               currentIndex={previewIndex}
               totalCards={targetCards.length}
               showNextButton={true}
+              isRevealedInitially={
+                targetCards[previewIndex]?.id
+                  ? revealedCardIds.has(targetCards[previewIndex].id)
+                  : false
+              }
+              onReveal={() => {
+                if (targetCards[previewIndex]?.id) {
+                  markCardRevealed(targetCards[previewIndex].id);
+                }
+              }}
               onNext={handleNextPreview}
               onPrev={handlePrevPreview}
             />

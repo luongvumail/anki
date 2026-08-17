@@ -4,12 +4,14 @@ import { Card } from "../store/slices/types";
 import { triggerHaptic } from "../constants/theme";
 import { awardArcadeXP, ARCADE_XP_REWARDS } from "../lib/arcadeScoring";
 
+export type SpeedMatchMode = "mixed" | "hanzi_meaning" | "hanzi_pinyin" | "pinyin_meaning";
+
 export interface MatchTile {
   id: string;
   cardId: string;
-  type: "hanzi" | "meaning";
+  type: "left" | "right";
   text: string;
-  pinyin?: string;
+  subText?: string;
   matched: boolean;
 }
 
@@ -32,6 +34,8 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
   const [tiles, setTiles] = useState<MatchTile[]>([]);
   const [selectedTile, setSelectedTile] = useState<MatchTile | null>(null);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [mode, setMode] = useState<SpeedMatchMode>("mixed");
+  const [currentRoundMode, setCurrentRoundMode] = useState<SpeedMatchMode>("hanzi_meaning");
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevVisibleRef = useRef(false);
@@ -43,42 +47,72 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
     });
   }, []);
 
-  const generateTiles = useCallback((availableCards: Card[]) => {
-    if (availableCards.length < 2) return [];
-    const pool = shuffleArray(availableCards).slice(0, 6);
+  const generateTiles = useCallback(
+    (availableCards: Card[], selectedMode: SpeedMatchMode) => {
+      if (availableCards.length < 2) return [];
+      const pool = shuffleArray(availableCards).slice(0, 6);
 
-    const generated: MatchTile[] = [];
-    pool.forEach((card) => {
-      generated.push({
-        id: `h_${card.id}`,
-        cardId: card.id,
-        type: "hanzi",
-        text: card.character,
-        pinyin: card.pinyin,
-        matched: false,
-      });
-      generated.push({
-        id: `m_${card.id}`,
-        cardId: card.id,
-        type: "meaning",
-        text: card.translation,
-        matched: false,
-      });
-    });
+      // Determine the active sub-mode for this round
+      let activeMode: SpeedMatchMode = selectedMode;
+      if (selectedMode === "mixed") {
+        const subModes: SpeedMatchMode[] = ["hanzi_meaning", "hanzi_pinyin", "pinyin_meaning"];
+        activeMode = subModes[Math.floor(Math.random() * subModes.length)];
+      }
+      setCurrentRoundMode(activeMode);
 
-    return shuffleArray(generated);
-  }, []);
+      const generated: MatchTile[] = [];
+      pool.forEach((card) => {
+        let leftText = card.character;
+        let leftSub = "";
+        let rightText = card.translation;
+        let rightSub = "";
+
+        if (activeMode === "hanzi_pinyin") {
+          leftText = card.character;
+          rightText = card.pinyin || card.character;
+        } else if (activeMode === "pinyin_meaning") {
+          leftText = card.pinyin || card.character;
+          rightText = card.translation;
+        } else {
+          // hanzi_meaning
+          leftText = card.character;
+          rightText = card.translation;
+        }
+
+        generated.push({
+          id: `l_${card.id}`,
+          cardId: card.id,
+          type: "left",
+          text: leftText,
+          subText: leftSub || undefined,
+          matched: false,
+        });
+
+        generated.push({
+          id: `r_${card.id}`,
+          cardId: card.id,
+          type: "right",
+          text: rightText,
+          subText: rightSub || undefined,
+          matched: false,
+        });
+      });
+
+      return shuffleArray(generated);
+    },
+    [],
+  );
 
   const startGame = useCallback(() => {
     if (cards.length < 2) return;
-    const newTiles = generateTiles(cards);
+    const newTiles = generateTiles(cards, mode);
     setTiles(newTiles);
     setScore(0);
     setTimeLeft(60);
     setSelectedTile(null);
     setIsGameOver(false);
     setIsPlaying(true);
-  }, [cards, generateTiles]);
+  }, [cards, mode, generateTiles]);
 
   useEffect(() => {
     if (visible && !prevVisibleRef.current) {
@@ -139,13 +173,13 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
 
         setTiles((prev) => {
           const updated = prev.map((t) =>
-            t.cardId === tile.cardId ? { ...t, matched: true } : t
+            t.cardId === tile.cardId ? { ...t, matched: true } : t,
           );
           // Check if all tiles in current round are matched -> spawn new tiles!
           const remaining = updated.filter((t) => !t.matched);
           if (remaining.length === 0) {
             setTimeout(() => {
-              setTiles(generateTiles(cards));
+              setTiles(generateTiles(cards, mode));
             }, 300);
           }
           return updated;
@@ -158,7 +192,19 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
         setSelectedTile(null);
       }
     },
-    [isPlaying, selectedTile, cards, generateTiles]
+    [isPlaying, selectedTile, cards, mode, generateTiles],
+  );
+
+  const changeMode = useCallback(
+    (newMode: SpeedMatchMode) => {
+      setMode(newMode);
+      if (isPlaying) {
+        const newTiles = generateTiles(cards, newMode);
+        setTiles(newTiles);
+        setSelectedTile(null);
+      }
+    },
+    [cards, isPlaying, generateTiles],
   );
 
   return {
@@ -169,6 +215,9 @@ export function useSpeedMatch(visible: boolean, cards: Card[]) {
     tiles,
     selectedTile,
     isGameOver,
+    mode,
+    currentRoundMode,
+    changeMode,
     startGame,
     handleTilePress,
   };
