@@ -100,7 +100,7 @@ export function QuizCardView({ question, onAnswer, isFastRepairMode }: QuizCardV
           {question.type === "cloze" ? (
             <View style={styles.clozeContainer}>
               <Text style={[styles.clozeSentenceText, { color: theme.textPrimary }]}>
-                {question.clozeSentence?.replace("___", " [ ? ] ")}
+                {question.clozeSentence}
               </Text>
               {question.clozeTranslation ? (
                 <Text style={[styles.clozeTranslationText, { color: theme.textMuted }]}>
