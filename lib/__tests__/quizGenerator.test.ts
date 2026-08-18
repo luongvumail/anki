@@ -109,7 +109,7 @@ export function runQuizGeneratorTests() {
   const qCloze = generateQuizQuestion(mockCard3, allCards, "cloze");
   assertStrictEqual(qCloze.type, "cloze");
   assertStrictEqual(qCloze.correctAnswer, "喝水");
-  assertOk(qCloze.clozeSentence?.includes("[ _____ ]"), "Sentence must have blank placeholder");
+  assertOk(qCloze.clozeSentence?.includes("（___）"), "Sentence must have blank placeholder");
   assertOk(!qCloze.clozeSentence?.includes("喝水"), "Target keyword must be masked out");
   assertStrictEqual(new Set(qCloze.options).size, 4, "All cloze options must be unique");
 }

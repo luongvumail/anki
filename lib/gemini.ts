@@ -376,7 +376,7 @@ export async function generateAIQuizBatch(cards: CardData[]): Promise<AIQuizItem
 ${cardList}
 
 Hãy tạo ra một bộ câu hỏi trắc nghiệm điền từ vào câu thực tế hoặc tình huống giao tiếp đời sống (mỗi từ tạo 1 câu, tối đa 6 câu).
-Trong câu chữ Hán, hãy thay thế từ vựng đó bằng "[ _____ ]".
+Trong câu chữ Hán, hãy thay thế từ vựng đó bằng "（___）".
 Options gồm 4 lựa chọn (chữ Hán), trong đó có 1 đáp án đúng và 3 phương án gây nhiễu hợp lý.
 
 Trả về JSON array (CHỈ JSON array, không markdown):
@@ -384,7 +384,7 @@ Trả về JSON array (CHỈ JSON array, không markdown):
   {
     "character": "từ vựng mục tiêu",
     "prompt": "Điền từ thích hợp vào ngữ cảnh câu:",
-    "clozeSentence": "câu có chứa [ _____ ]",
+    "clozeSentence": "câu có chứa （___）",
     "clozeTranslation": "bản dịch tiếng Việt của cả câu",
     "options": ["đáp án 1", "đáp án 2", "đáp án 3", "đáp án 4"],
     "correctAnswer": "từ vựng mục tiêu"

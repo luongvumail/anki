@@ -295,7 +295,7 @@ export function generateQuizQuestion(
       }
 
       if (targetToReplace) {
-        const blankedChinese = ex.chinese.replaceAll(targetToReplace, " [ _____ ] ");
+        const blankedChinese = ex.chinese.replaceAll(targetToReplace, "（___）");
         const distractors = getCharacterDistractors(card, allCards);
         const options = shuffleArray(Array.from(new Set([card.character, ...distractors])));
 

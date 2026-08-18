@@ -7,6 +7,7 @@ import {
   Animated,
   PanResponder,
   Pressable,
+  Easing,
   useWindowDimensions,
 } from "react-native";
 
@@ -29,7 +30,7 @@ interface FlashcardViewProps {
   onReveal?: () => void;
 }
 
-export function FlashcardView({
+export const FlashcardView = React.memo(function FlashcardView({
   card,
   onNext,
   onPrev,
@@ -51,6 +52,10 @@ export function FlashcardView({
     playTTS,
   } = useFlashcardAnimation(card?.character || "", isRevealedInitially, onReveal);
 
+  // Keep latest callbacks in ref to avoid stale closures in PanResponder
+  const callbacksRef = useRef({ onNext, onPrev, handleToggleDetail });
+  callbacksRef.current = { onNext, onPrev, handleToggleDetail };
+
   // Reset swipe animation position when card changes
   React.useEffect(() => {
     swipeAnim.setValue(0);
@@ -63,56 +68,63 @@ export function FlashcardView({
       onStartShouldSetPanResponderCapture: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
         return (
-          Math.abs(gestureState.dy) > 6 &&
+          Math.abs(gestureState.dy) > 8 &&
           Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2
         );
       },
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
         return (
-          Math.abs(gestureState.dy) > 6 &&
+          Math.abs(gestureState.dy) > 8 &&
           Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2
         );
+      },
+      onPanResponderGrant: () => {
+        swipeAnim.stopAnimation();
       },
       onPanResponderMove: (_, gestureState) => {
         swipeAnim.setValue(gestureState.dy);
       },
       onPanResponderRelease: (_, gestureState) => {
         const { dy, dx, vy } = gestureState;
+        const { onNext: nextFn, onPrev: prevFn, handleToggleDetail: toggleFn } = callbacksRef.current;
 
-        if (dy < -50 || vy < -0.35) {
+        if (dy < -60 || vy < -0.45) {
           // Swipe UP -> Next Card
           triggerHaptic("selection");
           Animated.timing(swipeAnim, {
-            toValue: -600,
-            duration: 160,
+            toValue: -750,
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
           }).start(() => {
-            if (onNext) onNext();
+            if (nextFn) nextFn();
           });
-        } else if (dy > 50 || vy > 0.35) {
+        } else if (dy > 60 || vy > 0.45) {
           // Swipe DOWN -> Previous Card
           triggerHaptic("selection");
           Animated.timing(swipeAnim, {
-            toValue: 600,
-            duration: 160,
+            toValue: 750,
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
           }).start(() => {
-            if (onPrev) onPrev();
+            if (prevFn) prevFn();
           });
-        } else if (Math.abs(dy) < 8 && Math.abs(dx) < 8) {
+        } else if (Math.abs(dy) < 18 && Math.abs(dx) < 18) {
           // Tap anywhere on card -> Toggle Detail Reveal
           Animated.spring(swipeAnim, {
             toValue: 0,
-            friction: 8,
+            friction: 7,
             tension: 50,
             useNativeDriver: true,
           }).start();
-          handleToggleDetail();
+          toggleFn();
         } else {
           // Snap back smoothly if threshold not met
           Animated.spring(swipeAnim, {
             toValue: 0,
-            friction: 8,
+            velocity: vy,
+            friction: 7,
             tension: 50,
             useNativeDriver: true,
           }).start();
@@ -121,12 +133,39 @@ export function FlashcardView({
     })
   ).current;
 
-  // Fluid TikTok swipe opacity interpolation
+  // Fluid TikTok swipe interpolations
   const swipeOpacity = swipeAnim.interpolate({
-    inputRange: [-400, 0, 400],
-    outputRange: [0.3, 1, 0.3],
+    inputRange: [-350, 0, 350],
+    outputRange: [0.35, 1, 0.35],
     extrapolate: "clamp",
   });
+
+  const swipeScale = swipeAnim.interpolate({
+    inputRange: [-350, 0, 350],
+    outputRange: [0.94, 1, 0.94],
+    extrapolate: "clamp",
+  });
+
+  const swipeRotate = swipeAnim.interpolate({
+    inputRange: [-400, 0, 400],
+    outputRange: ["-2.5deg", "0deg", "2.5deg"],
+    extrapolate: "clamp",
+  });
+
+  const cardThemeStyle = React.useMemo(
+    () => ({
+      width: cardWidth,
+      backgroundColor: theme.cardBg,
+      borderColor: theme.isDark ? theme.cardBorder : "rgba(15, 23, 42, 0.12)",
+      borderBottomColor: theme.cardBottom,
+      shadowColor: theme.isDark ? "#000000" : "#0F172A",
+      shadowOpacity: theme.isDark ? 0.3 : 0.16,
+      shadowRadius: theme.isDark ? 16 : 24,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: theme.isDark ? 4 : 10,
+    }),
+    [cardWidth, theme.cardBg, theme.cardBorder, theme.cardBottom, theme.isDark],
+  );
 
   if (!card) return null;
 
@@ -136,18 +175,14 @@ export function FlashcardView({
         {...panResponder.panHandlers}
         style={[
           styles.fullCardContainer,
+          cardThemeStyle,
           {
-            width: cardWidth,
-            backgroundColor: theme.cardBg,
-            borderColor: theme.isDark ? theme.cardBorder : "rgba(15, 23, 42, 0.12)",
-            borderBottomColor: theme.cardBottom,
-            shadowColor: theme.isDark ? "#000000" : "#0F172A",
-            shadowOpacity: theme.isDark ? 0.3 : 0.16,
-            shadowRadius: theme.isDark ? 16 : 24,
-            shadowOffset: { width: 0, height: 8 },
-            elevation: theme.isDark ? 4 : 10,
             opacity: swipeOpacity,
-            transform: [{ translateY: swipeAnim }],
+            transform: [
+              { translateY: swipeAnim },
+              { scale: swipeScale },
+              { rotate: swipeRotate },
+            ],
           },
         ]}
       >
@@ -161,12 +196,15 @@ export function FlashcardView({
             contentContainerStyle={styles.centeredScrollContent}
             showsVerticalScrollIndicator={false}
             bounces={false}
+            scrollEnabled={isRevealed}
           >
             {/* Always Centered Hanzi Header */}
             <Animated.View style={[styles.hanziWrapper, hanziAnimatedStyle]}>
-              <Text style={[styles.mainCharacter, { color: theme.textPrimary }]}>
-                {card.character}
-              </Text>
+              <Pressable onPress={handleToggleDetail} hitSlop={12}>
+                <Text style={[styles.mainCharacter, { color: theme.textPrimary }]}>
+                  {card.character}
+                </Text>
+              </Pressable>
 
               <View style={styles.audioRow}>
                 <AudioButton onPress={playTTS} isPlaying={speaking} size="md" />
@@ -279,7 +317,7 @@ export function FlashcardView({
       </View>
     </View>
   );
-}
+});
 
 
 
